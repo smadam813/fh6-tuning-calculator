@@ -5,7 +5,7 @@
    ===================================================================== */
 (function () {
   "use strict";
-  const { GOALS, GOAL_META, compute, validate } = window.TUNING;
+  const { GOALS, GOAL_META, compute, validate, overallTireDiameter } = window.TUNING;
 
   /* ---------- unit handling ---------- */
   // factor to convert a METRIC value to IMPERIAL (multiply); divide to go back.
@@ -20,7 +20,9 @@
     rideHeightMinF: "ride", rideHeightMaxF: "ride", rideHeightMinR: "ride", rideHeightMaxR: "ride",
     springRateMinF: "spring", springRateMaxF: "spring", springRateMinR: "spring", springRateMaxR: "spring",
     aeroFrontMin: "aero", aeroFrontMax: "aero", aeroRearMin: "aero", aeroRearMax: "aero",
-    tireDiameter: "ride", targetTopSpeed: "speed",
+    targetTopSpeed: "speed",
+    // note: tire width (mm), aspect (%), rim (in) are unit-independent in Forza —
+    // they stay OUT of FIELD_DIM so the metric toggle never rewrites them.
   };
   let units = "imperial";
 
@@ -106,15 +108,25 @@
       // optional downforce ranges (imperial lbf, or null = show % of slider)
       aeroFront: optAeroRange("aeroFrontMin", "aeroFrontMax"),
       aeroRear: optAeroRange("aeroRearMin", "aeroRearMax"),
-      // optional gearing physics (null = HP heuristic). tire Ø in inches, target speed in mph.
+      // optional gearing physics (null = HP heuristic). target speed in mph.
+      // drive-tire overall Ø (in) is computed from the FH6 spec width/aspect/rim;
+      // null when any part is blank, which falls back to the HP heuristic.
       redlineRpm: optField("redlineRpm"),
-      tireDiameter: optField("tireDiameter", "ride"),
+      tireDiameter: overallTireDiameter(optField("tireWidth"), optField("tireAspect"), optField("tireRim")),
       targetTopSpeed: optField("targetTopSpeed", "speed"),
       // handling bias: −5 (understeer) … 0 (neutral) … +5 (oversteer); 0 = pure baseline
       handlingBias: num("handlingBias"),
       // overall stiffness: −5 (soft) … 0 (balanced) … +5 (hard); 0 = pure baseline
       overallStiffness: num("overallStiffness"),
     };
+  }
+
+  /* ---------- drive-tire computed-diameter readout ---------- */
+  // Mirrors the engine's overallTireDiameter so the user sees the rolling Ø
+  // their width/aspect/rim spec resolves to (e.g. 315/30R17 → "= 24.4 in").
+  function updateTireDiaOut() {
+    const dia = overallTireDiameter(optField("tireWidth"), optField("tireAspect"), optField("tireRim"));
+    $("tireDiaOut").textContent = dia != null ? `= ${nf(dia, 1)} in` : "= — in";
   }
 
   /* ---------- handling-bias slider label ---------- */
@@ -447,6 +459,7 @@
     syncAeroFields();
     updateBiasLabel();
     updateStiffLabel();
+    updateTireDiaOut();
     const compare = $("compareMode").checked;
     $("goalTabs").querySelectorAll("button").forEach((b) =>
       b.classList.toggle("active", b.dataset.goal === currentGoal));
@@ -505,7 +518,7 @@
     $("srUnitRmin").textContent = lbl.spring; $("srUnitRmax").textContent = lbl.spring;
     $("afUnit").textContent = lbl.aero; $("afUnit2").textContent = lbl.aero;
     $("arUnit").textContent = lbl.aero; $("arUnit2").textContent = lbl.aero;
-    $("tireUnit").textContent = lbl.ride; $("topSpeedUnit").textContent = lbl.speed;
+    $("topSpeedUnit").textContent = lbl.speed;
     refresh();
   }
 

@@ -14,7 +14,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { TUNING, CAR_LIGHT_RWD, CAR_HEAVY_AWD_EV, CAR_MID_RWD_HIGHPI, RANGES } = require("./fixtures.js");
+const { TUNING, baseInput, CAR_LIGHT_RWD, CAR_HEAVY_AWD_EV, CAR_MID_RWD_HIGHPI, RANGES } = require("./fixtures.js");
 const { inRange, assertAllInRange, assertSpringInPart, assertWhyShape } = require("./helpers.js");
 
 const L = TUNING.compute(CAR_LIGHT_RWD, "Circuit");
@@ -62,6 +62,17 @@ test("gearing.singleSpeed — EV true, others false; ratios length matches gears
   assert.equal(M.gearing.ratios.length, CAR_MID_RWD_HIGHPI.gears);
 });
 
+test("overallTireDiameter — FH6 spec (width/aspect/rim) → rolling Ø in inches", () => {
+  // rim + 2 × (width × aspect/100) / 25.4
+  assert.ok(Math.abs(TUNING.overallTireDiameter(315, 30, 17) - 24.4409) < 1e-3); // rear drive tire
+  assert.ok(Math.abs(TUNING.overallTireDiameter(225, 45, 17) - 24.9724) < 1e-3); // front tire
+  assert.ok(Math.abs(TUNING.overallTireDiameter(245, 40, 19) - 26.7165) < 1e-3); // ~26" reference
+  // any blank/non-positive part → null (caller falls back to the HP heuristic)
+  assert.equal(TUNING.overallTireDiameter(null, 30, 17), null);
+  assert.equal(TUNING.overallTireDiameter(315, 0, 17), null);
+  assert.equal(TUNING.overallTireDiameter(315, 30, ""), null);
+});
+
 /* ---------------- ALIGNMENT ---------------- */
 test("alignment.camberF — exact + in range", () => {
   assert.equal(L.alignment.camberF, -2.1);
@@ -99,13 +110,13 @@ test("alignment.caster — exact + in range", () => {
 test("arb.front — exact + in range", () => {
   assert.equal(L.arb.front, 15.94);
   assert.equal(E.arb.front, 26.04);
-  assert.equal(M.arb.front, 10.65);
+  assert.equal(M.arb.front, 11.29); // M is oversteer-prone (mid-engine, 43% front): firmer front bar
   for (const t of [L, E, M]) inRange(t.arb.front, RANGES.arb, "arb.front");
 });
 test("arb.rear — exact + in range", () => {
   assert.equal(L.arb.rear, 12.94);
   assert.equal(E.arb.rear, 27.33);
-  assert.equal(M.arb.rear, 16.75);
+  assert.equal(M.arb.rear, 13.4); // oversteer-prone: softer rear bar (was 16.75) to free the rear
   for (const t of [L, E, M]) inRange(t.arb.rear, RANGES.arb, "arb.rear");
 });
 
@@ -184,7 +195,7 @@ test("aero — no-aero car not applicable, full-aero cars give % in range", () =
   // M full kit
   assert.equal(M.aero.applicable, true);
   assert.equal(M.aero.front, 95);
-  assert.equal(M.aero.rear, 85);
+  assert.equal(M.aero.rear, 90); // oversteer-prone mid-engine no longer has rear wing trimmed (was 85)
   for (const t of [E, M]) {
     inRange(t.aero.front, RANGES.aeroPct, "aero.front");
     inRange(t.aero.rear, RANGES.aeroPct, "aero.rear");
@@ -231,6 +242,36 @@ test("differential AWD — full per-axle set, exact + in range", () => {
   inRange(E.differential.frontAccel, RANGES.diff, "front accel");
   inRange(E.differential.frontDecel, RANGES.diff, "front decel");
   inRange(E.differential.centerRear, RANGES.awdCenter, "center rear");
+});
+
+/* ---------------- OVERSTEER-PRONE COMPENSATION ---------------- */
+// A rear-engine / rear-biased car must get a tune that fights oversteer across the
+// ARB, the AWD centre/rear diff, AND aero — not the tail-happy default. Mirrors the
+// real car that surfaced this: AWD rear-engine, 46% front, Street tires, full aero.
+const OS = baseInput({
+  drivetrain: "AWD", engineLocation: "Rear", powertrain: "ICE", piClass: "A",
+  power: 450, torque: 369, weight: 2614, frontWeightPct: 46, gears: 8,
+  tireCompound: "Street", aeroFront: [122, 203], aeroRear: [362, 702],
+});
+const OSt = TUNING.compute(OS, "Circuit");
+
+test("oversteer-prone: rear-engine AWD is flagged; a balanced front-engine AWD is not", () => {
+  assert.equal(OSt.derived.oversteerProne, true);
+  const bal = TUNING.compute(baseInput({ drivetrain: "AWD", engineLocation: "Front", frontWeightPct: 50 }), "Circuit");
+  assert.equal(bal.derived.oversteerProne, false);
+  assert.equal(bal.aero.rear, 15); // unchanged: balanced AWD keeps the min-rear-wing default
+});
+test("oversteer-prone AWD: centre split + rear locks pulled back from the sharpened-RWD default", () => {
+  assert.ok(OSt.differential.centerRear <= 66, `center ${OSt.differential.centerRear} should be <= 66`);
+  assert.ok(OSt.differential.accel <= 55, `rear accel ${OSt.differential.accel} should be <= 55`);
+  inRange(OSt.differential.centerRear, RANGES.awdCenter, "center");
+});
+test("oversteer-prone: roll stiffness shifted forward (rear ARB no longer stiffer than front)", () => {
+  assert.ok(OSt.arb.rear <= OSt.arb.front + 0.5, `rear ARB ${OSt.arb.rear} must not exceed front ${OSt.arb.front}`);
+});
+test("oversteer-prone AWD: rear wing planted, aero balance rear-biased by actual lbf", () => {
+  assert.ok(OSt.aero.rear >= 80, `rear wing ${OSt.aero.rear}% should be raised, not floored`);
+  assert.ok(OSt.aero.rearLbf > OSt.aero.frontLbf, `rear DF ${OSt.aero.rearLbf} must exceed front ${OSt.aero.frontLbf}`);
 });
 
 /* ---------------- WHOLE-TUNE INVARIANTS ---------------- */

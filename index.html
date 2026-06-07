@@ -155,14 +155,22 @@
         <label><span class="lbl">Redline RPM</span>
           <input type="number" id="redlineRpm" step="100" placeholder="optional" />
         </label>
-        <label><span class="lbl">Drive tire diameter <em id="tireUnit">(in)</em></span>
-          <input type="number" id="tireDiameter" step="0.1" placeholder="optional" />
-        </label>
         <label><span class="lbl">Target top speed <em id="topSpeedUnit">(mph)</em></span>
           <input type="number" id="targetTopSpeed" step="1" placeholder="optional" />
         </label>
+        <label class="tire-size">
+          <span class="lbl">Drive tire size <em>rear for RWD/AWD · front for FWD</em></span>
+          <span class="tire-size-row">
+            <input type="number" id="tireWidth" step="5" min="0" placeholder="225" aria-label="tire width in mm" />
+            <span class="sep">/</span>
+            <input type="number" id="tireAspect" step="5" min="0" placeholder="45" aria-label="tire aspect ratio percent" />
+            <span class="sep">R</span>
+            <input type="number" id="tireRim" step="1" min="0" placeholder="17" aria-label="rim diameter in inches" />
+            <output class="tire-dia-out" id="tireDiaOut">= — in</output>
+          </span>
+        </label>
       </div>
-      <p class="hint">Optional — redline + tire diameter shows real top speed &amp; per-gear speeds; add a target top speed to back-solve an exact final drive. Blank = HP-based estimate.</p>
+      <p class="hint">Optional — redline + tire size shows real top speed &amp; per-gear speeds; add a target top speed to back-solve an exact final drive. Blank = HP-based estimate. Read the <strong>drive tire's</strong> spec straight off FH6's Tires screen — e.g. <strong>315/30R17</strong> = width&nbsp;/&nbsp;aspect&nbsp;R&nbsp;rim — and we compute the rolling diameter for you.</p>
     </fieldset>
   </section>
 

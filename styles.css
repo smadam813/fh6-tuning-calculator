@@ -97,6 +97,13 @@ input:focus, select:focus { outline: none; border-color: var(--accent-2); box-sh
 .aero-kit-label { margin: 12px 0 4px; }
 .hint { color: var(--muted); font-size: 12px; margin: 8px 2px 0; }
 
+/* drive-tire spec: three small inline boxes (width / aspect R rim) + computed Ø */
+.tire-size { grid-column: 1 / -1; }
+.tire-size-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.tire-size-row input { width: 4.5em; text-align: center; }
+.tire-size-row .sep { color: var(--muted); font-size: 14px; }
+.tire-dia-out { color: var(--accent-2); font-size: 13px; margin-left: 4px; white-space: nowrap; }
+
 /* ---------- Outputs ---------- */
 .outputs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .goal-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
