@@ -44,6 +44,8 @@ for (const dt of DT) for (const pt of PT) for (const el of EL) {
 }
 
 const BIAS_STEPS = []; for (let b = -5; b <= 5.0001; b += 0.5) BIAS_STEPS.push(Math.round(b * 10) / 10);
+const STIFF_STEPS = BIAS_STEPS.slice(); // same −5…+5 / 0.5 grid
+const COMBOS = [[-5, -5], [-5, 5], [5, -5], [5, 5]]; // [bias, stiff] extremes
 
 let calls = 0, checks = 0, errors = 0, goalDistinctOK = 0, dtDistinctOK = 0;
 const fail = (msg) => { errors++; if (errors <= 12) console.log("FAIL:", msg); };
@@ -75,8 +77,15 @@ for (const cfg of configs) {
     const baseline = JSON.stringify(compute(cfg, g)); calls++;
     const zero = JSON.stringify(compute(Object.assign({}, cfg, { handlingBias: 0 }), g)); calls++;
     checks++; if (baseline !== zero) fail(`bias0 != baseline @ ${cfg.drivetrain}/${g}`);
+    // stiff-0 == baseline (byte for byte) — same neutrality contract as bias
+    const stiffZero = JSON.stringify(compute(Object.assign({}, cfg, { overallStiffness: 0 }), g)); calls++;
+    checks++; if (baseline !== stiffZero) fail(`stiff0 != baseline @ ${cfg.drivetrain}/${g}`);
     // range/NaN across the full bias range
     for (const b of BIAS_STEPS) { const t = compute(Object.assign({}, cfg, { handlingBias: b }), g); calls++; rangeCheck(t, `${cfg.drivetrain}/${cfg.powertrain}/${g}/bias${b}`); }
+    // range/NaN across the full stiffness range
+    for (const s of STIFF_STEPS) { const t = compute(Object.assign({}, cfg, { overallStiffness: s }), g); calls++; rangeCheck(t, `${cfg.drivetrain}/${cfg.powertrain}/${g}/stiff${s}`); }
+    // range/NaN with both dials at their extremes simultaneously (composition)
+    for (const [b, s] of COMBOS) { const t = compute(Object.assign({}, cfg, { handlingBias: b, overallStiffness: s }), g); calls++; rangeCheck(t, `${cfg.drivetrain}/${cfg.powertrain}/${g}/bias${b}+stiff${s}`); }
   }
 }
 

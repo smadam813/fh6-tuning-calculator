@@ -16,6 +16,10 @@
      • Alignment : camber from tire-grip factor ; caster from weight+class
      • Aero      : level(goal) × balance(drivetrain) of each wing's range
      • Diff      : per-axle base + power-trim + per-goal adj ; AWD center%
+   Two optional dials post-process the finished tune (skipped at 0, so the
+   baseline is returned byte-for-byte): Handling Bias shifts front/rear BALANCE
+   (a ratio knob); Overall Stiffness scales suspension FIRMNESS up/down the same
+   direction at both ends (a magnitude knob) — the two are orthogonal.
    Every output is clamped to the legal Forza slider range.
    ===================================================================== */
 (function () {
@@ -712,6 +716,81 @@
   }
 
   /* =====================================================================
+     OVERALL STIFFNESS  (Soft −5 … 0 … +5 Hard)
+     ---------------------------------------------------------------------
+     The MAGNITUDE companion to Handling Bias. Where bias shifts the front/rear
+     RATIO (opposite directions each end), stiffness scales suspension FIRMNESS
+     up or down THE SAME direction at both ends, so it leaves handling balance
+     untouched — the two dials are orthogonal and compose cleanly.
+
+     Applied AS A POST-PROCESS on top of the fully-computed per-goal tune. At
+     stiff === 0 this is NEVER called, so every baseline value is returned
+     byte-for-byte (same hard contract as bias). +stiff (Hard) raises spring
+     rate, anti-roll bars and damping and drops ride height toward the floor;
+     −stiff (Soft) does the mirror. Each lever uses the shared non-linear
+     biasScale curve (gentle near 0, firmer at the extremes) and is re-clamped
+     to its legal range. Stock suspension exempts every lever (nothing to tune).
+     ===================================================================== */
+  const stiffNote = (why, msg) => { if (why) why.text += "  Overall stiffness: " + msg + "."; };
+
+  function applyOverallStiffness(t, input, stiff) {
+    const d = t.derived;
+    // Stock suspension locks springs / bars / dampers / ride height in-game, so
+    // there is nothing for the firmness dial to move — leave the tune untouched.
+    if (!d.canTuneSusp) return t;
+    const hard = stiff > 0;
+
+    /* ---- Spring rate front & rear (±25% each, exp 1.1) + ride height ---- */
+    if (t.springs) {
+      const s = biasScale(stiff, 1.1);             // + → stiffer / lower
+      const minF = input.springRateMinF != null ? input.springRateMinF : input.springRateMin;
+      const maxF = input.springRateMaxF != null ? input.springRateMaxF : input.springRateMax;
+      const minR = input.springRateMinR != null ? input.springRateMinR : input.springRateMin;
+      const maxR = input.springRateMaxR != null ? input.springRateMaxR : input.springRateMax;
+      t.springs.front = rInt(clamp(t.springs.front * (1 + 0.25 * s), minF, maxF));
+      t.springs.rear  = rInt(clamp(t.springs.rear  * (1 + 0.25 * s), minR, maxR));
+      // Ride height: harder → lower toward the floor, softer → taller. Grounded in
+      // the goal data (stiff tarmac goals sit at the ride-height floor, soft
+      // off-road goals sit tall) and the anti-bottoming physics (soft springs need
+      // more travel). Both ends move together so balance is preserved.
+      const rhMinF = input.rideHeightMinF != null ? input.rideHeightMinF : input.rideHeightMin;
+      const rhMaxF = input.rideHeightMaxF != null ? input.rideHeightMaxF : input.rideHeightMax;
+      const rhMinR = input.rideHeightMinR != null ? input.rideHeightMinR : input.rideHeightMin;
+      const rhMaxR = input.rideHeightMaxR != null ? input.rideHeightMaxR : input.rideHeightMax;
+      t.springs.rideF = r1(clamp(t.springs.rideF - (rhMaxF - rhMinF) * 0.15 * s, rhMinF, rhMaxF));
+      t.springs.rideR = r1(clamp(t.springs.rideR - (rhMaxR - rhMinR) * 0.15 * s, rhMinR, rhMaxR));
+      stiffNote(t.springs.why, hard
+        ? "spring rates raised ~25% and ride height lowered → a firmer, lower, flatter platform"
+        : "spring rates lowered ~25% and ride height raised → a softer, taller, more compliant platform");
+    }
+
+    /* ---- Anti-roll bars front & rear (±30% each, exp 1.15) ---- */
+    if (t.arb) {
+      const s = biasScale(stiff, 1.15);
+      t.arb.front = clamp(r2(t.arb.front * (1 + 0.30 * s)), 1, 65);
+      t.arb.rear  = clamp(r2(t.arb.rear  * (1 + 0.30 * s)), 1, 65);
+      stiffNote(t.arb.why, hard
+        ? "both anti-roll bars stiffened ~30% → less body roll, sharper turn-in"
+        : "both anti-roll bars softened ~30% → more roll, more mechanical grip over bumps");
+    }
+
+    /* ---- Damping: bump + rebound, all four corners (±25%, exp 1.1) ---- */
+    // Scaling bump and rebound by the same factor keeps their ratio intact.
+    if (t.damping) {
+      const k = 1 + 0.25 * biasScale(stiff, 1.1);
+      t.damping.bumpF    = r1(clamp(t.damping.bumpF * k, 1, 20));
+      t.damping.bumpR    = r1(clamp(t.damping.bumpR * k, 1, 20));
+      t.damping.reboundF = r1(clamp(t.damping.reboundF * k, 1, 20));
+      t.damping.reboundR = r1(clamp(t.damping.reboundR * k, 1, 20));
+      stiffNote(t.damping.why, hard
+        ? "bump and rebound raised ~25% in proportion → tighter body control"
+        : "bump and rebound lowered ~25% in proportion → softer, more absorbent damping");
+    }
+
+    return t;
+  }
+
+  /* =====================================================================
      VALIDATE — guard against nonsense input before computing a tune.
      Returns { valid:boolean, errors:string[] }. compute() stays defensive
      (clamps everything) but the UI uses this to refuse to render a tune
@@ -803,8 +882,12 @@
       braking: braking(input, d, goal),
       differential: differential(input, d, goal),
     };
-    // Handling-bias post-process. At bias === 0 we DO NOT touch the tune, so
-    // every baseline value is returned byte-for-byte identical.
+    // Post-process dials. At 0 each is skipped, so the baseline is returned
+    // byte-for-byte. Stiffness (magnitude) runs first to set how firm the
+    // platform is, then handling bias (balance) shifts the front/rear ratio on
+    // top — the two are orthogonal so the order only matters at the clamps.
+    const stiff = Number(input.overallStiffness) || 0;
+    if (stiff !== 0) applyOverallStiffness(tune, input, clamp(stiff, -5, 5));
     const bias = Number(input.handlingBias) || 0;
     if (bias !== 0) applyHandlingBias(tune, input, clamp(bias, -5, 5));
     return tune;

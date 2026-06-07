@@ -155,6 +155,73 @@ test("bias moves the AWD center torque split (rear %) in order, clamped 50–90"
   assert.ok(p.differential.centerRear <= 90 && n.differential.centerRear >= 50, "center clamped 50–90");
 });
 
+/* ---------------- overall-stiffness slider ---------------- */
+// Rally has spring/ride headroom in both directions, so every lever can move.
+const stiffN5 = TUNING.compute(baseInput({ overallStiffness: -5 }), "Rally");
+const stiff0  = TUNING.compute(baseInput({ overallStiffness: 0 }), "Rally");
+const stiffP5 = TUNING.compute(baseInput({ overallStiffness: 5 }), "Rally");
+
+test("stiffness 0 equals the pre-slider baseline byte-for-byte", () => {
+  const strip = (t) => JSON.parse(JSON.stringify({
+    tires: t.tires, gearing: t.gearing, alignment: t.alignment, arb: t.arb,
+    springs: { front: t.springs.front, rear: t.springs.rear, rideF: t.springs.rideF, rideR: t.springs.rideR },
+    damping: t.damping, aero: { front: t.aero.front, rear: t.aero.rear },
+    braking: t.braking, differential: t.differential,
+  }));
+  assert.deepEqual(strip(stiff0), strip(TUNING.compute(baseInput({}), "Rally")));
+});
+
+test("stiffness -5 / 0 / +5 are three DISTINCT output sets", () => {
+  const sig = (t) => JSON.stringify([t.springs.front, t.springs.rear, t.springs.rideF, t.arb.front, t.arb.rear, t.damping.bumpF, t.damping.reboundF]);
+  const s = new Set([sig(stiffN5), sig(stiff0), sig(stiffP5)]);
+  assert.equal(s.size, 3, "the three stiffness settings must differ");
+});
+
+test("Hard (+) firms BOTH ends together; Soft (−) softens BOTH — same direction (balance-neutral)", () => {
+  // springs: + raises both, − lowers both
+  assert.ok(stiffP5.springs.front > stiff0.springs.front && stiffP5.springs.rear > stiff0.springs.rear, "+5 stiffens both spring ends");
+  assert.ok(stiffN5.springs.front < stiff0.springs.front && stiffN5.springs.rear < stiff0.springs.rear, "−5 softens both spring ends");
+  // ARB: + raises both, − lowers both
+  assert.ok(stiffP5.arb.front > stiff0.arb.front && stiffP5.arb.rear > stiff0.arb.rear, "+5 stiffens both bars");
+  assert.ok(stiffN5.arb.front < stiff0.arb.front && stiffN5.arb.rear < stiff0.arb.rear, "−5 softens both bars");
+  // damping: + raises, − lowers (one corner each is enough to prove direction)
+  assert.ok(stiffP5.damping.reboundF > stiff0.damping.reboundF && stiffN5.damping.reboundF < stiff0.damping.reboundF, "damping tracks the dial");
+});
+
+test("Hard lowers ride height, Soft raises it (both ends)", () => {
+  assert.ok(stiffP5.springs.rideF < stiff0.springs.rideF && stiffP5.springs.rideR < stiff0.springs.rideR, "+5 drops ride height");
+  assert.ok(stiffN5.springs.rideF > stiff0.springs.rideF && stiffN5.springs.rideR > stiff0.springs.rideR, "−5 raises ride height");
+});
+
+test("stiffness leaves BALANCE levers untouched (brakes, diff, aero, alignment, tires)", () => {
+  for (const t of [stiffN5, stiffP5]) {
+    assert.equal(t.braking.balance, stiff0.braking.balance, "brake balance unchanged by stiffness");
+    assert.equal(t.differential.accel, stiff0.differential.accel, "diff accel unchanged by stiffness");
+    assert.equal(t.aero.front, stiff0.aero.front, "aero front unchanged by stiffness");
+    assert.equal(t.alignment.camberF, stiff0.alignment.camberF, "camber unchanged by stiffness");
+    assert.equal(t.tires.front, stiff0.tires.front, "tire psi unchanged by stiffness");
+  }
+});
+
+test("stiffness extremes stay inside legal ranges", () => {
+  assertAllInRange(stiffN5);
+  assertAllInRange(stiffP5);
+});
+
+test("stiffness composes with handling bias and stays in range", () => {
+  for (const sgn of [-5, 5]) for (const b of [-5, 5]) {
+    assertAllInRange(TUNING.compute(baseInput({ overallStiffness: sgn, handlingBias: b }), "Circuit"));
+  }
+});
+
+test("stock suspension exempts the stiffness dial (nothing to firm)", () => {
+  const stock0 = TUNING.compute(baseInput({ suspensionType: "Stock", overallStiffness: 0 }), "Circuit");
+  const stockHard = TUNING.compute(baseInput({ suspensionType: "Stock", overallStiffness: 5 }), "Circuit");
+  assert.equal(stockHard.springs.front, stock0.springs.front, "stock springs untouched");
+  assert.equal(stockHard.arb.front, stock0.arb.front, "stock ARB untouched");
+  assert.equal(stockHard.damping.bumpF, stock0.damping.bumpF, "stock damping untouched");
+});
+
 /* ---------------- optional gearing physics (back-solved final drive) ---------------- */
 test("non-EV gearing back-solves final drive to a target top speed", () => {
   const t = TUNING.compute(baseInput({ redlineRpm: 7000, tireDiameter: 26, targetTopSpeed: 160 }), "Circuit");

@@ -8,4 +8,5 @@ findings: 16
 - spec-springs-damping.md (20477 chars)
 - spec-aero-diff.md (19440 chars)
 - spec-handling-bias.md (8041 chars)
+- spec-overall-stiffness.md (firmness dial — magnitude companion to handling bias)
 - critique.md (8081 chars)

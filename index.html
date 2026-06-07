@@ -64,19 +64,19 @@
       <legend>Performance</legend>
       <div class="grid2">
         <label><span class="lbl">Power <em id="powerUnit">(hp)</em></span>
-          <input type="number" id="power" value="400" min="0" step="1" />
+          <input type="number" id="power" min="0" step="1" placeholder="e.g. 400" />
         </label>
         <label><span class="lbl">Torque <em id="torqueUnit">(lb-ft)</em></span>
-          <input type="number" id="torque" value="370" min="0" step="1" />
+          <input type="number" id="torque" min="0" step="1" placeholder="e.g. 370" />
         </label>
         <label><span class="lbl">Weight <em id="weightUnit">(lb)</em></span>
-          <input type="number" id="weight" value="3300" min="0" step="1" />
+          <input type="number" id="weight" min="0" step="1" placeholder="e.g. 3300" />
         </label>
         <label><span class="lbl">Front Weight %</span>
-          <input type="number" id="frontWeight" value="52" min="20" max="80" step="0.5" />
+          <input type="number" id="frontWeight" min="20" max="80" step="0.5" placeholder="e.g. 52" />
         </label>
         <label><span class="lbl">Number of Gears</span>
-          <input type="number" id="gears" value="6" min="1" max="10" step="1" />
+          <input type="number" id="gears" min="1" max="10" step="1" placeholder="e.g. 6" />
         </label>
       </div>
     </fieldset>
@@ -99,31 +99,31 @@
       </div>
       <div class="grid2 ranges">
         <label><span class="lbl">Spring Rate front min <em id="srUnitFmin">(lb/in)</em></span>
-          <input type="number" id="springRateMinF" value="150" step="1" />
+          <input type="number" id="springRateMinF" step="1" placeholder="150" />
         </label>
         <label><span class="lbl">Spring Rate front max <em id="srUnitFmax">(lb/in)</em></span>
-          <input type="number" id="springRateMaxF" value="900" step="1" />
+          <input type="number" id="springRateMaxF" step="1" placeholder="900" />
         </label>
         <label><span class="lbl">Spring Rate rear min <em id="srUnitRmin">(lb/in)</em></span>
-          <input type="number" id="springRateMinR" value="150" step="1" />
+          <input type="number" id="springRateMinR" step="1" placeholder="150" />
         </label>
         <label><span class="lbl">Spring Rate rear max <em id="srUnitRmax">(lb/in)</em></span>
-          <input type="number" id="springRateMaxR" value="900" step="1" />
+          <input type="number" id="springRateMaxR" step="1" placeholder="900" />
         </label>
         <label><span class="lbl">Ride Height front min <em id="rhUnitFmin">(in)</em></span>
-          <input type="number" id="rideHeightMinF" value="4.5" step="0.1" />
+          <input type="number" id="rideHeightMinF" step="0.1" placeholder="4.5" />
         </label>
         <label><span class="lbl">Ride Height front max <em id="rhUnitFmax">(in)</em></span>
-          <input type="number" id="rideHeightMaxF" value="7.0" step="0.1" />
+          <input type="number" id="rideHeightMaxF" step="0.1" placeholder="7.0" />
         </label>
         <label><span class="lbl">Ride Height rear min <em id="rhUnitRmin">(in)</em></span>
-          <input type="number" id="rideHeightMinR" value="4.5" step="0.1" />
+          <input type="number" id="rideHeightMinR" step="0.1" placeholder="4.5" />
         </label>
         <label><span class="lbl">Ride Height rear max <em id="rhUnitRmax">(in)</em></span>
-          <input type="number" id="rideHeightMaxR" value="7.0" step="0.1" />
+          <input type="number" id="rideHeightMaxR" step="0.1" placeholder="7.0" />
         </label>
       </div>
-      <p class="hint">Ranges come from the parts you installed — read them off the in-game slider's min/max. Front and rear sliders can have different ranges, so enter each separately.</p>
+      <p class="hint">Ranges come from the parts you installed — read them off the in-game slider's min/max. Front and rear sliders can have different ranges, so enter each separately. Left blank, the calculator assumes the placeholder values shown.</p>
       <label class="aero-kit-label">Aero (adjustable)
         <select id="aeroKit">
           <option value="Full" selected>Full kit (front + rear)</option>
@@ -181,22 +181,43 @@
       <button id="copyBtn" class="ghost-btn" type="button" title="Copy tune to clipboard">Copy tune</button>
     </div>
 
-    <div class="bias-row" id="biasRow">
-      <div class="bias-head">
-        <span class="bias-title">Handling bias</span>
-        <span class="bias-value" id="biasValue">Neutral (0)</span>
+    <div class="dials">
+      <div class="dial-row bias-row" id="biasRow">
+        <div class="dial-head">
+          <span class="dial-title">Handling bias</span>
+          <span class="dial-value" id="biasValue">Neutral (0)</span>
+        </div>
+        <input type="range" id="handlingBias" min="-5" max="5" step="0.5" value="0"
+               aria-label="Handling bias from understeer to oversteer" />
+        <div class="dial-ends">
+          <span>&larr; Understeer</span>
+          <button type="button" id="biasReset" class="dial-reset" title="Reset to neutral">Reset</button>
+          <span>Oversteer &rarr;</span>
+        </div>
+        <p class="hint dial-hint"><b>Balance.</b> Tilts the tune toward front grip (understeer) or rear
+          rotation (oversteer) by moving each end the <i>opposite</i> way — ARB, springs, differential,
+          brake balance &amp; aero. At <b>0</b> it's the pure per-goal baseline.</p>
       </div>
-      <input type="range" id="handlingBias" min="-5" max="5" step="0.5" value="0"
-             aria-label="Handling bias from understeer to oversteer" />
-      <div class="bias-ends">
-        <span>&larr; Understeer</span>
-        <button type="button" id="biasReset" class="bias-reset" title="Reset to neutral">Reset</button>
-        <span>Oversteer &rarr;</span>
+
+      <div class="dial-row stiff-row" id="stiffRow">
+        <div class="dial-head">
+          <span class="dial-title">Overall stiffness</span>
+          <span class="dial-value" id="stiffValue">Balanced (0)</span>
+        </div>
+        <input type="range" id="overallStiffness" min="-5" max="5" step="0.5" value="0"
+               aria-label="Overall stiffness from soft to hard" />
+        <div class="dial-ends">
+          <span>&larr; Soft</span>
+          <button type="button" id="stiffReset" class="dial-reset" title="Reset to balanced">Reset</button>
+          <span>Hard &rarr;</span>
+        </div>
+        <p class="hint dial-hint"><b>Firmness.</b> Scales springs, anti-roll bars &amp; damping the <i>same</i>
+          way at both ends (and drops/raises ride height) — so the car gets harder or softer without
+          changing its balance. At <b>0</b> it's the pure per-goal baseline.</p>
       </div>
-      <p class="hint bias-hint">Tilts the recommended tune toward more grip up front (understeer) or freer
-        rotation at the rear (oversteer). At <b>0</b> the tune is the pure per-goal baseline; the dial scales
-        ARB, springs, differential, brake balance &amp; aero on top of it.</p>
     </div>
+
+    <div id="sliderChanges" class="slider-changes" role="status" aria-live="polite" hidden></div>
 
     <div id="summaryStrip" class="summary-strip"></div>
     <div id="output" class="output-cards"></div>

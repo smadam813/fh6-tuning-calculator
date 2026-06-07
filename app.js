@@ -60,6 +60,23 @@
     return [toImp("aero", lo), toImp("aero", hi)];
   }
 
+  // a part-range field (spring/ride) → imperial number, falling back to the
+  // placeholder default (imperial) when the field is left blank/invalid. Lets the
+  // ranges stay empty-by-default while still producing a sensible tune.
+  function rangeField(id, dim, defImp) {
+    const s = $(id).value.trim();
+    if (s === "") return defImp;
+    const v = parseFloat(s);
+    return isFinite(v) ? toImp(dim, v) : defImp;
+  }
+  // an integer field with a default when blank (e.g. gear count)
+  function intField(id, def) {
+    const s = $(id).value.trim();
+    if (s === "") return def;
+    const v = parseFloat(s);
+    return isFinite(v) ? Math.round(v) : def;
+  }
+
   /* ---------- read all inputs into engine-ready (imperial) object ---------- */
   function readInputs() {
     return {
@@ -71,21 +88,21 @@
       torque: toImp("torque", num("torque")),
       weight: toImp("weight", num("weight")),
       frontWeightPct: num("frontWeight"),
-      gears: Math.round(num("gears")),
+      gears: intField("gears", 6),
       tireCompound: $("tireCompound").value,
       suspensionType: $("suspensionType").value,
       // aero kit: None | Front (splitter only) | Rear (wing only) | Full
       hasFrontAero: (function () { const k = $("aeroKit").value; return k === "Front" || k === "Full"; })(),
       hasRearAero: (function () { const k = $("aeroKit").value; return k === "Rear" || k === "Full"; })(),
       aeroInstalled: $("aeroKit").value !== "None", // any wing -> secondary downforce effects apply
-      rideHeightMinF: toImp("ride", num("rideHeightMinF")),
-      rideHeightMaxF: toImp("ride", num("rideHeightMaxF")),
-      rideHeightMinR: toImp("ride", num("rideHeightMinR")),
-      rideHeightMaxR: toImp("ride", num("rideHeightMaxR")),
-      springRateMinF: toImp("spring", num("springRateMinF")),
-      springRateMaxF: toImp("spring", num("springRateMaxF")),
-      springRateMinR: toImp("spring", num("springRateMinR")),
-      springRateMaxR: toImp("spring", num("springRateMaxR")),
+      rideHeightMinF: rangeField("rideHeightMinF", "ride", 4.5),
+      rideHeightMaxF: rangeField("rideHeightMaxF", "ride", 7.0),
+      rideHeightMinR: rangeField("rideHeightMinR", "ride", 4.5),
+      rideHeightMaxR: rangeField("rideHeightMaxR", "ride", 7.0),
+      springRateMinF: rangeField("springRateMinF", "spring", 150),
+      springRateMaxF: rangeField("springRateMaxF", "spring", 900),
+      springRateMinR: rangeField("springRateMinR", "spring", 150),
+      springRateMaxR: rangeField("springRateMaxR", "spring", 900),
       // optional downforce ranges (imperial lbf, or null = show % of slider)
       aeroFront: optAeroRange("aeroFrontMin", "aeroFrontMax"),
       aeroRear: optAeroRange("aeroRearMin", "aeroRearMax"),
@@ -95,6 +112,8 @@
       targetTopSpeed: optField("targetTopSpeed", "speed"),
       // handling bias: −5 (understeer) … 0 (neutral) … +5 (oversteer); 0 = pure baseline
       handlingBias: num("handlingBias"),
+      // overall stiffness: −5 (soft) … 0 (balanced) … +5 (hard); 0 = pure baseline
+      overallStiffness: num("overallStiffness"),
     };
   }
 
@@ -107,6 +126,17 @@
     const dir = b > 0 ? "Oversteer" : "Understeer";
     el.classList.add(b > 0 ? "over" : "under");
     el.textContent = `${dir} (${b > 0 ? "+" : ""}${nf(b, 1)})`;
+  }
+
+  /* ---------- overall-stiffness slider label ---------- */
+  function updateStiffLabel() {
+    const s = num("overallStiffness");
+    const el = $("stiffValue");
+    el.classList.remove("soft", "hard");
+    if (s === 0) { el.textContent = "Balanced (0)"; return; }
+    const dir = s > 0 ? "Hard" : "Soft";
+    el.classList.add(s > 0 ? "hard" : "soft");
+    el.textContent = `${dir} (${s > 0 ? "+" : ""}${nf(s, 1)})`;
   }
 
   /* ---------- card definitions (single-goal view) ---------- */
@@ -167,15 +197,21 @@
   ];
 
   /* ---------- render: single-goal cards ---------- */
-  function renderCards(t) {
+  // `base` (optional) is the centered-dial baseline; rows that differ from it are
+  // highlighted in place so dial effects are visible at a glance. The exact
+  // before→after numbers live in the "What the sliders changed" panel.
+  function renderCards(t, base) {
     $("summaryStrip").innerHTML = t.summary
       .map((c) => `<span class="chip">${c.k}: <b>${c.v}</b></span>`).join("");
 
     $("output").innerHTML = CARDS.map((c) => {
       const why = t[c.id].why;
-      const rows = c.rows(t).map((row) =>
-        `<div class="row ${row.sub ? "sub" : ""}"><span class="k">${row.k}</span><span class="v">${row.v}</span></div>`
-      ).join("");
+      const liveRows = c.rows(t);
+      const baseRows = base ? c.rows(base) : null;
+      const rows = liveRows.map((row, i) => {
+        const changed = baseRows && baseRows[i] && baseRows[i].v !== row.v;
+        return `<div class="row ${row.sub ? "sub" : ""}${changed ? " changed" : ""}"><span class="k">${row.k}</span><span class="v">${row.v}</span></div>`;
+      }).join("");
       const whyHtml = why ? `
         <details class="why">
           <summary>Why &amp; formula</summary>
@@ -185,6 +221,72 @@
       return `<div class="card"><h3><span class="ico">${c.icon}</span>${c.title}</h3>
         <div class="rows">${rows}</div>${whyHtml}</div>`;
     }).join("");
+  }
+
+  /* ---------- "What the sliders changed" diff (live vs centered baseline) ---------- */
+  // which end of the car a row label refers to (for plain-language effects)
+  function endOf(key) {
+    if (/front/i.test(key) || /\bF$/.test(key)) return "front";
+    if (/rear/i.test(key) || /\bR$/.test(key)) return "rear";
+    return "";
+  }
+  // map a changed output row to a plain-language effect + direction (up/down)
+  function effectPhrase(cardId, key, fromStr, toStr) {
+    const f = parseFloat(fromStr), tv = parseFloat(toStr);
+    const up = !(isFinite(f) && isFinite(tv)) || tv >= f;
+    const end = endOf(key);
+    let text;
+    switch (cardId) {
+      case "arb":
+        text = `${up ? "stiffer" : "softer"} ${end} anti-roll bar`; break;
+      case "springs":
+        text = /rate/i.test(key)
+          ? `${up ? "stiffer" : "softer"} ${end} springs`
+          : `${up ? "higher" : "lower"} ${end} ride height`;
+        break;
+      case "damping":
+        text = `${up ? "firmer" : "softer"} ${end} ${/bump/i.test(key) ? "bump" : "rebound"}`; break;
+      case "braking":
+        text = up ? "more front brake bias" : "more rear brake bias"; break;
+      case "differential":
+        if (/center/i.test(key)) text = up ? "more torque to the rear" : "more torque to the front";
+        else text = `${up ? "more" : "less"} ${end ? end + " " : ""}${/accel/i.test(key) ? "accel" : "decel"} lock`;
+        break;
+      case "aero":
+        text = `${up ? "more" : "less"} ${end} downforce`; break;
+      default:
+        text = `${key} ${up ? "increased" : "decreased"}`;
+    }
+    return { text, from: fromStr, to: toStr, dir: up ? "up" : "down" };
+  }
+
+  function renderChangesPanel(t, base) {
+    const panel = $("sliderChanges");
+    if (!base) { panel.hidden = true; panel.innerHTML = ""; return; }
+    const items = [];
+    for (const c of CARDS) {
+      const liveRows = c.rows(t), baseRows = c.rows(base);
+      liveRows.forEach((row, i) => {
+        if (!baseRows[i] || baseRows[i].v === row.v) return;
+        items.push(effectPhrase(c.id, row.k, baseRows[i].v, row.v));
+      });
+    }
+    if (!items.length) { panel.hidden = true; panel.innerHTML = ""; return; }
+    const dials = [];
+    if (num("handlingBias") !== 0) dials.push("handling bias");
+    if (num("overallStiffness") !== 0) dials.push("overall stiffness");
+    panel.hidden = false;
+    panel.innerHTML =
+      `<div class="sc-head">` +
+        `<h4 class="sc-title">What the sliders changed</h4>` +
+        `<span class="sc-sub">${items.length} setting${items.length > 1 ? "s" : ""} moved vs the centered baseline · <b>${escapeHtml(dials.join(" + "))}</b></span>` +
+      `</div>` +
+      `<ul class="sc-list">` +
+        items.map((it) =>
+          `<li class="sc-item ${it.dir}"><span class="sc-eff">${escapeHtml(it.text)}</span>` +
+          `<span class="sc-delta">${escapeHtml(it.from)} → ${escapeHtml(it.to)} <i class="arr">${it.dir === "up" ? "▲" : "▼"}</i></span></li>`
+        ).join("") +
+      `</ul>`;
   }
 
   /* ---------- render: compare table (all goals) ---------- */
@@ -266,6 +368,12 @@
     const L = [];
     L.push(`FH6 TUNE — ${GOAL_META[t.goal].label}`);
     L.push(`Car: ${input.drivetrain} ${input.engineLocation}-engine ${input.powertrain}, ${nf(t.derived.frac * 100, 0)}% front, P/W ${nf(t.derived.pw, 2)} hp/lb`);
+    if (input.handlingBias !== 0 || input.overallStiffness !== 0) {
+      const parts = [];
+      if (input.handlingBias !== 0) parts.push(`bias ${input.handlingBias > 0 ? "+" : ""}${nf(input.handlingBias, 1)} (${input.handlingBias > 0 ? "oversteer" : "understeer"})`);
+      if (input.overallStiffness !== 0) parts.push(`stiffness ${input.overallStiffness > 0 ? "+" : ""}${nf(input.overallStiffness, 1)} (${input.overallStiffness > 0 ? "hard" : "soft"})`);
+      L.push(`Dials: ${parts.join(", ")}`);
+    }
     L.push(`— Tires: F ${nf(t.tires.front, 1)} / R ${nf(t.tires.rear, 1)} psi`);
     L.push(`— Final drive: ${nf(t.gearing.final, 2)}${t.gearing.singleSpeed ? " (single-speed)" : "  Gears: " + t.gearing.ratios.map((r) => nf(r, 2)).join(", ")}${t.gearing.topSpeed != null ? `  | Top speed ~${speedDisp(t.gearing.topSpeed)}` : ""}`);
     L.push(`— Camber: F ${nf(t.alignment.camberF, 1)} / R ${nf(t.alignment.camberR, 1)}  Toe: F ${nf(t.alignment.toeF, 1)} / R ${nf(t.alignment.toeR, 1)}  Caster: ${nf(t.alignment.caster, 1)}`);
@@ -308,7 +416,7 @@
   function showErrors(errors) {
     // Surface validation errors instead of rendering a broken tune.
     $("output").hidden = false; $("summaryStrip").hidden = true;
-    $("compareWrap").hidden = true;
+    $("compareWrap").hidden = true; $("sliderChanges").hidden = true;
     $("output").innerHTML =
       `<div class="card error-card"><h3><span class="ico">⚠️</span>Check your inputs</h3>` +
       `<div class="rows">` +
@@ -316,27 +424,59 @@
       `</div></div>`;
   }
 
+  // The three stats a tune can't be derived without. Until they're filled, a
+  // first-time visitor sees a friendly welcome rather than a wall of red errors.
+  const REQUIRED_FIELDS = ["power", "weight", "frontWeight"];
+  function isIncomplete() {
+    return REQUIRED_FIELDS.some((id) => $(id).value.trim() === "");
+  }
+
+  function showWelcome() {
+    $("output").hidden = false; $("summaryStrip").hidden = true;
+    $("compareWrap").hidden = true; $("sliderChanges").hidden = true;
+    $("output").innerHTML =
+      `<div class="welcome">` +
+        `<div class="welcome-ico">🏎️</div>` +
+        `<h3>Enter your car's stats to build a tune</h3>` +
+        `<p>Start with at least <b>power</b>, <b>weight</b> and <b>front weight %</b> on the left — ` +
+        `your full, math-derived tune appears here instantly, across all six goals.</p>` +
+      `</div>`;
+  }
+
   function refresh() {
     syncAeroFields();
     updateBiasLabel();
-    const input = readInputs();
+    updateStiffLabel();
     const compare = $("compareMode").checked;
     $("goalTabs").querySelectorAll("button").forEach((b) =>
       b.classList.toggle("active", b.dataset.goal === currentGoal));
     $("goalTabs").style.opacity = compare ? 0.45 : 1;
 
+    // First visit / not enough entered yet: a friendly welcome, not red errors.
+    if (isIncomplete()) { showWelcome(); return; }
+
+    const input = readInputs();
     // Refuse to produce a tune from invalid input — show the problems instead.
     const check = validate(input);
     if (!check.valid) { showErrors(check.errors); return; }
 
     if (compare) {
       $("output").hidden = true; $("summaryStrip").hidden = true;
+      $("sliderChanges").hidden = true;
       $("compareWrap").hidden = false;
       renderCompare(input);
     } else {
       $("output").hidden = false; $("summaryStrip").hidden = false;
       $("compareWrap").hidden = true;
-      renderCards(compute(input, currentGoal));
+      const live = compute(input, currentGoal);
+      // Baseline = same car with BOTH dials centered. It's the reference the
+      // "what changed" view (panel + inline markers) diffs against.
+      const dialed = input.handlingBias !== 0 || input.overallStiffness !== 0;
+      const base = dialed
+        ? compute(Object.assign({}, input, { handlingBias: 0, overallStiffness: 0 }), currentGoal)
+        : null;
+      renderCards(live, base);
+      renderChangesPanel(live, base);
     }
   }
 
@@ -384,6 +524,7 @@
       b.addEventListener("click", () => setUnits(b.dataset.units)));
     $("compareMode").addEventListener("change", refresh);
     $("biasReset").addEventListener("click", () => { $("handlingBias").value = "0"; refresh(); });
+    $("stiffReset").addEventListener("click", () => { $("overallStiffness").value = "0"; refresh(); });
     $("copyBtn").addEventListener("click", async () => {
       const input = readInputs();
       const text = $("compareMode").checked
