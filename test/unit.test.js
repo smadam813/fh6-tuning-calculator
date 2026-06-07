@@ -1,0 +1,255 @@
+/* =====================================================================
+   UNIT TESTS — one test per output parameter, across three distinct cars.
+   For each parameter we assert (a) the EXACT value the engine produces for
+   known inputs (locked-in via Circuit-goal computations) and (b) that the
+   value sits inside its legal slider min/max. Exact values were captured
+   from the engine and are the regression contract — a change in any formula
+   that moves these must be deliberate.
+
+   Cars:
+     L = CAR_LIGHT_RWD     (lightweight RWD ICE, front engine, no aero, B)
+     E = CAR_HEAVY_AWD_EV  (heavy AWD EV, single-speed, full aero, S1)
+     M = CAR_MID_RWD_HIGHPI(mid-engine RWD, high power, full aero, S2)
+   ===================================================================== */
+"use strict";
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const { TUNING, CAR_LIGHT_RWD, CAR_HEAVY_AWD_EV, CAR_MID_RWD_HIGHPI, RANGES } = require("./fixtures.js");
+const { inRange, assertAllInRange, assertSpringInPart, assertWhyShape } = require("./helpers.js");
+
+const L = TUNING.compute(CAR_LIGHT_RWD, "Circuit");
+const E = TUNING.compute(CAR_HEAVY_AWD_EV, "Circuit");
+const M = TUNING.compute(CAR_MID_RWD_HIGHPI, "Circuit");
+
+/* ---------------- TIRES ---------------- */
+test("tires.front — exact + in range", () => {
+  assert.equal(L.tires.front, 29.5);
+  assert.equal(E.tires.front, 33.5);
+  assert.equal(M.tires.front, 32);
+  for (const t of [L, E, M]) inRange(t.tires.front, RANGES.tirePsi, "tires.front");
+});
+test("tires.rear — exact + in range", () => {
+  assert.equal(L.tires.rear, 29);
+  assert.equal(E.tires.rear, 33);
+  assert.equal(M.tires.rear, 31);
+  for (const t of [L, E, M]) inRange(t.tires.rear, RANGES.tirePsi, "tires.rear");
+});
+
+/* ---------------- GEARING ---------------- */
+test("gearing.final — exact + in range", () => {
+  assert.equal(L.gearing.final, 4.34);
+  assert.equal(E.gearing.final, 3.89);
+  assert.equal(M.gearing.final, 3.61);
+  for (const t of [L, E, M]) inRange(t.gearing.final, RANGES.fd, "gearing.final");
+});
+test("gearing.ratios — exact + each in range + strictly descending", () => {
+  assert.deepEqual(L.gearing.ratios, [3.21, 2.05, 1.57, 1.3, 1.13, 1]);
+  assert.deepEqual(E.gearing.ratios, [1.39]); // single-speed EV
+  assert.deepEqual(M.gearing.ratios, [2.88, 1.83, 1.41, 1.17, 1.01, 0.9, 0.81]);
+  for (const t of [L, E, M]) {
+    t.gearing.ratios.forEach((r, idx) => inRange(r, RANGES.gear, `ratios[${idx}]`));
+    for (let k = 1; k < t.gearing.ratios.length; k++) {
+      assert.ok(t.gearing.ratios[k] < t.gearing.ratios[k - 1], "ratios must strictly descend");
+    }
+  }
+});
+test("gearing.singleSpeed — EV true, others false; ratios length matches gears", () => {
+  assert.equal(L.gearing.singleSpeed, false);
+  assert.equal(E.gearing.singleSpeed, true);
+  assert.equal(M.gearing.singleSpeed, false);
+  assert.equal(L.gearing.ratios.length, CAR_LIGHT_RWD.gears);
+  assert.equal(E.gearing.ratios.length, 1);
+  assert.equal(M.gearing.ratios.length, CAR_MID_RWD_HIGHPI.gears);
+});
+
+/* ---------------- ALIGNMENT ---------------- */
+test("alignment.camberF — exact + in range", () => {
+  assert.equal(L.alignment.camberF, -2.1);
+  assert.equal(E.alignment.camberF, -2.3);
+  assert.equal(M.alignment.camberF, -2.3);
+  for (const t of [L, E, M]) inRange(t.alignment.camberF, RANGES.camber, "camberF");
+});
+test("alignment.camberR — exact + in range", () => {
+  assert.equal(L.alignment.camberR, -0.9);
+  assert.equal(E.alignment.camberR, -1);
+  assert.equal(M.alignment.camberR, -1.2);
+  for (const t of [L, E, M]) inRange(t.alignment.camberR, RANGES.camber, "camberR");
+});
+test("alignment.toeF — exact + in range", () => {
+  // `+ 0` normalises IEEE-754 negative zero (engine may emit -0 from clamp/round)
+  assert.equal(L.alignment.toeF + 0, 0);
+  assert.equal(E.alignment.toeF + 0, 0);
+  assert.equal(M.alignment.toeF + 0, 0);
+  for (const t of [L, E, M]) inRange(t.alignment.toeF, RANGES.toe, "toeF");
+});
+test("alignment.toeR — exact + in range", () => {
+  assert.equal(L.alignment.toeR, 0.1);
+  assert.equal(E.alignment.toeR, 0);
+  assert.equal(M.alignment.toeR, 0.2);
+  for (const t of [L, E, M]) inRange(t.alignment.toeR, RANGES.toe, "toeR");
+});
+test("alignment.caster — exact + in range", () => {
+  assert.equal(L.alignment.caster, 5.2);
+  assert.equal(E.alignment.caster, 7);
+  assert.equal(M.alignment.caster, 6.4);
+  for (const t of [L, E, M]) inRange(t.alignment.caster, RANGES.caster, "caster");
+});
+
+/* ---------------- ANTI-ROLL BARS ---------------- */
+test("arb.front — exact + in range", () => {
+  assert.equal(L.arb.front, 15.94);
+  assert.equal(E.arb.front, 26.04);
+  assert.equal(M.arb.front, 10.65);
+  for (const t of [L, E, M]) inRange(t.arb.front, RANGES.arb, "arb.front");
+});
+test("arb.rear — exact + in range", () => {
+  assert.equal(L.arb.rear, 12.94);
+  assert.equal(E.arb.rear, 27.33);
+  assert.equal(M.arb.rear, 16.75);
+  for (const t of [L, E, M]) inRange(t.arb.rear, RANGES.arb, "arb.rear");
+});
+
+/* ---------------- SPRINGS & RIDE HEIGHT ---------------- */
+test("springs.front — exact + within part min/max", () => {
+  assert.equal(L.springs.front, 379);
+  assert.equal(E.springs.front, 900);
+  assert.equal(M.springs.front, 676);
+  inRange(L.springs.front, [CAR_LIGHT_RWD.springRateMin, CAR_LIGHT_RWD.springRateMax], "L.springs.front");
+  inRange(E.springs.front, [CAR_HEAVY_AWD_EV.springRateMin, CAR_HEAVY_AWD_EV.springRateMax], "E.springs.front");
+  inRange(M.springs.front, [CAR_MID_RWD_HIGHPI.springRateMin, CAR_MID_RWD_HIGHPI.springRateMax], "M.springs.front");
+});
+test("springs.rear — exact + within part min/max", () => {
+  assert.equal(L.springs.rear, 240);
+  assert.equal(E.springs.rear, 900);
+  assert.equal(M.springs.rear, 786);
+  inRange(L.springs.rear, [CAR_LIGHT_RWD.springRateMin, CAR_LIGHT_RWD.springRateMax], "L.springs.rear");
+  inRange(E.springs.rear, [CAR_HEAVY_AWD_EV.springRateMin, CAR_HEAVY_AWD_EV.springRateMax], "E.springs.rear");
+  inRange(M.springs.rear, [CAR_MID_RWD_HIGHPI.springRateMin, CAR_MID_RWD_HIGHPI.springRateMax], "M.springs.rear");
+});
+test("springs.rideF / rideR — exact + within part min/max", () => {
+  assert.equal(L.springs.rideF, 4.5);
+  assert.equal(L.springs.rideR, 4.5);
+  assert.equal(E.springs.rideF, 4.6);
+  assert.equal(E.springs.rideR, 4.8);
+  assert.equal(M.springs.rideF, 4.5);
+  assert.equal(M.springs.rideR, 4.6);
+  assertSpringInPart(L, CAR_LIGHT_RWD);
+  assertSpringInPart(E, CAR_HEAVY_AWD_EV);
+  assertSpringInPart(M, CAR_MID_RWD_HIGHPI);
+});
+
+/* ---------------- DAMPING ---------------- */
+test("damping.reboundF — exact + in range", () => {
+  assert.equal(L.damping.reboundF, 9);
+  assert.equal(E.damping.reboundF, 10.8);
+  assert.equal(M.damping.reboundF, 9.1);
+  for (const t of [L, E, M]) inRange(t.damping.reboundF, RANGES.damping, "reboundF");
+});
+test("damping.reboundR — exact + in range", () => {
+  assert.equal(L.damping.reboundR, 8.7);
+  assert.equal(E.damping.reboundR, 10.6);
+  assert.equal(M.damping.reboundR, 9.5);
+  for (const t of [L, E, M]) inRange(t.damping.reboundR, RANGES.damping, "reboundR");
+});
+test("damping.bumpF — exact + in range", () => {
+  assert.equal(L.damping.bumpF, 5.4);
+  assert.equal(E.damping.bumpF, 6.4);
+  assert.equal(M.damping.bumpF, 5.5);
+  for (const t of [L, E, M]) inRange(t.damping.bumpF, RANGES.damping, "bumpF");
+});
+test("damping.bumpR — exact + in range", () => {
+  assert.equal(L.damping.bumpR, 5.3);
+  assert.equal(E.damping.bumpR, 6.3);
+  assert.equal(M.damping.bumpR, 6);
+  for (const t of [L, E, M]) inRange(t.damping.bumpR, RANGES.damping, "bumpR");
+});
+test("damping.bump is 40–70% of rebound for grip car (ratio guard)", () => {
+  // M is a non-bypass goal/drivetrain (Circuit RWD), so the ratio guard holds.
+  for (const end of [["bumpF", "reboundF"], ["bumpR", "reboundR"]]) {
+    const ratio = M.damping[end[0]] / M.damping[end[1]];
+    assert.ok(ratio >= 0.4 - 1e-9 && ratio <= 0.7 + 1e-9, `${end[0]}/${end[1]} ratio ${ratio} out of 0.4–0.7`);
+  }
+});
+
+/* ---------------- AERO ---------------- */
+test("aero — no-aero car not applicable, full-aero cars give % in range", () => {
+  // L has no aero kit
+  assert.equal(L.aero.applicable, false);
+  assert.equal(L.aero.front, null);
+  assert.equal(L.aero.rear, null);
+  // E (AWD circuit) forces full front / min rear
+  assert.equal(E.aero.applicable, true);
+  assert.equal(E.aero.front, 100);
+  assert.equal(E.aero.rear, 15);
+  // M full kit
+  assert.equal(M.aero.applicable, true);
+  assert.equal(M.aero.front, 95);
+  assert.equal(M.aero.rear, 85);
+  for (const t of [E, M]) {
+    inRange(t.aero.front, RANGES.aeroPct, "aero.front");
+    inRange(t.aero.rear, RANGES.aeroPct, "aero.rear");
+  }
+});
+
+/* ---------------- BRAKING ---------------- */
+test("braking.balance — exact + in range", () => {
+  assert.equal(L.braking.balance, 54);
+  assert.equal(E.braking.balance, 57);
+  assert.equal(M.braking.balance, 48);
+  for (const t of [L, E, M]) inRange(t.braking.balance, RANGES.brakeBalance, "braking.balance");
+});
+test("braking.pressure — exact + in range", () => {
+  assert.equal(L.braking.pressure, 105);
+  assert.equal(E.braking.pressure, 120);
+  assert.equal(M.braking.pressure, 110);
+  for (const t of [L, E, M]) inRange(t.braking.pressure, RANGES.brakePressure, "braking.pressure");
+});
+
+/* ---------------- DIFFERENTIAL ---------------- */
+test("differential.accel/decel — exact + in range (RWD cars)", () => {
+  assert.equal(L.differential.driveline, "RWD");
+  assert.equal(L.differential.accel, 56);
+  assert.equal(L.differential.decel, 20);
+  assert.equal(M.differential.driveline, "RWD");
+  assert.equal(M.differential.accel, 38);
+  assert.equal(M.differential.decel, 20);
+  for (const t of [L, M]) {
+    inRange(t.differential.accel, RANGES.diff, "diff.accel");
+    inRange(t.differential.decel, RANGES.diff, "diff.decel");
+    assert.equal(t.differential.accel % 2, 0, "accel must be an even %");
+  }
+});
+test("differential AWD — full per-axle set, exact + in range", () => {
+  assert.equal(E.differential.driveline, "AWD");
+  assert.equal(E.differential.accel, 72);
+  assert.equal(E.differential.decel, 30);
+  assert.equal(E.differential.frontAccel, 26);
+  assert.equal(E.differential.frontDecel, 5);
+  assert.equal(E.differential.centerRear, 83);
+  inRange(E.differential.accel, RANGES.diff, "rear accel");
+  inRange(E.differential.decel, RANGES.diff, "rear decel");
+  inRange(E.differential.frontAccel, RANGES.diff, "front accel");
+  inRange(E.differential.frontDecel, RANGES.diff, "front decel");
+  inRange(E.differential.centerRear, RANGES.awdCenter, "center rear");
+});
+
+/* ---------------- WHOLE-TUNE INVARIANTS ---------------- */
+test("every numeric output is inside its legal range (all 3 cars)", () => {
+  assertAllInRange(L);
+  assertAllInRange(E);
+  assertAllInRange(M);
+});
+test("every section carries a {text, formula} why (all 3 cars)", () => {
+  assertWhyShape(L);
+  assertWhyShape(E);
+  assertWhyShape(M);
+});
+test("summary strip + derived populated", () => {
+  for (const [t, car] of [[L, CAR_LIGHT_RWD], [E, CAR_HEAVY_AWD_EV], [M, CAR_MID_RWD_HIGHPI]]) {
+    assert.ok(Array.isArray(t.summary) && t.summary.length === 5, "summary has 5 chips");
+    assert.ok(t.derived && typeof t.derived.pw === "number", "derived.pw present");
+    // power-to-weight chip matches the input
+    const pwChip = t.summary.find((s) => s.k === "Power-to-weight");
+    assert.ok(pwChip.v.startsWith((Math.round(car.power / car.weight * 100) / 100).toString()), "pw chip matches");
+  }
+});

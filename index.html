@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<title>FH6 Tuning Calculator</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">FH6</span>
+    <div class="titles">
+      <h1>Tuning Calculator</h1>
+      <p class="tagline">Enter a car's stats &rarr; get a complete, math-derived tune.</p>
+    </div>
+  </div>
+  <div class="unit-toggle" id="unitToggle" role="group" aria-label="Units">
+    <button data-units="imperial" class="active" type="button">Imperial</button>
+    <button data-units="metric" type="button">Metric</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ===================== INPUTS ===================== -->
+  <section class="panel inputs" aria-label="Car inputs">
+    <h2 class="panel-title">Car Setup</h2>
+
+    <fieldset>
+      <legend>Identity</legend>
+      <div class="grid2">
+        <label>Drivetrain
+          <select id="drivetrain">
+            <option value="FWD">FWD</option>
+            <option value="RWD" selected>RWD</option>
+            <option value="AWD">AWD</option>
+          </select>
+        </label>
+        <label>Engine Location
+          <select id="engineLocation">
+            <option value="Front" selected>Front</option>
+            <option value="Mid">Mid</option>
+            <option value="Rear">Rear</option>
+          </select>
+        </label>
+        <label>Powertrain
+          <select id="powertrain">
+            <option value="ICE" selected>ICE</option>
+            <option value="EV">EV</option>
+            <option value="Hybrid">Hybrid</option>
+          </select>
+        </label>
+        <label>PI Class
+          <select id="piClass">
+            <option>D</option><option>C</option><option>B</option>
+            <option selected>A</option><option>S1</option><option>S2</option><option>X</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Performance</legend>
+      <div class="grid2">
+        <label><span class="lbl">Power <em id="powerUnit">(hp)</em></span>
+          <input type="number" id="power" value="400" min="0" step="1" />
+        </label>
+        <label><span class="lbl">Torque <em id="torqueUnit">(lb-ft)</em></span>
+          <input type="number" id="torque" value="370" min="0" step="1" />
+        </label>
+        <label><span class="lbl">Weight <em id="weightUnit">(lb)</em></span>
+          <input type="number" id="weight" value="3300" min="0" step="1" />
+        </label>
+        <label><span class="lbl">Front Weight %</span>
+          <input type="number" id="frontWeight" value="52" min="20" max="80" step="0.5" />
+        </label>
+        <label><span class="lbl">Number of Gears</span>
+          <input type="number" id="gears" value="6" min="1" max="10" step="1" />
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Installed Parts</legend>
+      <div class="grid2">
+        <label>Tire Compound
+          <select id="tireCompound">
+            <option>Stock</option><option>Street</option><option selected>Sport</option>
+            <option>Race</option><option>Rally</option><option>Drag</option><option>Offroad</option>
+          </select>
+        </label>
+        <label>Suspension
+          <select id="suspensionType">
+            <option>Stock</option><option>Street</option><option>Sport</option>
+            <option selected>Race</option><option>Drift</option><option>Offroad</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid2 ranges">
+        <label><span class="lbl">Ride Height min <em id="rhUnit">(in)</em></span>
+          <input type="number" id="rideHeightMin" value="4.5" step="0.1" />
+        </label>
+        <label><span class="lbl">Ride Height max <em id="rhUnit2">(in)</em></span>
+          <input type="number" id="rideHeightMax" value="7.0" step="0.1" />
+        </label>
+        <label><span class="lbl">Spring Rate min <em id="srUnit">(lb/in)</em></span>
+          <input type="number" id="springRateMin" value="150" step="1" />
+        </label>
+        <label><span class="lbl">Spring Rate max <em id="srUnit2">(lb/in)</em></span>
+          <input type="number" id="springRateMax" value="900" step="1" />
+        </label>
+      </div>
+      <p class="hint">Ranges come from the parts you installed — read them off the in-game slider's min/max.</p>
+      <label class="aero-kit-label">Aero (adjustable)
+        <select id="aeroKit">
+          <option value="Full" selected>Full kit (front + rear)</option>
+          <option value="Front">Front splitter only</option>
+          <option value="Rear">Rear wing only</option>
+          <option value="None">None</option>
+        </select>
+      </label>
+      <div class="grid2 ranges" id="aeroRanges">
+        <label class="aero-front-field"><span class="lbl">Aero front min <em id="afUnit">(lbf)</em></span>
+          <input type="number" id="aeroFrontMin" step="1" placeholder="optional" />
+        </label>
+        <label class="aero-front-field"><span class="lbl">Aero front max <em id="afUnit2">(lbf)</em></span>
+          <input type="number" id="aeroFrontMax" step="1" placeholder="optional" />
+        </label>
+        <label class="aero-rear-field"><span class="lbl">Aero rear min <em id="arUnit">(lbf)</em></span>
+          <input type="number" id="aeroRearMin" step="1" placeholder="optional" />
+        </label>
+        <label class="aero-rear-field"><span class="lbl">Aero rear max <em id="arUnit2">(lbf)</em></span>
+          <input type="number" id="aeroRearMax" step="1" placeholder="optional" />
+        </label>
+      </div>
+      <p class="hint" id="aeroHint">Optional — enter your wing's downforce range to get exact numbers; leave blank to show % of the slider.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Gearing refinement (optional)</legend>
+      <div class="grid2">
+        <label><span class="lbl">Redline RPM</span>
+          <input type="number" id="redlineRpm" step="100" placeholder="optional" />
+        </label>
+        <label><span class="lbl">Drive tire diameter <em id="tireUnit">(in)</em></span>
+          <input type="number" id="tireDiameter" step="0.1" placeholder="optional" />
+        </label>
+        <label><span class="lbl">Target top speed <em id="topSpeedUnit">(mph)</em></span>
+          <input type="number" id="targetTopSpeed" step="1" placeholder="optional" />
+        </label>
+      </div>
+      <p class="hint">Optional — redline + tire diameter shows real top speed &amp; per-gear speeds; add a target top speed to back-solve an exact final drive. Blank = HP-based estimate.</p>
+    </fieldset>
+  </section>
+
+  <!-- ===================== OUTPUTS ===================== -->
+  <section class="panel outputs" aria-label="Recommended tune">
+    <div class="outputs-head">
+      <h2 class="panel-title">Recommended Tune</h2>
+      <div class="goal-tabs" id="goalTabs" role="tablist"></div>
+    </div>
+
+    <div class="mode-row">
+      <label class="switch">
+        <input type="checkbox" id="compareMode" />
+        <span>Compare all goals side-by-side</span>
+      </label>
+      <button id="copyBtn" class="ghost-btn" type="button" title="Copy tune to clipboard">Copy tune</button>
+    </div>
+
+    <div class="bias-row" id="biasRow">
+      <div class="bias-head">
+        <span class="bias-title">Handling bias</span>
+        <span class="bias-value" id="biasValue">Neutral (0)</span>
+      </div>
+      <input type="range" id="handlingBias" min="-5" max="5" step="0.5" value="0"
+             aria-label="Handling bias from understeer to oversteer" />
+      <div class="bias-ends">
+        <span>&larr; Understeer</span>
+        <button type="button" id="biasReset" class="bias-reset" title="Reset to neutral">Reset</button>
+        <span>Oversteer &rarr;</span>
+      </div>
+      <p class="hint bias-hint">Tilts the recommended tune toward more grip up front (understeer) or freer
+        rotation at the rear (oversteer). At <b>0</b> the tune is the pure per-goal baseline; the dial scales
+        ARB, springs, differential, brake balance &amp; aero on top of it.</p>
+    </div>
+
+    <div id="summaryStrip" class="summary-strip"></div>
+    <div id="output" class="output-cards"></div>
+    <div id="compareWrap" class="compare-wrap" hidden></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Forza Horizon 6 Tuning Calculator &mdash; values are math-derived starting points; fine-tune with telemetry in-game.
+  Slider conventions follow the standard Forza tuning UI (FH4/FH5/FH6).</p>
+</footer>
+
+<script src="tuning.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

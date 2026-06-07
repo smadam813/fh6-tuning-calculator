@@ -1,0 +1,2099 @@
+[
+  {
+    "source": "Multiple Forza Horizon 6 guides: ForzaFire Platform & Handling, Drivetrain, Community Forums (Forza.net), SkyCoach, MMOExp, FH6 WillGameGuide, calculators.games",
+    "reachable": "yes",
+    "fh6Specific": "partial",
+    "reliability": "High for concrete numeric ranges and rules; medium for formulas (some sources provide equations, others only empirical ranges). All formulas quoted verbatim from sources. Main caveat: No official Forza formulas exist—all math is community-standard, validated through testing.",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "No mathematical formula provided. Pressure adjustment by compound: rally/low-spec 26–28 PSI, semi-slicks/slicks/drift ~32 PSI. Traditional baseline for grip: 1.0 Front / 65.0 Rear (from SkyCoach). High Performance/Race/Prototype/GP cars add ~0.5 PSI.",
+        "goalVariation": "Circuit/drag/drift use ~32 PSI. Rally/street/stock use 26–28 PSI. No formulas vary by goal—compound and class determine range.",
+        "inputs": [
+          "tire compound",
+          "car class"
+        ],
+        "concreteNumbers": "Rally/low-spec: 26–28 PSI. Semi-slicks/slicks/drift: ~32 PSI. Traditional grip baseline: 1.0 Front, 65.0 Rear. HP/Race/Prototype/GP: +0.5 PSI over baseline."
+      },
+      {
+        "category": "gearing",
+        "formula": "Formula 1 (6-speed standard): FD = (400 - Car HP) ÷ 600 + 4.25. Formula 2 (custom): FD = (Stock HP - Current HP) ÷ 600 + Stock FD. Formula 3 (gear spacing): Rn = A × n^B where A = first gear, B = -0.65 (example: A=3.00 yields 3.00, 1.91, 1.47, 1.22, 1.05, 0.94). Formula 4 (weight-based): FD = [(Weight÷HP) × (Default1st - DefaultLast) ÷ 100] + Default FD. Top speed rule: set top gear to extend 10–20 mph beyond highest lap speed; engine should just reach rev limiter in top gear at longest straight.",
+        "goalVariation": "All formulas apply across goals. Top speed (drag): maximize FD for lower final ratio. Circuit: balance for power band retention. Gear spacing: wider gaps bottom (control wheelspin), tighter top (wind resistance).",
+        "inputs": [
+          "car horsepower",
+          "car weight",
+          "stock power",
+          "stock final drive",
+          "redline RPM",
+          "target top speed",
+          "tire diameter"
+        ],
+        "concreteNumbers": "Example 325 hp, 6-speed std: 4.38 FD. Power series example: A=3.00, B=-0.65 yields 3.00, 1.91, 1.47, 1.22, 1.05, 0.94. Weight-power example: 2952 lbs, 481 hp = 3.37 FD."
+      },
+      {
+        "category": "alignment",
+        "formula": "No universal formulas. Camber (all negative): Road asphalt Front -1.0° to -2.0°, Rear -0.5° to -1.0°. Dirt rally Front -0.8° to -1.2°, Rear -0.5° to -0.8°. Cross country Front -0.5°, Rear -0.5°. Drift Front -3.0° to -5.0°, Rear -1.0°. Toe: 0.0° neutral; front toe-out -0.1° to -0.2° for turn-in, rear toe-in +0.1° to +0.3° for stability. Caster: 5.0°–7.0° range; light/agile 5.0–5.5°, mid-weight 5.5–6.5°, heavy/high-speed 6.5–7.0°. RWD requires more front camber; FWD needs more rear camber.",
+        "goalVariation": "Circuit (asphalt): -1.0 to -2.0 front, -0.5 to -1.0 rear. Drift: -3.0 to -5.0 front, -1.0 rear (aggressive). Rally/dirt: -0.8 to -1.2 front, -0.5 to -0.8 rear. Off-road/cross country: -0.5 both. Caster increases with vehicle weight/speed class.",
+        "inputs": [
+          "driving discipline",
+          "drivetrain type",
+          "vehicle weight class"
+        ],
+        "concreteNumbers": "Road asphalt: -1.0 to -2.0 front, -0.5 to -1.0 rear. Drift: -3.0 to -5.0 front, -1.0 rear. Caster: 5.0–7.0°; example 7° mentioned. Toe front: -0.1 to -0.2°, rear: +0.1 to +0.3°."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB = (Weight in lb ÷ 2) ÷ (200 - 200 × Stiffness%). Front/Rear distribution by drivetrain: RWD +1 ARB per 1% front-weight deviation from 50%, FWD -1 ARB per 1%, AWD +0.66 ARB per 1%. Stiffness% by class: Sports 61–65%, High Performance 40–46%, Race Car 35–62%. Mechanical balance target: 0.55–0.65 window, sweet spot 0.60.",
+        "goalVariation": "Circuit uses full formula. Drift/drag: adjust stiffness% and front/rear split for launch/exit traction. Off-road: lower stiffness%. General rule: softer front increases oversteer, softer rear increases understeer.",
+        "inputs": [
+          "car weight",
+          "car class",
+          "drivetrain type",
+          "weight distribution percentage",
+          "desired mechanical balance"
+        ],
+        "concreteNumbers": "RWD typical: Front 18–25, Rear 25–35. AWD typical: Front 22–30, Rear 28–38. FWD typical: Front 8–15, Rear 25–40. Stiffness%: Sports 61–65, HP 40–46, Race 35–62. Mechanical balance target: 0.55–0.65, sweet spot 0.60. Adjustment: ±1 ARB per 1% weight shift (RWD), ±0.66 (AWD), -1 (FWD)."
+      },
+      {
+        "category": "springs",
+        "formula": "Formula 1 (interpolation): Rate = ((Max Rate - Min Rate) × Slider Position %) + Min Rate. Formula 2 (frequency-based, imperial): Weight × Weight Distribution % × Multiplier (0.05=0.99Hz soft, 0.10=1.21Hz, 0.20=1.98Hz, 0.30=2.42Hz, 0.40=2.80Hz, 0.50=3.13Hz, 0.60+=3.43Hz+ heavy aero). Frequency Hz = sqrt(K ÷ M × 19.56), K=spring rate, M=weight over axle. Formula 3 (interpolation method): (Max - Min) × Weight Ratio + Min. Weight-based adjustment: 4 kgf/mm per 1% deviation from 50/50 balance (or 15 lb/in equivalent). Physical constraint: (Front Rate × Ride Height × 2) + (Rear Rate × Ride Height × 2) ≥ vehicle weight.",
+        "goalVariation": "Circuit/road race: target 1.8–2.4 Hz (moderate-to-stiff). Drift: 1.5–2.0 Hz (softer, ~50% front / 85% rear slider positions). Off-road: very soft, ~39–40% front / 6–7% rear. Rally: half race spring values. Baseline percentages: racing Front 70% / Rear 65%, drift Front 50% / Rear 85%, off-road Front 40% / Rear 35%.",
+        "inputs": [
+          "car weight",
+          "weight distribution",
+          "car class",
+          "target suspension frequency",
+          "ride height"
+        ],
+        "concreteNumbers": "Baseline slider positions (racing): Front 70%, Rear 65%. Drift: Front 50%, Rear 85%. Off-road: Front 40%, Rear 35%. Weight adjustment: 4 kgf/mm per 1% WD shift or 15 lb/in. Frequency targets: 0.99 Hz (very soft, multiplier 0.05) to 3.43+ Hz (stiff aero, multiplier 0.60+). Constraint: (Front Rate × Height × 2) + (Rear Rate × Height × 2) ≥ weight."
+      },
+      {
+        "category": "rideheight",
+        "formula": "No mathematical formula. Qualitative guidance: Start at the lower point of the range, then raise only if serious bottoming/clearance issues occur. Specific slider range recommendations by type: Race Cars 4–6, Street Cars 5–7, Prototypes 3.5–4.5, Off-roaders 5–7. Discipline guidance: Road Race min both ends, Drag min front/slightly higher rear (rake forward), Drift min both ends, Rally 70–80% of slider range, Cross Country max both ends.",
+        "goalVariation": "Circuit/road race/drift: minimum height both ends. Drag: minimum front, rake rear (higher rear for weight transfer). Rally/off-road: 70–80% slider or maximum range for clearance. Prototypes: lowest 3.5–4.5 range.",
+        "inputs": [
+          "car type",
+          "driving discipline"
+        ],
+        "concreteNumbers": "Race Cars: 4–6. Street Cars: 5–7. Prototypes: 3.5–4.5. Off-roaders: 5–7. Rally: 70–80% of slider. Cross Country: maximum both ends."
+      },
+      {
+        "category": "damping",
+        "formula": "Universal rule: Bump = 40–70% of Rebound, target ~60% baseline. Front Bump = Min Bump (by class) + (Front Weight in lb ÷ 200) × 0.1. Front Rebound = Front Bump ÷ 0.6. Rear offset based on spring rate difference: 0–1.5% diff = Rebound -0.2, Bump -0.1; 1.5–35% = Rebound -0.3, Bump -0.2; 36–40% = Rebound -0.6, Bump -0.4; >40% = Rebound -1.2, Bump -0.8. Rally/Off-road add +1.0 rebound both ends. Min Bump by class: Sports 4.4–4.8, High Performance 4.5–4.9, Race Car 4.7–4.9.",
+        "goalVariation": "Circuit racing baseline: empirical table shows Circuit 5.0/4.0 (F/R bump), 8.0/7.0 (F/R rebound). Street racing softer: 4.0/3.5 bump, 6.0/5.5 rebound. Drift softer: 2.0/1.0 bump, 4.0/3.0 rebound. Off-road: 1.0/1.0 bump, 3.0/3.0 rebound. Rally: add +1.0 to rebound.",
+        "inputs": [
+          "car weight (front)",
+          "car class",
+          "spring rate difference (front vs rear)",
+          "driving discipline"
+        ],
+        "concreteNumbers": "Bump rule: 40–70% of rebound, target 60%. Circuit: F 5.0 bump / 8.0 rebound, R 4.0 / 7.0. Street: F 4.0 / 6.0, R 3.5 / 5.5. Drift: F 2.0 / 4.0, R 1.0 / 3.0. Off-road: F 1.0 / 3.0, R 1.0 / 3.0. Min Bump: Sports 4.4–4.8, HP 4.5–4.9, Race 4.7–4.9. Spring diff offsets: 0–1.5% (-0.2R, -0.1B) to >40% (-1.2R, -0.8B)."
+      },
+      {
+        "category": "aero",
+        "formula": "No mathematical formula. General principle: more downforce = more grip; less downforce = more speed. Aero balance ratio target: 0.4–0.45. Discipline guidance: Time attack uses near-maximum downforce both ends. Sprint uses considerably less. Rule of thumb: front = as much downforce as possible, rear = as little as possible for maximum speed (inverse trade-off).",
+        "goalVariation": "Circuit/time attack: near-maximum downforce, balance 0.4–0.45. Drag/top speed: minimize rear aero for speed (or both low depending on straight length). Drift: balanced aero or lower rear. Rally/off-road: typically low aero. Touge: balance for corner grip vs top-speed straights.",
+        "inputs": [
+          "driving discipline",
+          "target top speed"
+        ],
+        "concreteNumbers": "Aero balance target: 0.4–0.45. Front = max downforce possible (circuit). Rear = minimized for speed OR maximized for stability (discipline-dependent). Time attack: near-maximum both. Sprint: considerably less than time attack."
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Balance (front bias %) by drivetrain: RWD 50–55%, AWD 52–56%, FWD 55–62%, Drift/Dirt 45–50%. Brake Pressure: default 100%, aggressive 105–115%, soft 85–95%. No weight-dependent formulas given.",
+        "goalVariation": "RWD circuit: 50–55% front bias. AWD circuit: 52–56%. FWD circuit: 55–62% (higher front bias due to weight transfer). Drift/dirt: 45–50% (lower front to avoid lockup). Pressure scales with braking intensity: default 100%, hard braking 105–115%, trail braking 85–95%.",
+        "inputs": [
+          "drivetrain type",
+          "driving discipline",
+          "braking intensity"
+        ],
+        "concreteNumbers": "Front bias %: RWD 50–55, AWD 52–56, FWD 55–62, Drift/Dirt 45–50. Brake pressure: default 100, aggressive 105–115, soft 85–95."
+      },
+      {
+        "category": "differential",
+        "formula": "RWD Acceleration (power-on locking): 40–65% typical, up to 80–100% for drift (near-welded). RWD Deceleration (lift-off locking): 15–30%, exceeding causes lift-off understeer, too low causes oversteer. AWD/FWD follow same logic applied to respective axles. Center Balance (rear torque %): AWD varies by discipline: Road Racing 70–85% rear (never below 65%), Dirt Rally 65–75% rear, Cross Country 55–65% rear. General AWD rule: never below 50% rear bias. Optional aggressive exit-speed formula: up to ~90% accel, center 70–80% rear. Deceleration ranges: 10–15% typical, up to 20–25% for trail-braking.",
+        "goalVariation": "Circuit RWD: 40–65% accel / 15–30% decel. Circuit AWD: 28% front accel / 0% front decel / 100% rear accel / 45% rear decel / 70–85% center. Drift RWD: 80–100% accel / 15–40% decel. Drag/exit-speed AWD: up to 90% accel, 70–80% center. Rally AWD: 30–40% front accel / 0–15% front decel / 55–70% rear accel / 20–25% rear decel / 65–75% center. Cross Country: 35–45% front accel / 5–15% front decel / 65–75% rear accel / 20–25% rear decel / 55–65% center.",
+        "inputs": [
+          "drivetrain type",
+          "driving discipline",
+          "driving style (power-on vs lift-off)"
+        ],
+        "concreteNumbers": "RWD accel: 40–65% circuit, 80–100% drift. RWD decel: 15–30% circuit, 15–40% drift. Center balance: never below 50%; circuit 70–85%, rally 65–75%, cross country 55–65%. AWD road race example: front accel 28%, rear accel 100%, center 70–85%. Aggressive exit accel up to 90%; decel 10–15% base, 20–25% trail-brake."
+      }
+    ]
+  },
+  {
+    "source": "https://grindout.com/forza-6/guides/tuning",
+    "reachable": "yes",
+    "reliability": "High. The source provides exact numeric formulas, specific PSI ranges, percentage values, and degree measurements. Formulas are explicitly stated (e.g., FD = 4.25 + ((400 − Power) / 6) × 0.01). The guide includes tuning order, discipline-specific baselines, and edge cases with concrete numbers.",
+    "fh6Specific": "partial",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "Stock/Street/Rally: 26–28 PSI front & rear. Sport: ~28 PSI. Semi/Race Slicks: ~32 PSI. Drift: ~32 PSI (variable low to high). Drag: Max front / Min rear. High-performance cars: +0.5 PSI on top of base. Adjustment increment: 0.5 PSI at a time.",
+        "inputs": [
+          "vehicle_class",
+          "tire_type",
+          "driving_goal"
+        ],
+        "concreteNumbers": "Stock 26-28 PSI, Sport 28 PSI, Race/Drift 32 PSI, Drag max/min. Increment 0.5 PSI per adjustment.",
+        "goalVariation": "Circuit/Rally: 26-28 PSI. Drift: 32 PSI variable. Drag: maximum front, minimum rear. High-performance baseline: +0.5 PSI.",
+        "edgeCases": "Drift requires variable low-to-high pressures front/rear. Drag uses extreme min/max. High-performance cars get +0.5 PSI bonus across all baselines."
+      },
+      {
+        "category": "gearing",
+        "formula": "FD = 4.25 + ((400 − Power) / 6) × 0.01. For 800+ hp: halve power input first. Discipline adjustments: Rally +0.50, Off-road +0.75, Drag −0.20, Drift +0.10. Aero offset: −0.05 to −0.40 depending on aero level.",
+        "inputs": [
+          "power_hp",
+          "driving_goal",
+          "aero_level",
+          "terrain_type"
+        ],
+        "concreteNumbers": "Base formula: FD = 4.25 + ((400 − Power) / 6) × 0.01. Examples: 250 hp = 4.50, 400 hp = 4.25, 600 hp = 3.91. Rally +0.50, Off-road +0.75, Drag −0.20, Drift +0.10. Aero −0.05 to −0.40.",
+        "goalVariation": "Rally: +0.50 vs road. Off-road: +0.75. Drag: −0.20. Drift: +0.10. Aero level reduces by −0.05 to −0.40 depending on downforce setting.",
+        "edgeCases": "800+ hp: halve power before calculation. Aero offset varies with downforce level."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber: start −1.0 to −1.5°, adjust in 0.3° increments toward more negative. Maximum useful ~−2.0° (beyond that, adjust caster instead). Caster: baseline 6.5–7.0°; lighter cars can drop to 5–6°. Toe: front toe-out sharpens turn-in; rear toe-in stabilizes RWD on throttle.",
+        "inputs": [
+          "drivetrain_type",
+          "car_weight",
+          "engine_location",
+          "driving_goal"
+        ],
+        "concreteNumbers": "Camber: −1.0 to −1.5° baseline, 0.3° increment, maximum useful ~−2.0°. Caster: 6.5–7.0° baseline; light cars 5–6°. RWD Drift rear toe: −0.1 to −0.2°.",
+        "goalVariation": "Circuit/Race: −1.5 to −2° front/rear. Drift: front −5° max, rear ~−1°. Caster maxed for drift turn-in sharpening.",
+        "edgeCases": "RWD: slightly more negative front than rear. FWD: slightly more negative rear than front. AWD: balanced. Open-wheel: drop rear camber by ~1.0°. Drift: front −5° (max), rear ~−1°."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "RWD baseline: 20 front / 55 rear. Target mechanical balance 0.55–0.65 (sweet spot 0.60). Below 0.55: soften front ARB or stiffen rear ARB. Above 0.65: stiffen front ARB or soften rear ARB. FWD wants stiffer rear (40+). AWD: less front, more rear if understeering. Drift: soft both (~8 if response desired, fully soft otherwise).",
+        "inputs": [
+          "drivetrain_type",
+          "handling_characteristic",
+          "driving_goal",
+          "mechanical_balance_target"
+        ],
+        "concreteNumbers": "RWD: 20 front / 55 rear. FWD rear: 40+. Drift: ~8. Mechanical balance target: 0.55–0.65 (optimum 0.60).",
+        "goalVariation": "Circuit RWD: 20 front / 55 rear. FWD: stiffer rear (40+). AWD: less front, more rear. Drift: soft (~8 or fully soft).",
+        "edgeCases": "Stiffer end loses grip first. FWD characteristic requires stiffer rear. AWD adjustment: reduce understeer via less front / more rear. Mechanical balance window 0.55–0.65 universal."
+      },
+      {
+        "category": "springs",
+        "formula": "No specific numeric formula given. Philosophy: softer springs absorb bumps and keep tire planted (more body roll); stiffer springs reduce body roll (risk of skating rough surfaces). Ride height: start at minimum for car type, front and rear matched. Drift baseline: soft, front and rear matched (~400 lb/in baseline). Damping relationship: bump should be 40–70% of rebound (most cars happiest around 60%).",
+        "inputs": [
+          "car_type",
+          "terrain_roughness",
+          "driving_goal",
+          "body_roll_sensitivity"
+        ],
+        "concreteNumbers": "Ride height: minimum for car type, matched F/R. Drift: ~400 lb/in baseline. Bump/rebound ratio: 40–70% bump (optimum ~60% of rebound).",
+        "goalVariation": "Drift: soft springs (~400 lb/in), matched F/R. Race/Grip: moderate-stiff, bump 60% of rebound. Rough terrain: softer for tire contact.",
+        "edgeCases": "Softer = more body roll but better tire contact. Stiffer = less body roll but may skip rough surfaces. Bump/rebound ratio (40–70%, optimum 60%) universal rule."
+      },
+      {
+        "category": "damping",
+        "formula": "Universal rule: bump should be 40–70% of rebound, with most cars happiest around 60%. Race/Grip baseline: ~14 / ~14 rebound (F/R), ~8 / ~8 bump (F/R). AWD soft meta: ~18 / ~18 rebound, ~6 / ~6 bump. Drift: ~4 / 4 / 4 / 4 (soft). Drag RWD: Front soft rebound / stiff bump; Rear stiff rebound / soft bump. Effect: softer front rebound = oversteer on entry; softer rear rebound = understeer on entry.",
+        "inputs": [
+          "drivetrain_type",
+          "driving_goal",
+          "handling_balance",
+          "speed_range"
+        ],
+        "concreteNumbers": "Race/Grip: 14 rebound F/R, 8 bump F/R. AWD soft: 18 rebound F/R, 6 bump F/R. Drift: 4/4/4/4. Bump/rebound ratio: 40–70% (optimum 60%). Drag RWD: soft rebound / stiff bump (front), stiff rebound / soft bump (rear).",
+        "goalVariation": "Race/Grip: 14 rebound, 8 bump baseline. AWD soft meta: 18 rebound, 6 bump. Drift: 4/4/4/4. Drag RWD: asymmetric F/R (soft rebound front, stiff rear).",
+        "edgeCases": "Softer front rebound causes oversteer on entry. Softer rear rebound causes understeer. Drag RWD requires asymmetric tuning (soft front rebound / stiff bump, opposite rear). Bump/rebound ratio (60% optimal) universal."
+      },
+      {
+        "category": "aero",
+        "formula": "New FH6 stat workflow: (1) adjust front and rear downforce until Aero Balance stat reads 0.40–0.45; (2) set overall level by feel; (3) add front downforce to fix high-speed understeer, add rear to fix high-speed oversteer. Drivetrain bias: RWD wants slight rear bias; FWD/AWD want slight front bias.",
+        "inputs": [
+          "drivetrain_type",
+          "speed_range",
+          "handling_characteristic_highspeed",
+          "aero_balance_target"
+        ],
+        "concreteNumbers": "Aero Balance stat target: 0.40–0.45. Front/rear downforce: adjust until target stat reached.",
+        "goalVariation": "RWD: slight rear bias. FWD/AWD: slight front bias. High-speed understeer: add front downforce. High-speed oversteer: add rear downforce.",
+        "edgeCases": "FH6-specific stat workflow (Aero Balance 0.40–0.45 target). RWD/FWD/AWD have different bias preferences. Downforce adjustment is directional (front for understeer, rear for oversteer)."
+      },
+      {
+        "category": "braking",
+        "formula": "Bias starting points: Stable AWD 52–55% front, Aggressive RWD 48–51% front, Touge/Mountain 50–52% front, FWD 55–60% front, Highway/Top Speed 54–58% front, Drift tandem 55–70% (toward front). Pressure baseline: 100% unless lockup issue. Lockup tuning: drop or raise 5–10% for adjustment. Sweet spot: tire lockup in last 10–15% of trigger pull. Adjustment sensitivity: 1% makes noticeable difference.",
+        "inputs": [
+          "drivetrain_type",
+          "driving_goal",
+          "terrain_type",
+          "lockup_behavior"
+        ],
+        "concreteNumbers": "AWD: 52–55%. RWD: 48–51%. Touge: 50–52%. FWD: 55–60%. Highway: 54–58%. Drift tandem: 55–70%. Pressure: 100% baseline. Lockup adjustment: ±5–10%. Sweet spot: lockup at 10–15% trigger pull.",
+        "goalVariation": "Stable AWD: 52–55%. Aggressive RWD: 48–51%. Touge: 50–52%. FWD: 55–60%. Highway/top speed: 54–58%. Drift tandem: 55–70% (front bias).",
+        "edgeCases": "FWD has higher front bias (55–60%) vs RWD (48–51%). Drift tandem heavily biased front (55–70%). Pressure typically 100%; adjust ±5–10% only for lockup issues. 1% bias change is noticeable."
+      },
+      {
+        "category": "differential",
+        "formula": "RWD Race: 50–60% accel / 10–20% decel (rear). FWD Race: 80–95% accel / 5–10% decel (front). AWD Race: Front 80–95% accel / 5–10% decel; Rear 50–70% accel / 10–15% decel; Center 70–80% rear. AWD Touge: Front 15–25% accel / 5–10% decel; Rear 65–80% accel / 15–20% decel; Center 70–80% rear. RWD Drift: 95–100% accel / 10–40% decel (rear). Rally/Off-road: baseline + 24% A / −20% D both axles; Center 60–70% rear. Open-wheel: accel ~30%, decel 0%. Hard limits: don't push accel above 95% on FWD/AWD, don't drop decel below 5%, AWD center never below 50%, accel increment only 2% (use even numbers).",
+        "inputs": [
+          "drivetrain_type",
+          "driving_goal",
+          "terrain_type",
+          "acceleration_bias"
+        ],
+        "concreteNumbers": "RWD Race: 50–60% accel / 10–20% decel. FWD Race: 80–95% accel / 5–10% decel. AWD Race front: 80–95% / 5–10%; rear 50–70% / 10–15%; center 70–80%. AWD Touge front: 15–25% / 5–10%; rear 65–80% / 15–20%; center 70–80%. RWD Drift: 95–100% accel / 10–40% decel. Rally/Off-road: +24% A / −20% D; center 60–70%. Open-wheel: ~30% accel / 0% decel. Increment: 2% (use even numbers).",
+        "goalVariation": "Race (RWD/FWD/AWD): balanced accel/decel per drivetrain. Touge (AWD): front looser (15–25%), rear grippier (65–80%). Drift (RWD): maximum accel (95–100%). Rally/Off-road: +24% accel, −20% decel.",
+        "edgeCases": "RWD rear only. FWD/AWD: high accel (80–95%), never above 95%. AWD center: never below 50%. Decel never below 5%. Accel always even numbers (2% increments). RWD Drift: rear 95–100% accel, high decel (10–40%). Rally/Off-road: formula-based (+24%A / −20%D). Open-wheel: ~30% accel / 0% decel."
+      }
+    ]
+  },
+  {
+    "source": "https://www.forzafire.com/guides (Platform & Handling, Drivetrain, Tires & Rims, Aero & Appearance, Engine guides)",
+    "reachable": "yes",
+    "fh6Specific": "yes",
+    "reliability": "High. The site provides concrete numeric ranges, formulas, and starting points with clear application rules. Some domains (engine) lack detailed formulas due to Forza architecture (no tuning sliders), but this is accurately reported. Tire pressures, damping calculations, and ARB formulas are precise and quantified.",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "Baseline PSI by compound: Stock/Street 31.0, Sport 31.5, Semi-Slick 32.0, Race Slicks 32.5, Rally 29.0-30.0, Off-Road 28.0-30.0, Drift 20.0-26.0. Front/Rear split: RWD +0.5-1.0 PSI front, FWD +1.0-2.0 PSI front, AWD equal or +0.2-0.5 PSI front. Weight rule: 600kg kei car = 28-30 PSI on sport; 1800kg muscle car = 33-35 PSI (same compound). Tire width +0.5-1.0 PSI per 50mm width increase. Adjustment increments: 0.5 PSI per iteration.",
+        "goalVariation": "Circuit (Race Slicks 31.5-32.5 PSI), Drag (25 PSI rear / 32 PSI front), Drift (20-22 PSI), Rally (29-30 PSI), Cross-Country (28-30 PSI), Off-Road (28-30 PSI)",
+        "inputs": [
+          "vehicle weight",
+          "drivetrain type",
+          "tire compound",
+          "tire width",
+          "rim size"
+        ],
+        "edgeCases": "RWD/FWD/AWD all have distinct front-rear splits. Drift requires unusually low pressure (20-26 PSI) due to low-grip need. FH6 applies higher PI penalty for Race Slicks on dirt, mandating Rally tires for mixed builds.",
+        "concreteNumbers": "Sport baseline 31.5 PSI; Race Slicks 32.5 PSI; Rally 29-30 PSI; Drift 20-26 PSI. RWD front +0.5-1.0 PSI above rear. FWD front +1.0-2.0 PSI above rear. AWD front +0.2-0.5 PSI above rear. Light cars (600kg) -3-5 PSI vs heavy cars (1800kg). Pressure adjustment: 0.5 PSI per diagnostics pass."
+      },
+      {
+        "category": "gearing",
+        "formula": "Final Drive slider adjustment conceptual: raising shortens all gears (more acceleration, lower top speed); lowering lengthens all gears (lower acceleration, higher top speed). Race Transmission gear count: 6-7 speeds for road, 8-10 for drag/extreme powerband. Empirical recommendation: adjust and monitor 0-100 km/h time and top speed.",
+        "goalVariation": "Road racing (6-7 gears, empirical FD tuning), Drag (8-10 gears, favor lower ratios), Rally/Off-Road (similar empirical approach with weight influence noted but unquantified)",
+        "inputs": [
+          "vehicle weight",
+          "powerband characteristics",
+          "target discipline",
+          "transmission type"
+        ],
+        "edgeCases": "Only Race Transmission allows gear count adjustment. Weight effect on optimal FD is noted but no formula provided. Standard transmissions lack tuning sliders.",
+        "concreteNumbers": "Road: 6-7 gears. Drag: 8-10 gears. No specific Final Drive ratios or multipliers given; adjustment is slider-based with empirical testing."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber (degrees) by discipline: Road asphalt front -1.0 to -2.0 / rear -0.5 to -1.0. Dirt rally front -0.8 to -1.2 / rear -0.5 to -0.8. Cross-country front -0.5 / rear -0.5. Drift front -3.0 to -5.0 / rear -1.0. Toe: neutral (0.0) is default; front toe-out -0.1 to -0.2 for sharper turn-in; rear toe-in +0.1 to +0.3 for high-speed stability. Caster by car class: light/agile 5.0-5.5, mid-weight road race 5.5-6.5, heavier/high-speed 6.5-7.0. Warning: caster above 7.0 causes contact patch to switch violently.",
+        "goalVariation": "Circuit (road asphalt settings, neutral toe), Drift (extreme front camber -3.0 to -5.0), Rally (mild -0.8 to -1.2), Cross-Country (minimal -0.5 all around), Drag (minimal camber, rake via ride height)",
+        "inputs": [
+          "vehicle weight class",
+          "suspension stiffness",
+          "target discipline"
+        ],
+        "edgeCases": "Drift requires far more negative front camber (-3.0 to -5.0) than road racing (-1.0 to -2.0). Caster over 7.0 degrees becomes unstable. Toe-in/out adjustments are discipline-specific (turn-in vs stability priority).",
+        "concreteNumbers": "Road camber: front -1.0 to -2.0, rear -0.5 to -1.0 deg. Drift camber: front -3.0 to -5.0, rear -1.0 deg. Rally camber: front -0.8 to -1.2, rear -0.5 to -0.8 deg. Cross-country camber: -0.5 all around. Toe turn-in: -0.1 to -0.2 front. Toe stability: +0.1 to +0.3 rear. Caster light 5.0-5.5, mid 5.5-6.5, heavy 6.5-7.0, max safe 7.0 deg."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB = (Weight in lb / 2) / (200 - 200 × Stiffness%). Stiffness% varies by class: Sports 61-65%, High Performance 40-46%, Race Car 35-62%. Distribution adjustment per drivetrain: RWD +1 ARB per 1% front weight above 50%; FWD -1 ARB per 1%; AWD +0.66 per 1%. Typical ranges by drivetrain: RWD front 18-25 / rear 25-35; AWD front 22-30 / rear 28-38; FWD front 8-15 / rear 25-40.",
+        "goalVariation": "Circuit (race stiff settings within ranges), Drag (minimal rear ARB), Drift (stiff rear, softer front to enable rotation), Rally/Off-Road (moderate values, rear-biased)",
+        "inputs": [
+          "vehicle weight (lb)",
+          "vehicle class",
+          "drivetrain type",
+          "front weight distribution"
+        ],
+        "edgeCases": "FWD naturally has low front ARB (8-15) despite heavy front weighting; instead ARBs are rear-biased (25-40 rear). RWD is front-understeery by nature so +adjustment applied. AWD is middle ground at +0.66 per 1%.",
+        "concreteNumbers": "Formula: (Weight_lb / 2) / (200 - 200 × Stiffness%). RWD adjustment +1.0 per 1% front weight above 50%. FWD adjustment -1.0 per 1%. AWD adjustment +0.66 per 1%. RWD ranges: F18-25, R25-35. AWD ranges: F22-30, R28-38. FWD ranges: F8-15, R25-40. Class stiffness: Sports 61-65%, HP 40-46%, Race 35-62%."
+      },
+      {
+        "category": "springs",
+        "formula": "Spring Rate slider positions by class and drivetrain. Sports class: RWD/AWD front 87-98% / rear 58-80%; FWD front 58-80% / rear 87-98%. High Performance: RWD/AWD front 85-93% / rear 63-84%; FWD front 63-84% / rear 85-93%. Race Car: RWD/AWD front 83-93% / rear 59-85%; FWD front 59-85% / rear 83-93%. Weight distribution adjustment: shift roughly 4 kgf/mm per 1% deviation from 50/50 split. Rally springs: use half the Race spring values. Off-Road springs: front 39-40% / rear 6-7% slider position.",
+        "goalVariation": "Circuit (Race class values), Drag (Race class with slight forward rake via ride height adjustment), Drift (Race class), Rally (half of Race values), Off-Road (39-40% front / 6-7% rear), Cross-Country (maximum both ends)",
+        "inputs": [
+          "vehicle class",
+          "drivetrain type",
+          "weight distribution",
+          "target discipline"
+        ],
+        "edgeCases": "FWD has reversed spring ranges (soft front, stiff rear) vs RWD/AWD (stiff front, soft rear). Rally uses exactly half of Race values. Off-Road is extreme rear-soft (6-7%). Cross-country is maximum-stiff at both ends.",
+        "concreteNumbers": "Sports RWD: F87-98%, R58-80%. Sports FWD: F58-80%, R87-98%. HP RWD: F85-93%, R63-84%. HP FWD: F63-84%, R85-93%. Race RWD: F83-93%, R59-85%. Race FWD: F59-85%, R83-93%. Weight adjustment: 4 kgf/mm per 1% from 50/50. Rally = half Race. Off-Road: F39-40%, R6-7%."
+      },
+      {
+        "category": "rideheight",
+        "formula": "Discipline-specific slider targets: Road race minimum both ends. Dirt rally 70-80% of slider range. Cross-country maximum both ends. Drag minimum front, slightly higher rear. Drift minimum both ends.",
+        "goalVariation": "Circuit (minimum), Drag (min front + slightly higher rear for slight rake), Drift (minimum), Rally (70-80%), Cross-Country (maximum)",
+        "inputs": [
+          "target discipline",
+          "aero build"
+        ],
+        "edgeCases": "Drag is the only discipline that uses rake (lower front, higher rear). Rally sits middle at 70-80%. Cross-country needs clearance so maximum.",
+        "concreteNumbers": "Road race: minimum both ends. Dirt rally: 70-80% of range. Cross-country: maximum both ends. Drag: minimum front, slightly elevated rear. Drift: minimum both ends."
+      },
+      {
+        "category": "damping",
+        "formula": "Core rule: Bump = 40-70% of Rebound, target ~60% baseline. Front Bump = Min_Bump + (Front_Weight_lb / 200) × 0.1. Minimum bump by class: Sports 4.4-4.8, High Performance 4.5-4.9, Race Car 4.7-4.9. Front Rebound = Front Bump / 0.6. Rear damping offset (based on spring rate difference): 0-1.5% diff (Rear Rebound -0.2, Rear Bump -0.1), 1.5-35% diff (Rear Rebound -0.3, Rear Bump -0.2), 36-40% diff (Rear Rebound -0.6, Rear Bump -0.4), above 40% diff (Rear Rebound -1.2, Rear Bump -0.8). Rally/Off-Road: add +1.0 to rebound across the board.",
+        "goalVariation": "Circuit (apply base formula), Drag (base formula with potential slight rebound increase), Drift (base formula with potential stiffness adjustment), Rally (add +1.0 to all rebound), Off-Road (add +1.0 to all rebound)",
+        "inputs": [
+          "vehicle weight (front lb)",
+          "vehicle class",
+          "target discipline",
+          "spring rate differential"
+        ],
+        "edgeCases": "Rally and Off-Road both add +1.0 globally to rebound for compliance. Rear damping requires calculation of spring rate difference and three breakpoints (0-1.5%, 1.5-35%, 36-40%, 40%+). FWD spring stiffness is inverted vs RWD, affecting the differential calculation.",
+        "concreteNumbers": "Bump = 40-70% Rebound (target 60%). Front Bump = Min + (FrontWt_lb / 200) × 0.1. Sports Min 4.4-4.8, HP Min 4.5-4.9, Race Min 4.7-4.9. Front Rebound = FrontBump / 0.6. Spring diff 0-1.5%: RR-0.2, RB-0.1. 1.5-35%: RR-0.3, RB-0.2. 36-40%: RR-0.6, RB-0.4. >40%: RR-1.2, RB-0.8. Rally/Off-Road: +1.0 Rebound global."
+      },
+      {
+        "category": "aero",
+        "formula": "Aero Balance target by discipline: Road Racing AWD 0.40-0.45 (front-biased to fight understeer), Road Racing RWD 0.50-0.55 (neutral/rear-biased), Road Racing FWD 0.45-0.55 (front-biased), Drift 0.45-0.50 (enable rear breakaway), Drag minimize total, Dirt/Cross-Country ~0.50. Efficiency benchmarks: above 0.85 excellent, 0.70-0.85 average, below 0.70 poor. Front downforce by drivetrain: AWD maximum, RWD 60-80% of slider, FWD high to maximum. Rear downforce by drivetrain: AWD minimum rear (counterintuitive), RWD 60-90% of slider, FWD low to moderate. Unit: 1 KGF ≈ 2.2 lb.",
+        "goalVariation": "Circuit RWD (0.50-0.55 balance), Circuit AWD (0.40-0.45 balance), Circuit FWD (0.45-0.55 balance), Drift (0.45-0.50 balance), Drag (minimize total, balance irrelevant)",
+        "inputs": [
+          "drivetrain type",
+          "target discipline",
+          "total weight"
+        ],
+        "edgeCases": "AWD requires front-biased aero (0.40-0.45) with minimum rear downforce (counterintuitive finding: soft rear downforce despite rear weight bias in diffs). RWD is neutral to slightly rear-biased. FWD is front-biased. Drag racing aero is minimized; balance is irrelevant.",
+        "concreteNumbers": "Balance targets: RWD circuit 0.50-0.55, AWD circuit 0.40-0.45, FWD circuit 0.45-0.55, Drift 0.45-0.50, Dirt/CC ~0.50. Efficiency >0.85 excellent, 0.70-0.85 avg, <0.70 poor. Downforce: AWD F=max/R=min, RWD F=60-80%/R=60-90%, FWD F=high-max/R=low-mod. Conversion: 1 KGF = 2.2 lb."
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Balance (front-to-rear bias %): RWD 50-55%, AWD 52-56%, FWD 55-62%, Drift/Dirt 45-50%. Brake Pressure: default 100%, aggressive 105-115%, softer 85-95%.",
+        "goalVariation": "Circuit (bias per drivetrain: RWD 50-55%, AWD 52-56%, FWD 55-62%), Drag (not specified; likely circuit-appropriate), Drift (45-50% bias), Rally/Dirt (45-50% bias)",
+        "inputs": [
+          "drivetrain type",
+          "target discipline"
+        ],
+        "edgeCases": "FWD requires highest front bias (55-62%) due to inherent rear-biased weight distribution. RWD uses neutral bias. Drift and dirt off-road both shift to softer rear bias (45-50%) to reduce rear brake lock. Pressure adjustment is global (105-115% for aggression, 85-95% for softness).",
+        "concreteNumbers": "RWD balance: 50-55%. AWD balance: 52-56%. FWD balance: 55-62%. Drift/Dirt balance: 45-50%. Pressure default 100%, aggressive 105-115%, soft 85-95%."
+      },
+      {
+        "category": "differential",
+        "formula": "RWD Acceleration (road racing): 40-65% range. RWD Deceleration (road racing): 15-30% range. Warning: too high causes lift-off understeer; too low causes lift-off oversteer. AWD Center Balance (torque split to rear): Road 70-85% rear bias, Dirt 65-75% rear bias, Cross-Country 55-65% mild rear bias. General guideline: 70%+ starting point; longer wheelbase tolerates up to 90%. Common starting points (full diff config): Road racing (Front Accel 28%, Front Decel 0%, Rear Accel 100%, Rear Decel 45%, Center 70-85%), Dirt rally (Front Accel 30-40%, Front Decel 0-15%, Rear Accel 55-70%, Rear Decel 20-25%, Center 65-75%), Cross-Country (Front Accel 35-45%, Front Decel 5-15%, Rear Accel 65-75%, Rear Decel 20-25%, Center 55-65%).",
+        "goalVariation": "Road racing RWD (Accel 40-65%, Decel 15-30%), Road racing AWD (Front A 28%/D 0%, Rear A 100%/D 45%, Center 70-85%), Drift (RWD Accel 80-100% near-welded), Rally AWD (Center 65-75% rear bias), Cross-Country AWD (Center 55-65% mild rear bias)",
+        "inputs": [
+          "drivetrain type (RWD/AWD/FWD)",
+          "target discipline",
+          "wheelbase length",
+          "weight distribution"
+        ],
+        "edgeCases": "RWD has no center balance option (only Accel/Decel). AWD center balance ranges vary dramatically by discipline (70-85% road vs 55-65% cross-country). Longer wheelbase (270+ mm) tolerates higher center balance (up to 90%). Drift is near-welded (80-100% Accel).",
+        "concreteNumbers": "RWD road: Accel 40-65%, Decel 15-30%. RWD drift: Accel 80-100%. AWD road: FA28%, FD0%, RA100%, RD45%, C70-85%. AWD rally: FA30-40%, FD0-15%, RA55-70%, RD20-25%, C65-75%. AWD cross-country: FA35-45%, FD5-15%, RA65-75%, RD20-25%, C55-65%."
+      }
+    ]
+  },
+  {
+    "source": "https://forzatune.com/guide/the-fully-updated-forza-tuning-guide/",
+    "reachable": "yes",
+    "reliability": "High - comprehensive guide with specific formulas, ranges, and step-by-step tuning procedures. Source is ForzaTune, created by Anthony Curtis with engineering and physics background. Concrete numbers provided throughout.",
+    "fh6Specific": "partial",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "Set cold tire pressure between 27-30 PSI (1.90-2.07 Bar). Target warm tire pressure between 32-34 PSI (2.20-2.35 Bar). In Motorsport, middle tire temperature should be the target metric — if middle is too low, increase pressure; if too high, decrease pressure. Start with cold pressure 25-35 PSI (1.72-2.41 Bar) in Motorsport.",
+        "inputs": [
+          "tire compound",
+          "track type",
+          "ambient temperature",
+          "driving style"
+        ],
+        "concreteNumbers": "Cold: 27-30 PSI (FH6), 25-35 PSI (Motorsport). Warm/Target: 32-34 PSI (FH6). Temperature range: 170-250°F or 75-120°C optimal.",
+        "goalVariation": "Street/track: use telemetry-based pressure tuning. High-speed tracks: can use lower compounds due to cooler operation. Technical tracks: upgrade compounds to maintain grip.",
+        "edgeCases": "FH6/FH5: tire temperatures variable due to weather/water; pick consistent testing circuit. Motorsport: new tire model requires heat evenness across three temperature zones (inner/middle/outer)."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber: Use default or start -1.0 to -1.5 degrees. Target outer tire temperature equal to middle temp as car exits turn. Adjust camber more negative if outside edge hotter; move toward zero if inside hotter. Do not exceed -2.0 deg front without increasing caster. Toe: Keep at 0 degrees for most setups (FWD exception: 0.1 toe-out if turn-in hesitation; RWD exception: 0.1 toe-in rear if oversteer). Caster: Start 5.5 degrees or default if higher; optimal range 5.5-6.5 degrees. Values above 6.0 may cause snappiness.",
+        "inputs": [
+          "weight distribution",
+          "drivetrain",
+          "track characteristics",
+          "driving technique"
+        ],
+        "concreteNumbers": "Camber: -1.0 to -1.5 deg start, max -2.0 deg front. Toe: 0 deg standard; exceptions 0.1 deg only. Caster: 5.5-6.5 deg range.",
+        "goalVariation": "Circuit: balanced camber/caster for consistent grip. Turn-in hesitation (FWD): add 0.1 toe-out front. Oversteer (RWD): add 0.1 toe-in rear. Long straights: increase caster if weaving; decrease if snappy.",
+        "edgeCases": "FH5: toe settings unpredictable; use zero toe in FH5. FH6 better toe response. Avoid excessive caster (6.0+) on FH6 due to snap. Camber adjustment must follow suspension geometry changes."
+      },
+      {
+        "category": "springs",
+        "formula": "Heavier vehicles require stiffer springs. Weight distribution balance: if front weight % decreases, subtract spring rate from front and add to rear. Rule: 15 lb/in (4 kgf/mm) change per 1% weight distribution shift. Example: 2% front weight loss = subtract 30 lb/in front, add 30 lb/in rear. Lower ride height increases bottoming-out risk. Soft springs (avoid bottoming) + not too stiff (avoid skipping) = goal.",
+        "inputs": [
+          "vehicle weight",
+          "weight distribution",
+          "ride height",
+          "track surface roughness",
+          "power output"
+        ],
+        "concreteNumbers": "Spring rate adjustment: 15 lb/in per 1% weight distribution change (4 kgf/mm equivalent). Ride height: low for smooth tracks, higher for bumpy surfaces.",
+        "goalVariation": "Smooth circuit: lower ride height for CoG advantage; stiffer springs to prevent bottoming. Bumpy/off-road: higher ride height for compression clearance; softer springs. Front weight shift: adjust front springs, mirror adjustment to rear.",
+        "edgeCases": "AWD/RWD: match front/rear pressures initially. Lowered cars prone to bottoming; must stiffen springs accordingly. Rally suspension not for road tuning (common mistake)."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Front weight % change = ARB adjustment rule: for every 1% front weight removed, subtract 0.5 from front ARB and add 0.5 to rear ARB. Rough guidance: balance adjustment to match weight distribution. For understeer: reduce front ARB. For oversteer: reduce rear ARB. Do not compensate rear problem with front adjustment.",
+        "inputs": [
+          "weight distribution change from upgrades",
+          "handling balance",
+          "track characteristics"
+        ],
+        "concreteNumbers": "ARB adjustment: 0.5 point per 1% weight distribution change. No specific stiffness values given (adjusted per balance needs).",
+        "goalVariation": "Circuit: ARB is primary tool for oversteer/understeer tuning. Mid-corner handling primary effect. Tight tracks: higher ARB values for responsiveness. Sweeping curves: moderate ARB for balance.",
+        "edgeCases": "ARBs have no straight-line effect. Immediate noticeable effect during turns. If ARB >20-25 still lacks responsiveness, increase roll center instead. Match ARB changes to damper changes for consistency."
+      },
+      {
+        "category": "damping",
+        "formula": "Damper change rule: for every 1% front weight reduced (from upgrades), subtract 0.2 from front rebound and front bump, and add 0.2 to rear values. Do the opposite if front weight increases. Bump ~66% of rebound (rough): bump usually less than rebound (~two-thirds). Example: 2% front weight loss = 0.2 × 2 = 0.4 point reduction front, 0.4 point addition rear (both rebound and bump).",
+        "inputs": [
+          "weight distribution change",
+          "spring stiffness",
+          "track surface",
+          "ARB stiffness"
+        ],
+        "concreteNumbers": "Damper adjustment: 0.2 points per 1% weight distribution change. Bump typically around 66% (two-thirds) of rebound value.",
+        "goalVariation": "Smooth track: more damping. Bumpy/irregular: less damping. Understeer (turn-in): soften front damping. Oversteer/lift-off throttle: soften rear damping.",
+        "edgeCases": "Forza does not auto-adjust dampers on weight distribution change. Must manually adjust. Stiffer springs require stiffer dampers to match."
+      },
+      {
+        "category": "rideheight",
+        "formula": "Lower ride height: better CoG, better handling, but increases bottoming-out risk and reduces spring compression room. Higher ride height: more clearance for bumps, less bottoming risk. Check suspension telemetry bar graph — if reaching maximum during driving, increase ride height. If ride height maxed and bottoming still occurs, increase spring rates.",
+        "inputs": [
+          "track surface",
+          "vehicle ride height limits",
+          "spring stiffness",
+          "weight"
+        ],
+        "concreteNumbers": "No specific inch/mm values given; relative rule: low for smooth tracks, high for rough tracks. Telemetry guideline: suspension bars must not reach maximum compression during normal driving.",
+        "goalVariation": "Circuit/smooth: minimum viable ride height for CoG. Bumpy/off-road: higher ride height for clearance. Bottoming check: increase ride height first; if maxed, increase springs.",
+        "edgeCases": "Lowered ride height necessitates stiffer springs. Rally suspension for different geometry. Telemetry check is verification step after suspension tuning."
+      },
+      {
+        "category": "aero",
+        "formula": "Start with front slider between midpoint and 3/4 of maximum depending on top-speed trade-off desired. Rear aero ~25-50% less than front for balance. In FH6: target aero balance ~0.50 (measured in-game). Aero benefits only at higher speeds; requires fast enough speeds to generate downforce effect.",
+        "inputs": [
+          "track layout (high-speed corners)",
+          "top speed target",
+          "drivetrain",
+          "available upgrades"
+        ],
+        "concreteNumbers": "Front aero: midpoint to 3/4 maximum. Rear aero: 25-50% less than front. FH6 target: aero balance ~0.50.",
+        "goalVariation": "High-speed corners: beneficial for grip and exit speed. Long straights: reduce aero to max top speed (minimize/0 setting). Tight winding tracks: aero less useful (insufficient speed to benefit). Speed-focused: minimum aero.",
+        "edgeCases": "AWD/RWD: apply aero symmetrically (both front and rear) to avoid speed imbalance. Oversized aero upgrades visually: personal choice if worth tuning. Aero balance rear slide: increase rear downforce. Aero balance front slide: increase front downforce."
+      },
+      {
+        "category": "braking",
+        "formula": "Start with brake balance at 50% (default). Brake pressure set to 100%. Adjust balance 1% at a time if tires lock uncontrollably. Trail-braking + rear slide: shift balance toward front. Trail-braking + turn-in understeer: shift balance 1-2% toward rear. Straight-line + front lock: shift rear. Straight-line + rear lock: shift front. Target tire lock in last 10-15% of trigger/pedal movement for resolution.",
+        "inputs": [
+          "braking style (trail vs. straight-line)",
+          "ABS assist setting",
+          "driving skill level"
+        ],
+        "concreteNumbers": "Starting balance: 50%. Starting pressure: 100%. Adjustment: 1% increments. Lock target: last 10-15% of trigger/pedal travel.",
+        "goalVariation": "Trail-braking heavy: bias toward front (rear slide issue = increase front brake). Straight-line only: balance for even front/rear lock. ABS off: more sensitivity needed; small adjustments 1%. ABS on: defaults often work; fine-tune as needed.",
+        "edgeCases": "FH5 bug: brake balance backwards (slider right = more front, opposite of Motorsport/FH6). Motorsport/FH6: slider left = more front. Pressure: reduce 5-10% if both wheels lock frequently; increase if brakes weak at mid-travel."
+      },
+      {
+        "category": "differential",
+        "formula": "RWD acceleration: 40-60% (Motorsport/FH6), 25-45% (earlier Horizon); tight turns = lower end. RWD deceleration: 20-40% (Motorsport/FH6), 30-45% (earlier Horizon); more understeer = higher end. FWD acceleration: 20-30% (Motorsport/FH6), 15-25% (earlier); high power = lower end. FWD deceleration: 0-10% (Motorsport/FH6), 10-20% (earlier); more understeer = higher end. AWD: use FWD/RWD as starting points; center diff 60-70% range. Adjustment increments: 2-3% for oversteer/understeer changes.",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "power output",
+          "track type",
+          "turn complexity"
+        ],
+        "concreteNumbers": "RWD accel: 40-60% (FM/FH6) or 25-45% (FH5-). RWD decel: 20-40% (FM/FH6) or 30-45% (FH5-). FWD accel: 20-30% (FM/FH6) or 15-25% (FH5-). FWD decel: 0-10% (FM/FH6) or 10-20% (FH5-). AWD center: 60-70%. Adjustments: 1-3% increments.",
+        "goalVariation": "RWD turn-entry oversteer: increase deceleration 2-3%. RWD turn-exit oversteer: decrease acceleration 2-3%. FWD turn-entry understeer: decrease deceleration 1%. FWD turn-exit understeer: decrease acceleration 2-3%. AWD mid-corner: increase center split for oversteer.",
+        "edgeCases": "AWD has front, rear, and center differentials (3 total). RWD: single rear diff. FWD: single front diff. High-power RWD: lower acceleration values (toward 25-40%). High-power FWD: lower acceleration values (toward 15-20%). Deceleration off-throttle only; acceleration on-throttle only."
+      },
+      {
+        "category": "gearing",
+        "formula": "No explicit gearing formulas provided in guide. Article references 'Introduction to Gear Tuning in Forza' as separate topic. Guide focuses on suspension, aero, brakes, differentials only.",
+        "inputs": [
+          "not covered"
+        ],
+        "concreteNumbers": "None provided (separate article required)",
+        "goalVariation": "Not addressed in this guide",
+        "edgeCases": "Gearing is mentioned but detailed tuning deferred to 'Introduction to Gear Tuning in Forza'"
+      },
+      {
+        "category": "suspension_geometry",
+        "formula": "Roll Center Height Offset: lower roll center height creates more lean; higher reduces lean. Tight tracks typically want higher offset (more responsiveness). Long sweeping curves want lower offset. Start with ARB stiffening up to 20-25 first; if still unresponsive, increase roll center equally front/rear by ~1 inch. Anti-Dive/Anti-Squat: start with dampers first. If excessive dive (braking) or squat (acceleration) remains, increase anti-dive or anti-squat slightly (small changes 2-3% recommended). Excessive anti-dive/squat can make car rigid/unresponsive in corners.",
+        "inputs": [
+          "track layout",
+          "handling balance",
+          "braking/acceleration characteristics",
+          "ARB settings"
+        ],
+        "concreteNumbers": "Roll center: start ~1 inch adjustment. ARB threshold: 20-25 value before roll center needed. Anti-dive/anti-squat: small increments; default often effective.",
+        "goalVariation": "Tight tracks: higher roll center offset for responsiveness. Sweeping curves: lower offset for balance. Dive control: increase anti-dive if excessive. Squat control: increase anti-squat if excessive.",
+        "edgeCases": "FH6/Motorsport 2023+ only feature. Roll center and camber interact — increasing roll center may require adjusting camber. Must verify suspension behavior after geometry changes."
+      }
+    ]
+  },
+  {
+    "source": "https://gamingpromax.com/forza-horizon-6-car-tuning-guide-mechanical-balance-system/",
+    "reachable": "yes",
+    "fh6Specific": "partial",
+    "reliability": "Moderate. The source provides concrete numeric ranges and baselines (e.g., tire PSI, camber degrees, brake bias percentages, differential percentages, damping values, mechanical balance targets). However, these are empirically tuned recommendations, not derived formulas. Most values depend on live testing feedback (especially mechanical balance readout) rather than mathematical functions of car properties. No explicit car-input dependencies (weight, power, CG) are disclosed; recommendations vary by discipline and drivetrain type only. The guide is practical and detailed but treats tuning as iterative adjustment, not calculation.",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "Pressure: stock/street/rally 26–28 PSI front and rear; semi-slick/slick/drift 30–33 PSI front and rear. Adjust by 1–2 PSI if sliding (lower) or overheating (raise).",
+        "inputs": [
+          "tire_compound_type"
+        ],
+        "concreteNumbers": "26–28 PSI (street), 30–33 PSI (performance), adjust ±1–2 PSI per symptom. Drift front tire near max, rear near min (asymmetric).",
+        "goalVariation": "Circuit: 28 PSI balanced. Drag: max front, min rear. Drift: max front, low rear. Off-road: compound selection primary; pressure secondary.",
+        "edgeCases": "Compound type (stock/semi-slick/slick/rally/off-road) is the primary factor; no mention of weight or load distribution affecting pressure."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber (road racing): –1.5° to –2.5° front, –1.0° to –2.0° rear. Camber (drift): up to –3.0° front, rear near 0°. Toe (front): 0.1° to 0.3° toe-out for turn-in sharpness; rear: small toe-in for stability, near 0° preferred. Caster (road racing): 6.0° to 7.0°; guide recommends 7.0° as default starting point.",
+        "inputs": [
+          "discipline",
+          "driving_style"
+        ],
+        "concreteNumbers": "Camber front –1.5 to –2.5° (circuit), –3.0° (drift). Camber rear –1.0 to –2.0° (circuit), ≈0° (drift). Toe front 0.1–0.3° (toe-out), rear near 0°. Caster 7.0° (road racing); default stock is 5.0°.",
+        "goalVariation": "Circuit: –1.5 to –2.5° front / –1.0 to –2.0° rear. Drag: slight negative front, slight positive rear. Drift: –3.0° front, near 0° rear. Off-road: not specified, treat as circuit baseline.",
+        "edgeCases": "No variation by drivetrain; no weight or corner-load inputs provided. Toe behavior described as 'unpredictable in Forza physics,' suggesting empirical tuning required."
+      },
+      {
+        "category": "springs",
+        "formula": "No numeric spring rate formula given. Qualitative guidance: smooth tarmac = stiffer; mountain passes = moderate; off-road = soft. Match stiffness to weight distribution (heavier end = stiffer springs).",
+        "inputs": [
+          "surface_type",
+          "weight_distribution"
+        ],
+        "concreteNumbers": "No concrete spring rate values (e.g., N/mm) provided. Only relative stiffness guidance (stiff/moderate/soft).",
+        "goalVariation": "Circuit (tarmac): stiff. Touge/mountains: moderate. Off-road: soft. Drag: stiff front, soft rear. Drift: soft overall.",
+        "edgeCases": "Qualitative match to weight distribution; no formula for absolute stiffness per unit weight."
+      },
+      {
+        "category": "rideheight",
+        "formula": "Start at minimum ride height; raise only if bottoming out repeatedly. No explicit numeric values provided.",
+        "inputs": [
+          "suspension_travel_headroom",
+          "track_type"
+        ],
+        "concreteNumbers": "Minimum setting as baseline; off-road and rally require raising above minimum. No millimeter values specified.",
+        "goalVariation": "Circuit: minimum. Drag: minimum front, slightly above minimum rear. Off-road: raised above minimum for suspension travel. Rally: raised above minimum.",
+        "edgeCases": "Off-road requires more ground clearance; city/touge may not. No weight or suspension stiffness inputs."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Mechanical Balance target: 0.55 to 0.65, with 0.60 as the sweet spot for road racing. Below 0.55 = understeer; above 0.65 = instability. Tuning method: 'Max out both ARBs, then soften from there until the balance number and driving feel are both right.' Off-road: soften both ARBs toward minimum (opposite of tarmac).",
+        "inputs": [
+          "mechanical_balance_readout",
+          "discipline",
+          "track_type"
+        ],
+        "concreteNumbers": "Mechanical balance target 0.55–0.65 (circuit), sweet spot 0.60. Off-road: both ARBs minimum or near-minimum. No explicit stiffness values (e.g., N/mm) provided; tuning is feedback-based.",
+        "goalVariation": "Circuit: hit 0.60 balance by adjusting stiffness. Drift: soft front, stiff rear. Off-road: both minimum. Drag: soft front, stiff rear.",
+        "edgeCases": "Mechanical Balance stat is game-specific feedback loop; no real-world ARB stiffness formula. Off-road tuning inverts tarmac logic."
+      },
+      {
+        "category": "damping",
+        "formula": "Universal baseline: rebound 18.0, bump 6.0 (front and rear). Ratio rule: rebound should be significantly higher than bump. Adjustments by symptom: unresponsive front entry = lower front damping slightly; unstable rear = lower rear damping slightly; bouncing = increase rebound slightly; too reactive = lower rebound.",
+        "inputs": [
+          "suspension_stiffness",
+          "driving_feel_feedback"
+        ],
+        "concreteNumbers": "Baseline: rebound 18.0 / bump 6.0 (both front and rear). Rebound ≫ bump (ratio ~3:1 typical). Adjustments in small increments per feel.",
+        "goalVariation": "Circuit: 18 rebound / 6 bump as baseline. Drift: soften slightly from baseline for stability. Drag: stiffer (exact values not given). Off-road: softer than tarmac for large suspension movements.",
+        "edgeCases": "No explicit formula; all adjustments are iterative feedback-based. No inputs for weight, spring rate, or suspension travel."
+      },
+      {
+        "category": "aero",
+        "formula": "Balance target: 0.40–0.45 window for road racing; start rear aero until 'around 0.50 on the balance readout.' Japan Touge/City: moderate downforce works best.",
+        "inputs": [
+          "track_type",
+          "balance_readout"
+        ],
+        "concreteNumbers": "Aero balance 0.40–0.45 (circuit sweet spot). Start by adding rear aero until balance reads ~0.50, then adjust downforce level. No specific downforce (kg or lbs) values provided.",
+        "goalVariation": "Circuit: 0.40–0.45 balance. Touge/city: moderate (no specific target). Drag: minimal or removed. Off-road: minimal. Drift: minimal.",
+        "edgeCases": "No speed or weight dependency; tuning is balance-stat driven. Game-specific feedback loop."
+      },
+      {
+        "category": "braking",
+        "formula": "Balance: 50–55% front bias for most road racing; drift builds use more front bias to prevent rear lockup mid-drift. Pressure: start at 100%; lower if locking, raise if slow to decelerate.",
+        "inputs": [
+          "discipline",
+          "driving_style"
+        ],
+        "concreteNumbers": "Brake bias 50–55% front (circuit), front-biased for drift (exact % not specified, but more aggressive). Pressure 100% baseline, adjust down if locking, up if insufficient decel.",
+        "goalVariation": "Circuit: 50–55% front. Drift: front-biased (70%+implied). Off-road: not specified. Drag: not specified.",
+        "edgeCases": "No formula; depends on driving style (lock tendency) and surface type. Drift requires heavier front bias to prevent rear lockup during angle hold."
+      },
+      {
+        "category": "differential",
+        "formula": "RWD acceleration: 50–60% for road racing, 70–90% for drift. RWD deceleration: 10–20% for road racing. FWD acceleration: 60–80%. FWD deceleration: 10–20%. AWD center balance (road racing): 60–90% rear, most setups 70–80% rear. AWD center balance (rally/off-road): 50–70% rear. Hard rule: never drop below 50% rear.",
+        "inputs": [
+          "drivetrain_type",
+          "discipline"
+        ],
+        "concreteNumbers": "RWD circuit: 50–60% accel, 10–20% decel. RWD drift: 70–90% accel, decel not specified. FWD: 60–80% accel, 10–20% decel. AWD circuit: 70–80% rear, road racing 60–90% rear, rally 50–70% rear. Absolute floor: 50% rear.",
+        "goalVariation": "Circuit (RWD): 55% accel / 15% decel typical. Circuit (AWD): 70–80% rear. Drift (RWD): 70–90% accel. Rally/off-road (AWD): 50–70% rear. Drag (RWD): ~85% accel (inferred).",
+        "edgeCases": "Values vary strictly by drivetrain (RWD/FWD/AWD) and discipline. No weight, power, or torque curve inputs provided."
+      },
+      {
+        "category": "gearing",
+        "formula": "Final drive logic: shorter (toward acceleration) = faster response on tight tracks; longer (toward speed) = higher top speed. Tuning goal: 'Set final drive so the car hits redline near the fastest point of the circuit.' Drift gearing: 'Pick your main drift gear, throttle from a dead stop, adjust final drive until you hit redline smoothly.'",
+        "inputs": [
+          "track_type",
+          "chosen_gear_for_drift",
+          "car_power_curve"
+        ],
+        "concreteNumbers": "No explicit final-drive ratio values (e.g., 3.2:1 vs 4.1:1); only relative guidance (shorter/longer). Drift: hit redline at optimal drift speed for chosen gear.",
+        "goalVariation": "Circuit (tight): bias toward shorter/acceleration ratio. Circuit (high-speed): longer/top-speed ratio. Drag: likely max short ratio (not specified). Drift: match to drift gear redline speed.",
+        "edgeCases": "No formula for optimal ratio per track or power curve. Tuning is iterative based on redline point observation and desired response."
+      }
+    ]
+  },
+  {
+    "source": "https://skycoach.gg/blog/forza-horizon-6/articles/complete-tuning-guide",
+    "reachable": "yes",
+    "fh6Specific": "partial",
+    "reliability": "Mixed — contains practical heuristics and starting-point values (e.g. PSI ranges, camber degrees) but lacks precision on exact formulas. Most recommendations are qualitative rules (\"if car doesn't turn, reduce front camber\") rather than hard equations. Treat as a guide with empirically-tested starting values, not a mathematical formula database.",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "Start AWD at 28 PSI front / 27-28 PSI rear; adjust by 0.5 PSI increments. Trucks/Heavy baseline: 32 PSI.",
+        "goalVariation": "High pressure = quick/responsive but slides; low pressure = grips but sluggish. Circuit racing typically uses mid-range; drag may favor higher pressures for responsiveness.",
+        "inputs": [
+          "drivetrain (AWD vs RWD/FWD)",
+          "vehicle type (race car, street car, truck, off-roader)"
+        ],
+        "concreteNumbers": "28 PSI front, 27-28 PSI rear (AWD); 32 PSI (trucks/heavy); 0.5 PSI increment adjustments"
+      },
+      {
+        "category": "springs",
+        "formula": "Softer suspension aids grip; lower ride height improves cornering. Race cars: 4-6; Street cars: 5-7; Prototypes: 3.5-4.5; Off-roaders: 5-7.",
+        "goalVariation": "Most AWD builds use softest or near-softest spring settings. Start at lower range; raise only if serious handling issues.",
+        "inputs": [
+          "vehicle type",
+          "goal (circuit vs off-road)"
+        ],
+        "concreteNumbers": "Ride height ranges by type: Race 4-6, Street 5-7, Prototype 3.5-4.5, Off-road 5-7"
+      },
+      {
+        "category": "rideheight",
+        "formula": "Race cars: 4-6; Street cars: 5-7; Prototypes: 3.5-4.5; Off-roaders: 5-7. Logic: Start at lower range; raise only if serious handling issues.",
+        "goalVariation": "Lower height improves cornering; higher provides better ride compliance for rough terrain.",
+        "inputs": [
+          "vehicle type",
+          "terrain/track type"
+        ],
+        "concreteNumbers": "Race 4-6, Street 5-7, Prototype 3.5-4.5, Off-road 5-7"
+      },
+      {
+        "category": "alignment",
+        "formula": "Negative camber essential for cornering grip. AWD baseline: Front camber -1.5 to -2.0°, Rear camber -1.0 to -1.5°. Toe: keep near zero. Caster: keep above 5.5° for racing.",
+        "goalVariation": "Higher caster (above 5.5°) improves stability + grip for circuit racing. Toe adjustments only if car feels unstable (rare).",
+        "inputs": [
+          "drivetrain (AWD vs RWD)",
+          "track type (circuit vs off-road)"
+        ],
+        "concreteNumbers": "Front camber -1.5 to -2.0°, Rear camber -1.0 to -1.5° (AWD); Caster >5.5° for racing; Toe near 0°"
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Stiffer generally better for AWD racing. Lower front ARB = front gets more grip (reduces understeer). Lower rear ARB = rear grippier and stable (reduces oversteer). Max out both for most AWD builds; lower selectively if understeer/oversteer persists.",
+        "goalVariation": "Circuit racing typically maximizes both. Off-road and loose-surface builds may require lower values for compliance.",
+        "inputs": [
+          "drivetrain (AWD vs RWD/FWD)",
+          "track type",
+          "handling balance preference"
+        ],
+        "concreteNumbers": "No absolute values given; qualitative: 'max out both for most AWD builds'; adjust selectively downward"
+      },
+      {
+        "category": "damping",
+        "formula": "Baseline: Front/Rear at 18.0 rebound / 6.0 bump. Rebound controls suspension return speed (keep much higher than bump). Bump controls compression speed. Adjustments: bouncy car → increase rebound slightly; too sensitive → lower rebound. Corner entry issues → lower front damping. Rear instability → lower rear damping.",
+        "goalVariation": "Circuit racing uses baseline or slight increases to rebound. Off-road/rough terrain may require lower damping for compliance.",
+        "inputs": [
+          "track type",
+          "suspension compliance requirement"
+        ],
+        "concreteNumbers": "18.0 rebound / 6.0 bump baseline"
+      },
+      {
+        "category": "braking",
+        "formula": "Balance front vs. rear to prevent spin-out. Start at 10% front increase. More front brake = safer/stable; more rear = easier cornering but spin-risk. Brake force: keep mid-range; high = stronger but lock-prone; low = easier control.",
+        "goalVariation": "Circuit racing starts at 10% front bias (more front). Drift may favor higher rear bias. Drag needs careful balance to avoid wheel-lock.",
+        "inputs": [
+          "drivetrain",
+          "track type",
+          "control input type (wheel vs controller)"
+        ],
+        "concreteNumbers": "10% front increase baseline"
+      },
+      {
+        "category": "differential",
+        "formula": "Acceleration: keep as high as possible; lower only if excessive understeer on exit. Deceleration: lower baseline; raise if corner entry instability. Center Balance (AWD only): more front = safer/easier but understeer; more rear = faster/aggressive but oversteer-risk. RWD: adjust rear differential only. FWD: adjust front differential only.",
+        "goalVariation": "Circuit racing: maximize acceleration, balance center bias to neutralize. Drift: favor rear bias for oversteer. Drag: high acceleration for launch grip.",
+        "inputs": [
+          "drivetrain (AWD vs RWD vs FWD)",
+          "corner phase (entry vs exit)",
+          "goal (circuit vs drift vs drag)"
+        ],
+        "concreteNumbers": "No absolute percentages; qualitative guidance (maximize acceleration, lower deceleration baseline, balance center bias by goal)"
+      },
+      {
+        "category": "aero",
+        "formula": "More downforce = grip; less = speed. Front: maximize downforce for cornering grip (sacrifices straight-line speed). Rear: minimize downforce for maximum speed; increase only if rear slides. Trade-off: more aero = grip; less aero = speed.",
+        "goalVariation": "Circuit racing: maximize front downforce, minimize rear (or balance for stability). Drag: minimize total aero for speed. Drift: moderate aero for controllability.",
+        "inputs": [
+          "track type",
+          "goal (circuit vs drag vs drift)"
+        ],
+        "concreteNumbers": "No absolute values; qualitative guidance based on grip vs speed trade-off"
+      },
+      {
+        "category": "gearing",
+        "formula": "Balance final drive for top speed vs. acceleration. Primary goal: 'Make your car barely hit top speed at end of longest straight.' Adjustment logic: Bouncing off limiter early → increase speed; Slow corner exit → increase acceleration.",
+        "goalVariation": "Circuit racing: optimize for track layout (frequent short straights vs few long straights). Drag: maximize top speed. Touge/Drift: favor acceleration.",
+        "inputs": [
+          "track layout (straight lengths)",
+          "goal (circuit vs drag vs drift/touge)"
+        ],
+        "concreteNumbers": "No exact formula; rule-based: 'barely hit top speed at end of longest straight'"
+      }
+    ]
+  },
+  {
+    "source": "https://vpesports.com/guides/complete-forza-horizon-6-tuning",
+    "reachable": "yes",
+    "reliability": "Low — guide explicitly avoids concrete numeric specifications, states \"Forget about absolute numbers\" for spring stiffness. Only 5 sparse numeric values found across entire guide; rest is qualitative guidance (soften/stiffen). Not suitable as reference for tuning calculator.",
+    "fh6Specific": "partial",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "28-30 PSI for front tires (specific case: addresses understeer)",
+        "inputs": [
+          "current balance"
+        ],
+        "concreteNumbers": "28-30 PSI (front only)",
+        "goalVariation": "Not specified by goal; single context given (understeer correction)",
+        "edgeCases": "No drivetrain or aero distinctions made"
+      },
+      {
+        "category": "braking",
+        "formula": "51-52% for forward bias shift; 48-50% for rear bias shift (directional adjustment only)",
+        "inputs": [
+          "balance direction"
+        ],
+        "concreteNumbers": "51-52% forward, 48-50% rear",
+        "goalVariation": "Not specified by goal",
+        "edgeCases": "Only directional recommendations; no goal-specific breakdown"
+      },
+      {
+        "category": "alignment",
+        "formula": "Caster: 6.0-7.0 degrees (safe operating range); 6.0 degrees minimum threshold",
+        "inputs": [
+          "not specified"
+        ],
+        "concreteNumbers": "6.0° minimum, 6.0-7.0° safe range",
+        "goalVariation": "Not specified by goal",
+        "edgeCases": "No camber or toe values provided; no drivetrain distinctions"
+      },
+      {
+        "category": "differential",
+        "formula": "Keep differential at 65-75% lock for throttle oversteer mitigation",
+        "inputs": [
+          "oversteer condition"
+        ],
+        "concreteNumbers": "65-75% lock",
+        "goalVariation": "Not specified by goal; single scenario given (throttle oversteer)",
+        "edgeCases": "Only one condition covered (oversteer); AWD/RWD/FWD distinctions not made"
+      },
+      {
+        "category": "springs",
+        "formula": "Author explicitly states 'Forget about absolute numbers' for spring stiffness",
+        "inputs": [
+          "none specified"
+        ],
+        "concreteNumbers": "None provided",
+        "goalVariation": "Not specified",
+        "edgeCases": "Guide explicitly disclaims numeric spring values due to in-game/real-world divergence"
+      },
+      {
+        "category": "damping",
+        "formula": "No formulas or numeric values provided",
+        "inputs": [],
+        "concreteNumbers": "None",
+        "goalVariation": "Not specified",
+        "edgeCases": "Not addressed in guide"
+      },
+      {
+        "category": "gearing",
+        "formula": "No formulas or numeric values provided",
+        "inputs": [],
+        "concreteNumbers": "None",
+        "goalVariation": "Not specified",
+        "edgeCases": "Not addressed in guide"
+      },
+      {
+        "category": "antirollbars",
+        "formula": "No formulas or numeric values provided",
+        "inputs": [],
+        "concreteNumbers": "None",
+        "goalVariation": "Not specified",
+        "edgeCases": "Not addressed in guide"
+      },
+      {
+        "category": "rideheight",
+        "formula": "No formulas or numeric values provided",
+        "inputs": [],
+        "concreteNumbers": "None",
+        "goalVariation": "Not specified",
+        "edgeCases": "Not addressed in guide"
+      },
+      {
+        "category": "aero",
+        "formula": "No formulas or numeric values provided",
+        "inputs": [],
+        "concreteNumbers": "None",
+        "goalVariation": "Not specified",
+        "edgeCases": "Not addressed in guide"
+      }
+    ]
+  },
+  {
+    "source": "Multiple sources: https://www.forzafire.com/guides/forza-horizon-6-platform-and-handling-tuning-guide (primary), https://skycoach.gg/blog/forza-horizon-6/articles/complete-tuning-guide, https://www.forzafire.com/guides/forza-horizon-6-drivetrain-tuning-guide, https://www.forzafire.com/guides/forza-horizon-6-aero-and-appearance-tuning-guide, https://forzatune.com/guide/the-fully-updated-forza-tuning-guide/",
+    "reachable": "partial",
+    "reliability": "Concrete formulas and numeric ranges present for alignment, springs/damping, ARB, braking, differential, and aero. No concrete gearing, turbo, or advanced engine tuning formulas found in accessible sources. Nexus Mods mod 113 (F.A.T.T.Y) page inaccessible (HTTP 403). Primary forza.guide blocked. Extracted data is genuine but incomplete coverage of all tuning categories.",
+    "fh6Specific": "partial",
+    "categories": [
+      {
+        "category": "springs",
+        "formula": "Rate = ((Max Rate - Min Rate) × Slider Position %) + Min Rate. Weight Distribution Adjustment: Shift roughly 4 kgf/mm of spring rate per 1% deviation from 50/50 weight distribution.",
+        "inputs": [
+          "weight distribution",
+          "vehicle class",
+          "slider position"
+        ],
+        "concreteNumbers": "Sports class RWD/AWD: Front 87-98%, Rear 58-80%; High Performance: Front 85-93%, Rear 63-84%; Race Car: Front 83-93%, Rear 59-85%. FWD front/rear values reversed.",
+        "goalVariation": "Rally: Halve the Race Spring values. Off-Road: Slider positions ~39-40% front and 6-7% rear.",
+        "edgeCases": "FWD cars swap front/rear slider targets compared to RWD/AWD. Off-road and rally disciplines require significantly different settings."
+      },
+      {
+        "category": "damping",
+        "formula": "Front Bump = Min Bump + (Front Weight in lb / 200) × 0.1. Front Rebound = Front Bump / 0.6. Rear Damping Offset based on spring rate difference: 0-1.5% (Rear Rebound -0.2, Rear Bump -0.1); 1.5-35% (Rear Rebound -0.3, Rear Bump -0.2); 36-40% (Rear Rebound -0.6, Rear Bump -0.4); >40% (Rear Rebound -1.2, Rear Bump -0.8).",
+        "inputs": [
+          "vehicle weight",
+          "spring rate difference",
+          "vehicle class"
+        ],
+        "concreteNumbers": "Min Bump by class: Sports 4.4-4.8, High Performance 4.5-4.9, Race Car 4.7-4.9. Default recommended: 18.0/6.0 (Rebound/Bump) for both front and rear. Rally/Off-Road: Add +1.0 to rebound across the board.",
+        "goalVariation": "Rally and off-road increase rebound damping by +1.0 across all positions.",
+        "edgeCases": "Heavier vehicles use higher minimum bump values. Spring rate difference significantly affects rear damping offsets."
+      },
+      {
+        "category": "alignment",
+        "formula": "No formulas provided. Specific angle recommendations by discipline:",
+        "inputs": [
+          "driving goal/discipline",
+          "vehicle class"
+        ],
+        "concreteNumbers": "Road Racing (Asphalt): Front -1.0 to -2.0°, Rear -0.5 to -1.0°. Dirt Rally: Front -0.8 to -1.2°, Rear -0.5 to -0.8°. Cross Country: Front -0.5°, Rear -0.5°. Drift: Front -3.0 to -5.0°, Rear -1.0°. Toe: Default 0.0° both ends; Front toe-out -0.1 to -0.2° or Rear toe-in +0.1 to +0.3° only as last resort. Caster: 5.0-7.0° (Light 5.0-5.5°, Mid 5.5-6.5°, Heavy 6.5-7.0°).",
+        "goalVariation": "Drift requires front camber of -3.0 to -5.0° (significantly more negative). Off-road allows more neutral settings. Road racing uses moderate negative camber.",
+        "edgeCases": "Drift requires extreme negative camber on front. Cross-country uses neutral alignment. Toe should remain at 0.0° except when correcting understeer/oversteer."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB = (Weight in lb / 2) / (200 - 200 × Stiffness%). Front/Rear Distribution: RWD +1 ARB per 1% front weight above 50%, FWD -1 per 1%, AWD +0.66 per 1%.",
+        "inputs": [
+          "vehicle weight",
+          "weight distribution",
+          "drivetrain type",
+          "vehicle class"
+        ],
+        "concreteNumbers": "Class stiffness percentages: Sports 61-65%, High Performance 40-46%, Race Car 35-62%. Discipline targets: RWD Front 18-25 / Rear 25-35, AWD Front 22-30 / Rear 28-38, FWD Front 8-15 / Rear 25-40.",
+        "goalVariation": "Off-road and rally typically use lower overall ARB stiffness. FWD cars use much lower front ARB (8-15) compared to RWD (18-25).",
+        "edgeCases": "FWD requires opposite distribution logic (-1 per 1% weight above 50%). Heavier vehicles may require higher base values."
+      },
+      {
+        "category": "rideheight",
+        "formula": "No formulas provided. Discipline-specific slider position targets:",
+        "inputs": [
+          "driving goal/discipline"
+        ],
+        "concreteNumbers": "Road Racing: Minimum both ends. Dirt Rally: 70-80% of slider range. Cross Country: Maximum both ends. Drag: Minimum front, slightly higher rear. General starting points: Race Cars 4-6, Street Cars 5-7, Prototypes 3.5-4.5, Off-roaders 5-7.",
+        "goalVariation": "Drag racing uses asymmetric height (low front). Road racing uses minimum. Off-road uses maximum. Rally uses 70-80% range.",
+        "edgeCases": "Drag racing requires front-biased low height for launch traction."
+      },
+      {
+        "category": "tires",
+        "formula": "No formulas provided. Absolute pressure values:",
+        "inputs": [
+          "vehicle weight",
+          "vehicle class"
+        ],
+        "concreteNumbers": "AWD baseline: 28 PSI front, 27-28 PSI rear. Heavy vehicles/trucks: 32 PSI. Racing cars: ~27 or 32 PSI (99% of cases). Adjustment increments: Half PSI at a time.",
+        "goalVariation": "Racing uses 27-32 PSI depending on car. Heavy vehicles use 32 PSI. Light racing cars use ~27 PSI.",
+        "edgeCases": "Heavy vehicles require higher pressures. Racing cars typically use either 27 or 32 PSI extremes."
+      },
+      {
+        "category": "braking",
+        "formula": "No formulas provided. Specific brake balance percentages by drivetrain and discipline:",
+        "inputs": [
+          "drivetrain type",
+          "driving goal/discipline"
+        ],
+        "concreteNumbers": "Road Racing: RWD 50-55% front bias, AWD 52-56% front bias, FWD 55-62% front bias. Drift/Dirt: 45-50% (rear-biased). Brake Pressure: 100% default, Range 70-200%.",
+        "goalVariation": "Drift and dirt use rear bias (45-50%). FWD uses highest front bias (55-62%). Road racing RWD uses lowest front bias (50-55%).",
+        "edgeCases": "Drift requires rear bias for controlled oversteer. FWD requires highest front bias for stopping power. AWD sits between RWD and FWD."
+      },
+      {
+        "category": "differential",
+        "formula": "No formulas provided. Specific lock percentages by drivetrain and discipline:",
+        "inputs": [
+          "drivetrain type",
+          "driving goal/discipline"
+        ],
+        "concreteNumbers": "RWD Road Racing: Acceleration 40-65%, Deceleration 15-30%. RWD Drift: Acceleration 80-100%. AWD Road Racing: Front Accel 28% / Decel 0%, Rear Accel 100% / Decel 45%, Center 70-85% rear bias. AWD Dirt Rally: Front Accel 30-40% / Decel 0-15%, Rear Accel 55-70% / Decel 20-25%, Center 65-75% rear bias. AWD Cross Country: Front Accel 35-45% / Decel 5-15%, Rear Accel 65-75% / Decel 20-25%, Center 55-65% rear bias.",
+        "goalVariation": "Drift uses maximum lock (80-100% acceleration). Road racing uses moderate locks. Dirt rally uses front-biased settings. Cross country uses mild rear bias. Wheelbase affects tolerance: longer cars up to 90% rear bias, shorter cars 70-80%.",
+        "edgeCases": "AWD requires complex center balance; long wheelbase tolerates 90% rear bias vs short wheelbase 70-80%. Drift requires near-full lock. Coast lock (0-15% range typical) vs acceleration (40-100% range)."
+      },
+      {
+        "category": "aero",
+        "formula": "No formulas provided. Aero balance targets and downforce slider ranges by drivetrain and discipline:",
+        "inputs": [
+          "drivetrain type",
+          "driving goal/discipline"
+        ],
+        "concreteNumbers": "Aero Balance (front:total ratio) — Road Racing AWD: 0.40-0.45, RWD: 0.50-0.55, FWD: 0.45-0.55. Drift: 0.45-0.50. Dirt/Cross Country: ~0.50. Front Downforce: AWD Maximum, RWD 60-80% slider, FWD High-to-Maximum. Rear Downforce: AWD Minimum, RWD 60-90%, FWD Low-to-Moderate. Aero Efficiency: Excellent >0.85, Average 0.70-0.85, Poor <0.70.",
+        "goalVariation": "AWD uses front-biased aero (0.40-0.45) to fight understeer. RWD uses neutral (0.50-0.55). FWD slightly front-biased (0.45-0.55). Drift slightly front-biased (0.45-0.50).",
+        "edgeCases": "Race aero adds 15-30 kg. Off-road downforce rarely exceeds 150 km/h effectiveness threshold. AWD uses minimum rear + maximum front. FWD uses high-to-maximum front downforce."
+      },
+      {
+        "category": "gearing",
+        "formula": "No concrete formulas available in accessible sources. Community consensus: adjust final drive first (moves all gears uniformly), then fine-tune individual gears. Middle gears should follow logarithmic spacing curve (larger 1st-2nd gap, tighter at top).",
+        "inputs": [
+          "target top speed",
+          "acceleration requirements",
+          "power band characteristics"
+        ],
+        "concreteNumbers": "Higher final drive = shorter gears, faster acceleration, lower top speed. Lower final drive = taller gears, higher top speed, slower acceleration. No numeric baselines provided.",
+        "goalVariation": "Drag racing uses very short final drive for maximum acceleration. Circuit racing balances acceleration and top speed. No discipline-specific numeric targets found.",
+        "edgeCases": "No formulas available for calculating gear ratios based on weight, power, or engine displacement."
+      }
+    ]
+  },
+  {
+    "source": "https://forums.forza.net/t/spring-rate-calculation/9405 | https://forzaquicktune.com/tuning-guide/fm7/part2/ | https://www.forzafire.com/guides/forza-horizon-6-platform-and-handling-tuning-guide | https://forums.forza.net/t/gearing-tuning/87916 | https://forums.forza.net/t/onr-roadrunner-damping-formula/3266 | https://www.forzafire.com/guides/forza-horizon-6-tires-and-rims-tuning-guide",
+    "reachable": "yes",
+    "fh6Specific": "partial",
+    "reliability": "High for formulas extracted from official Forza forums and community-vetted guides (ForzaFire, ForzaTune, QuickTune). Spring and damping formulas are physics-based and consistent across Forza titles. Gearing and differential ranges are empirical starting points verified across multiple sources. Tire pressures are baseline PSI values with weight adjustments confirmed in multiple guides.",
+    "categories": [
+      {
+        "category": "springs",
+        "formula": "Spring Rate = [(2π)² ÷ t²] × M, where M (mass) = [(Weight ÷ Front Weight %) × 0.5] ÷ 32 (front) or [Weight × (1 - Front Weight %)] ÷ 64 (rear), t = time constant (1.25s, 1.50s, or 1.75s)",
+        "inputs": [
+          "total vehicle weight",
+          "front weight distribution percentage",
+          "ride height",
+          "time constant (natural frequency)"
+        ],
+        "concreteNumbers": "K multiplier values: t=1.25: K=0.394784; t=1.50: K=0.274156; t=1.75: K=0.201420. Alternative: Front Spring = K × Weight × FrontWeightDistribution; Rear Spring = K × Weight - FrontSpring. Slider position targets (RWD examples): Sports 87-98% front / 58-80% rear; High Performance 85-93% front / 63-84% rear; Race 83-93% front / 59-85% rear. Adjustment: shift ~4 kgf/mm per 1% deviation from 50/50 weight distribution.",
+        "goalVariation": "Circuit (Road race): minimum ride height, use K=0.394784 for responsive feel. Drag: adjust for weight bias (heavier rear may need softer rear springs). Drift: stiffer springs reduce body roll but lower grip window. Rally: 1.50-1.75s (softer) for bump absorption. Off-Road: maximum spring rates to handle terrain.",
+        "edgeCases": "RWD vs FWD: FWD reverses front/rear slider targets (softer front). AWD: intermediate between RWD/FWD. Heavier vehicles (>1500 kg) require higher absolute spring rates; lighter vehicles (<1000 kg) need lower rates. Chassis reinforcement reduces required springs: Sport -2.75%, Race -5.5%."
+      },
+      {
+        "category": "gearing",
+        "formula": "For standard Forza 6-speed race gearbox: (400 - Car HP) ÷ 600 + 4.25 = Final Drive. For custom gearbox: (Stock HP - Current HP) ÷ 600 + Stock FD = Final Drive. Alternative method: (Weight ÷ HP) × (1st gear - Last gear) ÷ 100 + Stock FD",
+        "inputs": [
+          "horsepower",
+          "vehicle weight",
+          "gearbox type (standard vs custom)",
+          "current vs stock power"
+        ],
+        "concreteNumbers": "Example 1: 325 hp car: (400-325)÷600+4.25 = 4.38 FD. Example 2: 325 hp (stock 300), stock FD 3.30: (300-325)÷600+3.30 = 3.26 FD. Standard reference gearbox ratios: 2.89, 1.99, 1.49, 1.19, 0.94, 0.78",
+        "goalVariation": "Circuit: tune FD so car reaches rev limiter in top gear at end of longest straight. Drag: lower FD (shorter gears) for acceleration. Rally: higher FD (taller gears) for top speed on straights. Drift: depends on course layout—typically mid-range. Road race vs off-road minimal FD difference.",
+        "edgeCases": "Power scaling: more power = lower FD (shorter gears); less power = higher FD (taller gears). Custom gearbox vs stock: custom allows fine-tuning per-gear; final drive still follows horsepower relationship. AWD vs RWD: same formula applies; weight effect minimal."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB = (Weight in lb ÷ 2) ÷ (200 - 200 × Stiffness%). Distribution: +1 ARB per 1% front weight above 50% (RWD); -1 ARB per 1% (FWD); +0.66 per 1% (AWD).",
+        "inputs": [
+          "vehicle weight",
+          "ARB stiffness percentage",
+          "weight distribution",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Example: 2500 lb car, 63% stiffness, 1.00 distribution: (2500÷2)÷(200-126) = 16.89 ARB. Class stiffness targets: Sports 61-65%, High Performance 40-46%, Race 35-62%. Rule of thumb: ±0.5 ARB per 1% weight distribution variance from 50%.",
+        "goalVariation": "Circuit (road race): 40-65% stiffness for progressive understeer correction. Drift: 35-45% (soft) for controlled slides. Rally: 50-60% (moderate) for terrain variance. Drag: 30-40% (very soft) minimal roll effect needed. Off-Road: 35-45% soft to allow suspension travel.",
+        "edgeCases": "RWD front-heavy: increase front ARB more; RWD rear-heavy: increase rear ARB more. FWD typically wants softer front ARB (weight distribution reversed). AWD 0.66 multiplier reflects better traction distribution. Heavier vehicles (>1500 kg) use higher absolute ARB values; lighter (<1000 kg) use lower values."
+      },
+      {
+        "category": "damping",
+        "formula": "Rebound/Bump = ((WB% (lbs) × 9.8) ÷ (Spring Rate × Ride Height²)) + 1. Front-specific: Front Bump = Min Bump (class) + (Front Weight in lb ÷ 200) × 0.1; Front Rebound = Front Bump ÷ 0.6. Rear offset table based on spring rate differential.",
+        "inputs": [
+          "weight distribution percentage",
+          "curb weight (lbs)",
+          "spring rate (min/max)",
+          "ride height (inches)",
+          "front weight (lbs)",
+          "spring rate differential front-to-rear"
+        ],
+        "concreteNumbers": "Min Bump by class: Sports 4.4-4.8, High Performance 4.5-4.9, Race 4.7-4.9. Example: 3000 lb car, 52% front, 4.5 min bump: 4.5 + (1560÷200)×0.1 = 5.28 front bump; Rebound = 5.28÷0.6 = 8.8. Rear offsets: 0-1.5% SR diff: -0.2 rebound/-0.1 bump; 1.5-35%: -0.3/-0.2; 36-40%: -0.6/-0.4; >40%: -1.2/-0.8. Baseline: Bump = 40-70% of Rebound, target ~60%.",
+        "goalVariation": "Circuit: 55-65% bump ratio for balanced absorption/extension. Drag: 40-50% (softer bump) for weight transfer. Drift: 50-60% for controlled response. Rally: 55-70% to handle variable terrain. Off-Road: 45-60% for compliance.",
+        "edgeCases": "RWD heavier front: increase front bump; lighter rear: decrease rear offsets. FWD inverts weight logic (softer front damping). AWD balanced approach. High spring rate differential (>35%): apply larger rear offsets. Per 100 lb front weight change: adjust rebound ±0.1, bump inversely."
+      },
+      {
+        "category": "differential",
+        "formula": "No direct mathematical formula. Empirical tuning ranges based on drivetrain and goal. Acceleration lock % = torque distribution when accelerating; Deceleration lock % = torque coupling when braking.",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "discipline (circuit/drift/drag)",
+          "track characteristics"
+        ],
+        "concreteNumbers": "RWD: Acceleration 40-65% (road racing), Deceleration 30-40%. High-performance/race RWD: Accel 70%, Decel 34%. Prototype: Accel 96%, Decel 0%. GP race: Accel 0%, Decel 80%. Drift: Accel 65-90% (65% min for consistent lines, below 70% twitchy). FWD: Accel 50-70%, Decel 20-30%. AWD: Center Balance typically 40-60% rear torque split.",
+        "goalVariation": "Circuit (road): 40-65% accel for progressive traction. Drag: higher accel% (70-80%) for initial launch traction. Drift: 80-90% for welded feel. Rally: 50-70% varies per stage. Off-Road: 50-60% variable terrain.",
+        "edgeCases": "RWD vs FWD: RWD can go higher accel%; FWD needs lower (risk of understeer). AWD center balance affects front/rear 50/50 coupling. Turbo/supercharged high-power cars benefit from lower accel% to prevent wheelspin."
+      },
+      {
+        "category": "alignment",
+        "formula": "No direct mathematical formula. Empirical angle targets by discipline. Camber adjustment primarily affects mid-corner grip; Toe affects turn-in response; Caster affects straight-line stability and steering feel.",
+        "inputs": [
+          "discipline (circuit/drift/rally/etc)",
+          "tire compound",
+          "power level",
+          "weight distribution"
+        ],
+        "concreteNumbers": "Camber: Road race Front -1.0° to -2.0° (use -2.0° for slicks, -1.0° for sport), Rear -0.5° to -1.0°. Dirt rally Front -0.8° to -1.2°, Rear -0.5° to -0.8°. Cross country Front/Rear -0.5°. Drift Front -3.0° to -5.0°, Rear -1.0°. Toe: keep 0.0° (neutral), adjust only as last resort (-0.1° to +0.3°). Caster: 5.0° to 7.0° range; 5.0° baseline, 6.0°-7.0° for modern cars and road race.",
+        "goalVariation": "Circuit: negative camber (-1.5° avg) for cornering grip. Drag: minimal camber (-0.5°), prioritize straight-line stability. Drift: aggressive front camber (-4.0°) to maintain grip at high steering angles. Rally: moderate (-1.0°) for variable surfaces. Off-Road: minimal (-0.5°) flatter contact patch.",
+        "edgeCases": "High-power RWD: increase negative camber to manage weight transfer. FWD: front camber critical (driven wheel); may need -1.5° minimum. Slick tires: tolerate and benefit from more negative camber (-2.0°+). Street/sport tires: less aggressive (-1.0°). Static camber should equal ~0° dynamic camber at corner apex during acceleration for max grip."
+      },
+      {
+        "category": "rideheight",
+        "formula": "No mathematical formula. Slider position targets by discipline. Lower = lower center of gravity (less weight transfer, more grip) but reduces suspension travel; Higher = more suspension compliance but higher CG.",
+        "inputs": [
+          "discipline",
+          "car weight",
+          "track surface (asphalt/dirt/mixed)"
+        ],
+        "concreteNumbers": "Road race: minimum both ends. Dirt rally: 70-80% slider range. Cross country: maximum both ends. Drag: minimum front, slightly higher rear. Drift: minimum both ends. Autocross: 60-75% both ends. Note: Forza scales slider ranges by car weight automatically; position percentage already accounts for weight.",
+        "goalVariation": "Circuit: minimum everywhere (lowest CG). Drag: low front (aero balance), higher rear (anti-squat). Drift: minimum (responsiveness). Rally: 70-80% (bump absorption + control). Off-Road: high (suspension travel for terrain).",
+        "edgeCases": "Very heavy cars (>2000 lb): raising ride height prevents bottoming. Very light cars (<800 kg): can go lower. Low ride height risks suspension lockout if bumps compress springs fully."
+      },
+      {
+        "category": "tires",
+        "formula": "Tire pressure baselines: Stock/Street 31.0 PSI, Sport 31.5 PSI, Semi-Slick 32.0 PSI, Race Slicks 32.5 PSI, Rally 29-30 PSI, Off-Road 28-30 PSI, Drift 20-26 PSI. Weight adjustment: heavier vehicles require +5-7 PSI vs light vehicles on same compound.",
+        "inputs": [
+          "tire compound",
+          "vehicle weight (kg/lb)",
+          "tire width",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Reference: 600 kg car on sport tires = 28-30 PSI; 1800 kg car on sport tires = 33-35 PSI. Width increase (235→285 rear): +0.5 to +1.0 PSI. Front/Rear split by drivetrain: RWD front +0.5-1.0 PSI higher; FWD front +1.0-2.0 PSI higher; AWD equal or front +0.2-0.5 PSI.",
+        "goalVariation": "Circuit: 32-33 PSI (maximize grip). Drag: 32-35 PSI (hotter compound, higher pressure). Drift: 20-26 PSI (smaller contact patch = easier initiation). Rally: 29-30 PSI (compliance on uneven surface). Off-Road: 28-30 PSI (traction on loose surface).",
+        "edgeCases": "High-downforce aero cars: pressure may go 34-36 PSI (stiff sidewalls). Turbo/supercharged high-heat cars: monitor warm pressures (may exceed baseline). Lower pressure = larger contact patch, more grip but faster wear and heat. Higher pressure = more responsive, less peak grip."
+      },
+      {
+        "category": "aero",
+        "formula": "For standard Forza aero kit (RWD): Front Downforce = [Max Front - ((2700 - Weight) ÷ 100)], Rear = [Max Rear - ((2700 - Weight) ÷ 100)]. For custom kits: apply same formula to stock maximum. High power (≥1.5× stock): multiply resulting downforce by 1.5.",
+        "inputs": [
+          "vehicle weight",
+          "aero kit type (standard vs custom)",
+          "horsepower (for >1.5× multiplier check)",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Example RWD standard kit, 2500 lb: Front = 100 - ((2700-2500)÷100) = 100 - 2 = 98; Rear = 200 - 2 = 198. Reference: 2700 lb baseline. High power (≥1.5× stock): 600 hp = 1.5× multiplier applied to downforce totals.",
+        "goalVariation": "Circuit (road race): maximum downforce for cornering grip. Drag: minimal aero (high drag penalty). Drift: low-moderate aero (200-400 total). Rally: minimal (drag on straights hurts acceleration). High-speed circuit (250+ km/h): high downforce (200-400+ rear for stability).",
+        "edgeCases": "FWD: more sensitive to front aero (affects nose-down balance). AWD: balanced distribution. RWD rear-heavy: may benefit from higher rear wing. FWD front-heavy: may prefer lower front wing. Custom aero kits: same formula applies but on different max values."
+      },
+      {
+        "category": "braking",
+        "formula": "No direct mathematical formula for deceleration/balance. Empirical tuning: Brake Balance is front % of total braking force. Distribution affects weight transfer during braking; higher % front = more nose-down, earlier turn-in ability.",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "discipline",
+          "braking style (late/trail-brake)"
+        ],
+        "concreteNumbers": "RWD: 50-55% front brake bias (balanced). AWD: 52-56% front. FWD: 55-62% front (heavier front = needs more braking bias). Drift/Dirt: 45-50% (rear-biased for weight management). Brake pressure: no tunable formula; ABS on/off selection available.",
+        "goalVariation": "Circuit (road race): 50-55% front (balanced mid-corner braking). Drag: minimal braking (low bias %). Drift: 45-50% rear bias (manage weight transfer, drifting requirements). Rally: 50-60% (variable terrain). Trail-braking: might prefer 48-52% (earlier turn-in).",
+        "edgeCases": "Very heavy RWD (>1500 kg rear): may need 48-52% front (weight distribution). Very light FWD: might use 60%+ front (extreme weight forward). Turbo/high power: higher front bias helps manage braking distance. ABS on: can be more aggressive; ABS off: require careful tuning to avoid lockup."
+      }
+    ]
+  },
+  {
+    "source": "https://forzaquicktune.com/tuning-guide/fm7/part2/ (primary formula source); https://www.forzafire.com/guides/forza-horizon-6-platform-and-handling-tuning-guide (springs, alignment, damping); https://grindout.com/forza-6/guides/tuning (differential, spring, damping, final drive); https://www.forzafire.com/guides/forza-horizon-6-aero-and-appearance-tuning-guide (aero); https://www.forzafire.com/guides/forza-horizon-6-tires-and-rims-tuning-guide (tire pressure)",
+    "reachable": "yes",
+    "fh6Specific": "partial",
+    "reliability": "High for differential/damping/springs; moderate for gearing/aero (guidelines rather than strict formulas); formulas extracted verbatim from sources, not invented. Note: Some sources (ForzaTune, forza.guide) blocked or empty; used alternative sources with documented formulas.",
+    "categories": [
+      {
+        "category": "differential",
+        "formula": "Accel/Decel are direct percentages (0-100%) with 2% increments. Lock % = wheels forced to spin at similar speeds under throttle (accel) or off-throttle (decel). Higher accel % = more traction on power but more understeer (RWD/FWD) or harder turn-in. Higher decel % = more rear-wheel coupling on lift-off = stable entry, less rotation.",
+        "inputs": [
+          "drivetrain type",
+          "driving goal",
+          "vehicle weight (minimal impact)",
+          "engine position"
+        ],
+        "concreteNumbers": "RWD road race: 40-65% accel / 15-30% decel. RWD drift: 80-100% accel / 10-40% decel. FWD road race: 80-95% accel / 5-10% decel. AWD road race: Front 80-95% accel / 5-10% decel, Rear 50-70% accel / 10-15% decel, Center 70-80% rear bias. AWD Touge: Front 15-25% accel / 5-10% decel, Rear 65-80% accel / 15-20% decel, Center 70-80% rear. Accel increments: 2% only (always use even numbers).",
+        "goalVariation": "Circuit: RWD 50-60% accel / 10-20% decel; AWD rear 55-75%, center 70-80%. Drag: Accel ~85%, decel irrelevant. Drift: RWD 95-100% accel / 10-40% decel (baseline 100% accel / 10% decel). Rally: Moderate accel (50-70%), moderate decel (15-25%). Touge (mountain): RWD higher accel (70-80%), AWD front/rear split varies sharply.",
+        "edgeCases": "AWD: never center diff below 50%. FWD: accel max 95% (restricts turn-in), decel min 5% (instability). RWD: pure drift uses 100% accel. Drag: decel lock irrelevant. All drivetrains: decel primarily affects off-throttle entry stability, not exit."
+      },
+      {
+        "category": "gearing",
+        "formula": "Final Drive (Custom Gearbox) = Stock FD + ((Stock Power - Current Power) / 6) × 0.01. Alternative formula (Standard): FD = 4.25 + ((400 - Current Power in HP) / 6) × 0.01. Each individual gear ratio adjusts proportionally by final drive multiplier.",
+        "inputs": [
+          "current engine power (HP)",
+          "stock final drive (for custom boxes)",
+          "stock power (for custom boxes)",
+          "tire diameter",
+          "max torque RPM",
+          "redline RPM"
+        ],
+        "concreteNumbers": "250 HP ≈ FD 4.50. 400 HP = FD 4.25 (reference). 600 HP ≈ FD 3.91. Per-discipline offsets: Rally +0.50, Off-road +0.75, Drag -0.20, Drift +0.10 to base calculations. Goal is engine power band usage: choose gears to keep engine spinning in power band for best acceleration across speed range.",
+        "goalVariation": "Circuit: Standard formula applies. Drag: FD -0.20 offset (taller gears, lower accel). Drift: FD +0.10 offset (shorter gears). Rally: FD +0.50 offset. Off-road: FD +0.75 offset. Touge: similar to circuit but slightly taller (slower accel/higher top speed for technical sections).",
+        "edgeCases": "Custom gearbox requires stock FD input; standard forza boxes use 4.25 reference. AWD power distribution affects effective power input. Engine position (mid-engine, front, rear) affects RPM at given speed (tire diameter compensation). Tire width changes effective diameter slightly, requires recalculation."
+      },
+      {
+        "category": "springs",
+        "formula": "Spring Rate = ((Max Rate - Min Rate) × Slider Position %) + Min Rate. Alternative: Rate = (Total Weight / 2) × (Weight Distribution %) × (Spring % Range). Per 10lb front downforce: +0.5 spring rate. Per 25lb rear downforce: +0.5 spring rate. Adjustment for weight shift: ~4 kgf/mm per 1% deviation from 50/50 weight distribution.",
+        "inputs": [
+          "slider position (% of range)",
+          "car weight (lb or kg)",
+          "weight distribution (% front/rear)",
+          "front/rear downforce (lb)",
+          "car class (Sports/High Perf/Race)"
+        ],
+        "concreteNumbers": "Sports class: Front 87-98%, Rear 58-80% slider (RWD/AWD); High Performance: Front 85-93%, Rear 63-84%; Race Car: Front 83-93%, Rear 59-85%. Example calculation: 3000lb car, 52% front, 86% slider = 670; 100% slider = 780. Rally springs ~50% of Race values. Off-road: ~39-40% front, ~6-7% rear.",
+        "goalVariation": "Circuit: High front (87-98%), moderate rear (58-85%). Drag: moderate front/rear (around 70% each), slight rake (lower rear). Drift: Front 50%, Rear 85% (enables rotation). Rally: ~50% of race values. Off-road: ~40% front / 6% rear (compliance). Road race minimum both ends.",
+        "edgeCases": "RWD vs AWD: sliders reversed for FWD (front lower, rear higher). Rally springs are intrinsically softer (~50% of race springs). Off-road must be extremely soft. Aero adds downforce: increasing spring rate slightly per lb added. Weight change requires proportional spring adjustment."
+      },
+      {
+        "category": "damping",
+        "formula": "Bump = 40-70% of Rebound, with ~60% as baseline. Front Bump = Min Bump (class-based) + (Front Weight in lb / 200) × 0.1. Front Rebound = Front Bump / 0.6 (inverts the 60% ratio). Rear Rebound offset from front based on spring rate difference: 0-1.5% diff = -0.2 rear rebound / -0.1 rear bump; 1.5-35% diff = -0.3 rear rebound / -0.2 rear bump.",
+        "inputs": [
+          "car weight (lb)",
+          "weight distribution (% front)",
+          "spring rate difference (front vs rear)",
+          "car class (Sports/High Perf/Race)",
+          "driving goal"
+        ],
+        "concreteNumbers": "Min Bump by class: Sports 4.4-4.8, High Perf 4.5-4.9, Race Car 4.7-4.9. Example 1400kg car (52% front) on Sports: Bump = 4.6 + 0.93 = 5.5, Rebound = 5.5/0.6 = 9.2. Per 100lb weight reduction: rebound +0.1, bump -0.1. Circuit baseline: ~8 bump / ~14 rebound. Drift: ~4/4/4/4 all soft. Street: ~4 bump / ~6 rebound.",
+        "goalVariation": "Circuit: Bump ~8, Rebound ~14 (60% ratio). Drag: Stiff (bump ~10, rebound ~16). Drift: Very soft (~4/4). Street: Soft (~4/6). Rally: Moderate (~5-6 bump / 8-10 rebound). Off-road: Very soft (~1/3). Ratio always 40-70% bumps/rebound; 60% is sweet spot.",
+        "edgeCases": "Heavy cars need higher base bump. Light cars (< 2500 lb) use lower minimums. Weight transfer under load = higher bump needed. Spring rate differences between front/rear create rear offset. Mid-engine cars shift weight distribution, requiring custom bump calculations."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber angle = front/rear tilt (negative = inward lean at top). Toe = front/rear angle left-right (negative = toe-out front, positive = toe-in rear). Caster = kingpin angle (5.0-7.0° typical). No explicit mathematical formula; values are direct angle inputs (degrees). Caster adjustment: lighter cars use 5-6°, standard 6.5-7.0°.",
+        "inputs": [
+          "driving goal",
+          "tire width/compound",
+          "drivetrain",
+          "weight"
+        ],
+        "concreteNumbers": "Road racing asphalt: Camber Front -1.0° to -2.0°, Rear -0.5° to -1.0° (use -2.0° for slicks, -1.0° for sport). Dirt rally: Front -0.8° to -1.2°, Rear -0.5° to -0.8°. Cross country: Front -0.5°, Rear -0.5°. Drift: Front -3.0° to -5.0°, Rear -1.0°. Caster: 5.0-7.0° depending on weight. Toe: 0.0° default racing; front toe-out -0.1° to -0.2° for turn-in; rear toe-in +0.1° to +0.3°. Open-wheel: rear camber ~1.0° less negative than standard.",
+        "goalVariation": "Circuit: Front -1.0° to -2.0°, Rear -0.5° to -1.0° (high-grip). Drag: minimal camber (near 0°). Drift: Aggressive (-3.0° to -5.0° front). Rally: Moderate (-0.8° to -1.2° front). Off-road: Minimal (-0.5°). Street: -1.5° front / -1.0° rear.",
+        "edgeCases": "Wider tires = reduce camber (flatter contact patch). Narrower tires = increase negative camber (compensate for deflection). Asphalt needs more camber than dirt. Grip mode racing: toe at 0.0° (unpredictable in standard); drift-only uses toe adjustments. More negative camber = more cornering grip but less straight-line braking/acceleration grip."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB = (Weight in lb / 2) / (200 - 200 × ARB Stiffness %). Per weight distribution offset: RWD = +1.0 per 1% front weight deviation; FWD = -1.0 per 1%; AWD = +0.66 per 1%. Final Front/Rear = Base ± (Offset / 2).",
+        "inputs": [
+          "car weight (lb)",
+          "ARB stiffness % (slider position)",
+          "weight distribution % (front)",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Example 2500lb car, 63% stiffness: Base = (2500/2) / (200 - 200×0.63) = 16.89. RWD: Front 18-25, Rear 25-35. AWD: Front 22-30, Rear 28-38. FWD: Front 8-15, Rear 25-40. Per weight distribution: RWD +1 per 1% front (heavier front = stiffer front ARB needed). FWD -1 per 1%. AWD +0.66 per 1%.",
+        "goalVariation": "Circuit: Standard ranges above. Drag: Very stiff (max slider). Drift: Softer front to allow lean (lower front, stiffer rear). Rally: Moderate. Off-road: Soft (lower values for compliance). Touge: Tuned to minimize understeer (higher front for RWD/AWD).",
+        "edgeCases": "The 1/65 ARB exploit (minimum front / maximum rear) used on AWD to overcome understeer. Weight distribution heavily influences distribution ratio. FWD front ARBs are naturally soft due to formula. AWD benefit from stiffer fronts proportionally."
+      },
+      {
+        "category": "rideheight",
+        "formula": "Ride height has no explicit formula; it is slider position applied as a percentage of range. Target depends on goal: minimum = 0%, maximum = 100%. Adjustments affect center of gravity (lower = lower CoG), ground clearance, and aero angle.",
+        "inputs": [
+          "driving goal",
+          "track type",
+          "aero setup"
+        ],
+        "concreteNumbers": "Road race: Minimum both ends (0-10%). Dirt rally: 70-80% of range (ground clearance). Cross country: Maximum both ends (90-100%). Drag: Minimum front (~0%), slight rear rake (~30%). Drift: Moderate (40-60%).",
+        "goalVariation": "Circuit: Minimum (aero efficiency). Drag: Low front, moderate rear (launch stability). Drift: Moderate (balance). Rally: Moderate-high (clearance). Off-road: Maximum (rock avoidance). Touge: Low (aero / handling).",
+        "edgeCases": "Lower ride height increases aero efficiency but risks grounding on bumps. Drag racing requires very low front for weight transfer. Off-road/rally need height for clearance over obstacles. Aero setups benefit from lower height (increased wing angle effectiveness). Tire width affects effective ride height."
+      },
+      {
+        "category": "tires",
+        "formula": "Tire Pressure (PSI) = Baseline (compound-dependent) ± adjustments. Base pressures: Stock/Street 31.0 PSI, Sport 31.5 PSI, Semi-Slick 32.0 PSI, Race Slicks 32.5 PSI, Rally 29.0-30.0 PSI, Off-Road 28.0-30.0 PSI, Drift 20.0-26.0 PSI. Drivetrain adjustment: RWD (Front +0.5 to +1.0 PSI vs rear), FWD (Front +1.0 to +2.0 PSI vs rear), AWD (equal or front +0.2-0.5 PSI). Weight adjustment: per 600kg increment, add ~1.0-2.0 PSI. Width adjustment: +0.5-1.0 PSI per tire upgrade.",
+        "inputs": [
+          "tire compound",
+          "drivetrain",
+          "car weight",
+          "tire width upgrade",
+          "driving goal"
+        ],
+        "concreteNumbers": "Stock/Street: 31.0 PSI. Sport: 31.5 PSI. Semi-Slick: 32.0 PSI. Race Slicks: 32.5 PSI. Rally: 29-30 PSI. Off-Road: 28-30 PSI. Drift: 20-26 PSI (both ends low, rear often same or slightly lower). Weight example: 600kg kei car = 28-30 PSI on sport; 1800kg muscle car = 33-35 PSI. Adjustments in 0.5 PSI increments.",
+        "goalVariation": "Circuit: 32-32.5 PSI (slicks), baseline +0.5-1.0 front bias (RWD). Drag: Maximum front, minimum rear. Drift: 20-26 PSI (both soft). Rally: 29-30 PSI. Off-Road: 28-30 PSI. Street: 31-31.5 PSI.",
+        "edgeCases": "Weight heavily affects pressure: light cars run 28-30 PSI, heavy cars 33-35 PSI. Drift uses unusually low (20-26 PSI) for grip feel. Off-road needs lower for contact patch. Wider tire upgrades require +0.5-1.0 PSI to maintain shape stability. Track temperature affects hot pressure; all listed values are 'hot' targets. RWD benefits from front-biased pressure (turn-in). FWD needs high front (steering/power). AWD balanced (all four working equally)."
+      },
+      {
+        "category": "aero",
+        "formula": "Downforce (Front/Rear sliders) are direct percentages (0-100%). Weight Adjustment Formula (standard kits): Adjustment = (Car Weight - 2700lb) / 100lb. New Downforce = Max Downforce ± Adjustment. Balanced Rear Downforce = Base Rear + (Front Weight % - 47%) × 1.866667 lb.",
+        "inputs": [
+          "car weight (lb)",
+          "front weight distribution %",
+          "driving goal",
+          "car class/aero rating"
+        ],
+        "concreteNumbers": "Aero Balance: 0.50 = neutral, <0.50 = front-biased, >0.50 = rear-biased. Efficiency targets: >0.85 = excellent DF/drag ratio, 0.70-0.85 = average, <0.70 = poor. Example balanced setup: car with 64% front weight, base rear 137lb = 137 + (64-47)×1.87 ≈ 169lb rear. AWD road race: Max front, minimum rear (0.40-0.45 balance). RWD road race: Front 60-80%, Rear 60-90% (0.50-0.55 balance). FWD road race: High front, low-moderate rear (0.45-0.55 balance).",
+        "goalVariation": "Circuit: Max front downforce, tune rear for balance (0.45-0.55). Drag: Minimum both (near 0%, reduce drag). Drift: Race bumper only (slight front DF), skip rear wing. Rally: Minimal aero (speeds rarely exceed 150 kph). Cross-country: wasted tuning. Off-road: minimal. Street/commute: optional (low impact).",
+        "edgeCases": "AWD naturally has good rear traction, so minimum rear DF often correct (counterintuitive). RWD needs balanced DF (0.50-0.55). FWD prefers front bias (0.45-0.55). Drag racing must minimize DF (fuel economy). Drift requires minimal rear wing (rotation freedom). Aero only generates force at speed; low-speed corners (under 100 kph) = wasted PI points. Weight class affects max DF available; light cars = lower max DF."
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Balance = Front bias % (0-100%, where 50% = equal). No explicit formula; depends on weight distribution and drivetrain. Brake Pressure = % of maximum force (typical 70-200%, default 100%). Balance targets by drivetrain: RWD 50-55% front (forward weight transfer), AWD 52-56% front, FWD 55-62% front (front has more grip).",
+        "inputs": [
+          "weight distribution (% front)",
+          "drivetrain",
+          "driving goal",
+          "track surface"
+        ],
+        "concreteNumbers": "RWD: 50-55% front bias (stable grip 52-55%, aggressive 48-51%). AWD: 52-56% front. FWD: 55-62% front (more weight on front). Drift: 55-70% front (for tandem stability). Pressure: default 100%, aggressive 105-115%, soft 85-95%.",
+        "goalVariation": "Circuit: RWD 52-55% front, AWD 52-56%, FWD 55-62% (tuned for balance). Drag: front-heavy bias (60-70%) for weight transfer. Drift: 55-70% front (stability in tandems). Rally: moderate 50-55%. Touge: RWD 50-55%, standard approach.",
+        "edgeCases": "RWD needs slight front bias to match forward weight transfer under braking. FWD needs higher front bias (front already has more weight). AWD balanced between RWD and FWD. Dirt tracks may need less front bias (grip reduction). Drift tandem may use 60-70% front for rear stability. Pressure tuning: aggressive (105-115%) for better response, soft (85-95%) for modulation."
+      }
+    ]
+  },
+  {
+    "source": "https://forzaquicktune.com/tuning-guide/fm7/part2/ (FQ7), https://forums.forza.net/t/gearing-tuning/87916 (Forza Forums), https://www.forzafire.com/guides/forza-horizon-6-drivetrain-tuning-guide/ (ForzaFire Drivetrain), https://forzaquicktune.com/tuning-guide/fm7/part2/ (FQ7 Master Reference)",
+    "reachable": "yes",
+    "fh6Specific": "partial",
+    "reliability": "High for Forza 7 mechanics; partial for FH6 specifics. Formulas are from QuickTune calculator (legacy-established across FM7-FH6) and community consensus sources.",
+    "categories": [
+      {
+        "category": "gearing",
+        "formula": "Final Drive = 4.25 + ((400 - Current_HP) / 6 × 0.01) OR Final Drive = Stock_FD + ((Stock_HP - Current_HP) / 6 × 0.01) for custom gearboxes",
+        "inputs": [
+          "current horsepower",
+          "stock horsepower",
+          "stock final drive",
+          "gearbox type"
+        ],
+        "concreteNumbers": "For every 6hp change, adjust final drive by ±0.01. Example: 325hp car from 400hp reference = (400-325)/6 × 0.01 = 0.125, so 4.25 + 0.125 = 4.38 FD. Special cases: ≥800hp halve power; ≤200hp double power before calculating.",
+        "goalVariation": "Drag (maximize accel): Shorten 1st gear, maximize final drive for launch. Circuit (balanced): Use reference formula. Drift (long gears): Tune main drift gear to hit redline from dead stop. Rally/Touge: Shorter gearing for corner exit punch. Expressway/highway: Longer gearing for sustained pull.",
+        "edgeCases": "High-performance race cars without engine upgrades: reduce stock FD by 0.75. FWD/AWD may need slight adjustments but use same formula base. Reference values shift for premium gearboxes (e.g., race gearbox 2.89, 1.99, 1.49, 1.19, 0.94, 0.78)."
+      },
+      {
+        "category": "tires",
+        "formula": "Tire Pressure Base (compound-dependent): Stock/Street 28.0 psi, Sport 28.5 psi, Race 29.0 psi, Drag 29.5 psi. Adjustments: Open-wheel Front -0.5 to -4.0, Rear +0.5 to +4.0; AWD Front -1.0, Rear +1.0; FWD Front -2.0, Rear +2.0; Mid-engine Front +1.0, Rear -1.0; Rear-engine Front +2.0, Rear -2.0. High-performance race cars +0.5 psi additional.",
+        "inputs": [
+          "tire compound type",
+          "car drivetrain",
+          "engine location",
+          "car weight class"
+        ],
+        "concreteNumbers": "Stock/Street 28.0 PSI, Sport 28.5 PSI, Race 29.0 PSI, Drag 29.5 PSI. Semi-slicks ~32 PSI. Softer compounds require higher pressure (Sport/Race ~32 PSI vs Stock 26-28 PSI). High-Performance/Race/Prototype +0.5 PSI.",
+        "goalVariation": "Drag (max launch): 29.5+ PSI, maximize contact patch. Circuit (balanced grip): 29.0-29.5 PSI. Off-road/Rally: 1.9-2.0 BAR (~27-29 PSI) for flex. Drift: Lower pressure for sidewall compliance.",
+        "edgeCases": "Lower pressure = more grip but slower steering; higher pressure = sharper/faster but less cornering grip. Softer compounds (Sport/Race) need higher pressure for rigidity. Contact patch optimization crucial for grip ceiling."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber (FR reference): Utility/Street -3.0 to 0.0°, Sports -3.0 to 0.0°, High Perf -2.5 to -1.0°, Race -2.5 to -1.5°, GP Race -3.0 to -0.5°. Adjustments: FWD cars Front -0.4°, AWD cars Front/Rear -0.2°. Toe (most cars): Front 0.0°, Rear 0.0° (except older cars 0.0 to -0.3°). Caster: Utility/Street 5.0-7.0°, Race 4.0-5.0°, Prototype 6.0°, GP Race 7.0°.",
+        "inputs": [
+          "car type (street/sports/race/prototype)",
+          "drivetrain (FWD/AWD/RWD)",
+          "racing goal",
+          "tire width"
+        ],
+        "concreteNumbers": "Circuit road race FR: Front -1.0° to -2.0°, Rear -0.5° to -1.0° (use -2.0° for slicks, -1.0° for sport tires). Camber adjustments per drivetrain: FWD -0.4° front, AWD -0.2° front/rear. Caster 4.0-7.0° range per class.",
+        "goalVariation": "Circuit (grip): Negative camber per class ranges, balanced with tire temps. Drag (straight-line): Minimal camber, near zero for straight-line acceleration grip. Drift (angle): Moderate negative (-1.0 to -1.5°) for drifting. Off-road/Rally: -0.8° to -1.2° front, -0.5° to -0.8° rear for flat contact patches on dirt.",
+        "edgeCases": "More negative = more cornering grip but less braking/accel grip. Monitor tire temps: outside edge hot = more negative needed; inside hot = move toward zero. FWD needs more rear camber; RWD more front; AWD balanced. Tire width changes proportionally reduce camber."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB Stiffness = (Weight / 2) / (200 - 200 × Stiffness%). Distribution: RWD 1 unit per 1% weight distribution difference from 50%, FWD -1 per 1% difference (reversed), AWD 0.66 per 1% difference. Base stiffness ranges: Street/Utility 63-66%, Sports 61-65%, High Perf 40-55%, Race 35-62%, Prototype 80-89%, GP Race 84-90%.",
+        "inputs": [
+          "car weight",
+          "weight distribution %",
+          "car type",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Example: Street car 2500lb @ 63% stiffness: (2500/2) / (200-126) = 16.89 ARB. RWD distribution rule: 1 per 1% from 50% (e.g., 51% FWD = Front ARB 1 higher). Base ranges: Street 63-66%, Sports 61-65%, Race 35-62%, GP 84-90%.",
+        "goalVariation": "Drag (launch stability): Higher front, lower rear for traction. Circuit (balanced): Match weight distribution 1:1 for RWD. Drift (oversteer): Soft rear ARB for rotation. Off-road: Softer overall for compliance.",
+        "edgeCases": "Sway bar diameter +1mm = ~15% spring rate change. Springs and dampers also affect balance during turning, so ARB is not strict 1:1 with weight distribution. FWD reverses distribution (front gets less ARB with front-heavy setup)."
+      },
+      {
+        "category": "springs",
+        "formula": "Base Spring Calculation = ((Max - Min) × Weight%) + Min, distributed by car type. Example RWD 3000lb @ 52% WD, Sports Car (~87%): Front = 3000/2 × 52% × 87% = 679 lb/in. Adjustments: Tire width +10\" = Springs +0.5%, Downforce +10lb front = +0.5 spring rate. Chassis reinforcement Sport -2.75% front, Race -5.5% front.",
+        "inputs": [
+          "car weight",
+          "weight distribution %",
+          "car type",
+          "tire width",
+          "downforce",
+          "spring slider range"
+        ],
+        "concreteNumbers": "Front 83-104%, Rear 10-90% (car-type dependent). Weight distribution impact: ±4 kgf/mm per 1% shift from 50/50. Per 100lb weight change: spring adjustments proportional. Minimum ride heights: Street 4.0-6.0\", High Perf 3.0-4.0\", Race 3.0-5.0\", Prototype 2.5-3.5\", GP Race 2.5-4.5\".",
+        "goalVariation": "Drag (soft front): Reduce front springs for weight transfer/launch. Circuit (balanced): Match weight distribution. Drift (rear-biased): Soft rear for rotation. Rally (compliance): Higher ride height (70-80% slider), softer springs for bump absorption.",
+        "edgeCases": "Heavier cars need stiffer springs. Front-heavy cars: add springs to front, subtract from rear (~40 kgf/mm per 10% WD imbalance). Downforce couples with springs (more aero = stiffer needed). Minimum ride height enforced by suspension travel limits."
+      },
+      {
+        "category": "rideheight",
+        "formula": "Keep ride height as low as possible without bottoming out (car-type minimum enforced). Keep front/rear sliders aligned except for track-specific tuning. Minimums: Street/Sports 4.0-6.0\", High Perf 3.0-4.0\", Race 3.0-5.0\", Prototype 2.5-3.5\", GP Race 2.5-4.5\".",
+        "inputs": [
+          "car type",
+          "suspension travel limits",
+          "track characteristics"
+        ],
+        "concreteNumbers": "Road race: Minimum both ends. Rally: 70-80% slider range. Cross-country: Maximum both ends. General: Lowest possible without suspension bottoming.",
+        "goalVariation": "Circuit (low CG): Minimum both ends. Rally (clearance): 70-80% slider range. Off-road/Cross-country (jumps): Maximum both ends. Drag (stability): Balanced or slightly raked.",
+        "edgeCases": "Lower = better CG and cornering, higher = more bump compliance. Unaligned front/rear creates artificial over/understeer. Car type minimum ride height is hard limit (cannot go below without suspension damage simulation)."
+      },
+      {
+        "category": "damping",
+        "formula": "Bump should be 30-55% of Rebound (targeting ~40%). Formula: Bump ÷ 0.4 = Rebound, OR Rebound = 1.5x to 1.8x Bump. Front base ranges FR: Rebound 6.0-9.5, Bump 3.5-6.5 (car-type dependent). Front-Rear offset by spring rate differential: <-10% diff = Rear +0.4 reb/+0.2 bump; -5% to 1.5% = Rear -0.2 reb/-0.1 bump; 36-40% = Rear -0.6 reb/-0.4 bump; >40% = Rear -1.2 reb/-0.8 bump. Per 100lb front weight change: ±0.1 inverse rebound/bump.",
+        "inputs": [
+          "spring rate differential (front vs rear)",
+          "car weight",
+          "car type"
+        ],
+        "concreteNumbers": "40% rule: Bump ~40% of Rebound (range 30-55% acceptable). Example: Bump 6.0 → Rebound ~15.0. FWD +2.5 front rebound/bump, AWD +1.5 front reb/bump, Prototype/GP +3.5 rear reb/bump. Front base (Rebound 6.0-9.5, Bump 3.5-6.5) adjusted per spring rate mismatch.",
+        "goalVariation": "Softer (30% ratio): Grippier, more chassis dive, underdamped feel. Stiffer (55% ratio): Firmer, responsive, less body motion. Drift (responsive): Higher compression for quick transitions. Off-road (compliance): Softer for bump absorption.",
+        "edgeCases": "Bump = compression (absorb hit), Rebound = extension (control return). Spring stiffness determines baseline damping needs. FWD/AWD need more front damping. Weight distribution changes bump/rebound offset."
+      },
+      {
+        "category": "braking",
+        "formula": "Base distribution by car type: Street/Sports 48%, High Perf 44%, GP Race 52%. Base pressure: Street/Sports 125%, High Perf/Race 145%, GP Race 125%. Adjustments: FWD +4% distribution/-10% pressure, AWD +2%/-5%, Mid-engine -2%/+5%, Rear-engine -4%/+10%, Open-wheel +4-8%/-10-20%. Weight-based rule: Front weight % - 50 = brake bias offset (e.g., 43% front = 43-50=-7, divide by 2 = -3.5, subtract 3-4% from 50% baseline).",
+        "inputs": [
+          "car type",
+          "drivetrain (FWD/AWD/RWD)",
+          "weight distribution %",
+          "engine location"
+        ],
+        "concreteNumbers": "RWD 50-55% front, AWD 52-56%, FWD 55-62%. Base ranges: Street 48%, High Perf 44%, GP 52%. Pressure: 125-145% depending on class. Weight formula: 43% front car → 47-46% brake bias (subtract 3-4%).",
+        "goalVariation": "Drag (traction): Higher rear bias for stability. Circuit (balanced): Match weight distribution + 2-3%. Rally (landing): Rear-biased (48%) for jump landings. Drift: Rear-biased for entry stability.",
+        "edgeCases": "Forward weight transfer under braking requires front bias. FWD has more front weight, needs more front bias. Rear-engine cars shift weight rearward under braking (less front bias). Open-wheel very front-biased."
+      },
+      {
+        "category": "differential",
+        "formula": "RWD: Road 40-65% accel / 15-30% decel; Drift 80-100% accel / varies; Drag maximize accel. FWD: Apply RWD logic to front (40-65% accel), but higher accel restricts turn-in. AWD three-zone: Front, Rear, Center Balance (displays rear % torque, 50%=equal, >65% common for road). Road AWD: Front 28-40% accel/0-15% decel, Rear 55-100% accel/20-45% decel, Center 70-85% rear. Dirt AWD: Front 30-40%/0-15%, Rear 55-70%/20-25%, Center 65-75%. Cross AWD: Front 35-45%/5-15%, Rear 65-75%/20-25%, Center 55-65%.",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "racing goal",
+          "wheelbase length",
+          "power delivery"
+        ],
+        "concreteNumbers": "RWD road: 40-65% accel, 15-30% decel. RWD drift: 80-100% accel (welded-diff behavior). RWD drag: maximize accel. AWD road: Front 28%, Rear 100%, Center 70-85% rear. Accel increments in 2% only. Hard limits: FWD/AWD accel <95%, decel >5%.",
+        "goalVariation": "Drag (launch): Maximize rear accel lock. Circuit (balance): RWD 55% accel/15% decel. Drift (angle): RWD 90-100% accel for welded feel. Rally/Touge: RWD 50-60% accel. Off-road/Cross: Lower accel lock (35-45% front) for traction breaking.",
+        "edgeCases": "Accel locks diff under throttle (more oversteer RWD, understeer FWD). Decel locks off-throttle/braking (stability into corners). Center Balance >65% rear common for road (understeer prevention). Shorter wheelbase 70-80%, longer up to 90%. No front decel on road-race AWD (rarely need it)."
+      },
+      {
+        "category": "aero",
+        "formula": "Standard Forza Aero: Downforce = Max_Downforce + ((3000 - Current_Weight) / 100). Example 2900lb FWD with 100 max front/75 max rear: Front 100+2=102 (capped), Rear 75+2=77. Custom aero: Downforce = Max + ((Stock_Weight - 300 - Current_Weight) / 100). High power (≥800hp) multiplier 1.5×. Low power (≤200hp) Front ×0.7, Rear ×0.4. Aero Balance adjustment: Per 1% weight distribution deviation from 47% = ±1.87 lb rear downforce.",
+        "inputs": [
+          "car weight",
+          "current weight distribution %",
+          "car power level",
+          "aero kit max values"
+        ],
+        "concreteNumbers": "Weight base 3000lb reference. 100lb car weight difference = 1 lb downforce change. 800+ hp cars: 1.5× multiplier. <200hp cars: Front ×0.7, Rear ×0.4. Aero balance 0.40-0.45 window preferred for balance. Per 1% WD from 47%: ±1.87 rear downforce.",
+        "goalVariation": "Drag (low aero): Minimize downforce/drag trade-off. Circuit (high grip): Balance front/rear in 0.40-0.45 zone. Drift (low aero): Reduce downforce. Highway/Expressway (low drag): Minimize aero.",
+        "edgeCases": "High power cars (800+hp): Need 1.5× standard downforce. Low power (<200hp): Reduced effectiveness (front ×0.7, rear ×0.4). Weight-sensitive: heavier cars need more downforce; lighter less. Aero balance critical—imbalanced setups cause understeer/oversteer separate from suspension."
+      }
+    ]
+  },
+  {
+    "source": "https://www.forzafire.com/guides/forza-horizon-6-platform-and-handling-tuning-guide (primary); https://forzatune.com/guide/the-fully-updated-forza-tuning-guide/; https://github.com/super-android/tunelab (TuneLab); https://www.forzafire.com/guides/forza-horizon-6-tires-and-rims-tuning-guide",
+    "reachable": "yes",
+    "fh6Specific": "yes",
+    "reliability": "High for FH6-specific concrete numbers and ranges. Damping formulas tested in community; spring formulas from decompiled ForzaTune Pro source (TuneLab). Tire pressures verified against multiple guides. No mathematical derivations provided for all categories but empirical ranges well-documented.",
+    "categories": [
+      {
+        "category": "damping",
+        "formula": "Front Bump = Min Bump + (Front Weight in lb / 200) × 0.1; Front Rebound = Front Bump / 0.6; Bump should be 40-70% of Rebound (baseline ~60%)",
+        "inputs": [
+          "Front weight (lbs)",
+          "Car class (determines min bump)",
+          "Spring rate difference front-to-rear"
+        ],
+        "concreteNumbers": "Sports class min bump: 4.4-4.8; High Performance: 4.5-4.9; Race Car: 4.7-4.9. Rear damping offset by spring difference: 0-1.5% diff → Rebound -0.2/Bump -0.1; 1.5-35% → -0.3/-0.2; 36-40% → -0.6/-0.4; >40% → -1.2/-0.8",
+        "goalVariation": "Rally/Off-road: min bump set to 1.0 (softest) for terrain absorption. Road/Circuit: standard formula. Drift: higher bump values (~6-8) to absorb transitions",
+        "edgeCases": "Rally/off-road min bump overrides class minimum; FWD and AWD may need different front/rear balance than RWD"
+      },
+      {
+        "category": "springs",
+        "formula": "Rate = ((Max Rate - Min Rate) × Slider Position %) + Min Rate; Spring Rate = M × (2πf)² where f = 6.79e-7 × (PI-100)² + 2.45",
+        "inputs": [
+          "Slider position (%)",
+          "Min/Max spring rates (vary by chassis)",
+          "Vehicle mass (kg)",
+          "Performance Index class",
+          "Weight distribution (%)"
+        ],
+        "concreteNumbers": "Weight distribution adjustment: shift ~4 kgf/mm per 1% deviation from 50/50. Sports class slider ranges: Front 87-98%, Rear 58-80%. High Performance: Front 85-93%, Rear 63-84%. Race Car: Front 83-93%, Rear 59-85%. Frequency polynomial: base ~2.45 Hz, adjusted by (PI-100) squared term",
+        "goalVariation": "Sports/High Performance: moderate spring ranges. Race Car: stiffer. Rally: softer front. Drag: soft front for traction, stiff rear for stability. Drift: soft for weight transfer",
+        "edgeCases": "FWD uses opposite slider distribution vs RWD/AWD (higher rear%, lower front%). AWD: adjust ~0.66 per 1% weight vs 1.0 for RWD"
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base = (Weight in lb / 2) / (200 - 200 × Stiffness%)",
+        "inputs": [
+          "Vehicle weight (lbs)",
+          "Weight distribution (%)",
+          "Drivetrain type",
+          "Car class"
+        ],
+        "concreteNumbers": "Class stiffness targets: Sports 61-65%, High Performance 40-46%, Race Car 35-62%. Front/Rear ARB adjustment: RWD +1 per 1% front weight above 50%; FWD -1 per 1%; AWD +0.66 per 1%. Typical starting ranges: RWD Front 18-25/Rear 25-35; AWD Front 22-30/Rear 28-38; FWD Front 8-15/Rear 25-40",
+        "goalVariation": "Circuit: stiff settings for flat cornering. Rally: softer for body movement. Drift: very soft front, stiff rear for rotation. Off-road: very soft both ends",
+        "edgeCases": "FWD inverts the normal distribution (lower front stiffness). AWD center differential affects both axles"
+      },
+      {
+        "category": "alignment",
+        "formula": "No explicit formula; empirical ranges by discipline and tire grip level",
+        "inputs": [
+          "Race discipline",
+          "Tire compound grip level",
+          "Drivetrain",
+          "Vehicle weight category"
+        ],
+        "concreteNumbers": "Camber: Road racing Front -1.0° to -2.0°/Rear -0.5° to -1.0° (slick tires: -2.0°, sport: -1.0°). Rally Front -0.8° to -1.2°/Rear -0.5° to -0.8°. Cross country Front/Rear -0.5°. Drift Front -3.0° to -5.0°/Rear -1.0°. Caster 5.0-7.0° (light cars 5.0-5.5°, mid-weight 5.5-6.5°, heavy/high-speed 6.5-7.0°). Toe: 0.0° default; minimal deviation due to scrub penalty",
+        "goalVariation": "Circuit racing: high negative camber. Rally: moderate negative. Off-road: minimal camber. Drift: extreme negative front camber. Drag: minimal camber for straight-line grip",
+        "edgeCases": "Slick tires support more negative camber than sport tires. Heavier cars benefit from higher caster. FWD may need different toe strategy for steering feel"
+      },
+      {
+        "category": "tires",
+        "formula": "Pressure = Base + Adjustment; A 600 kg car wants ~3 PSI less than 1800 kg car on same compound; Wider tires: +0.5-1.0 PSI",
+        "inputs": [
+          "Tire compound type",
+          "Vehicle weight (kg)",
+          "Tire width (mm)",
+          "Discipline"
+        ],
+        "concreteNumbers": "Stock/Street 31.0 PSI; Sport 31.5 PSI; Semi-Slick 32.0 PSI; Race Slicks 32.5 PSI; Rally 29.0-30.0 PSI; Off-road 28.0-30.0 PSI; Drift 20.0-26.0 PSI. Adjust by 0.5 PSI at a time. Example: 600kg kei car on sport tires 28-30 PSI; 1800 kg muscle car same compound 33-35 PSI. Drag: ~25 PSI rear, 32 PSI front",
+        "goalVariation": "Circuit: 31-33 PSI typical. Rally: 29-30 PSI. Off-road: 28-30 PSI. Drift: 20-26 PSI (intentionally low). Drag: front-biased pressure split",
+        "edgeCases": "Drift requires unusually low pressure (high slip). Off-road varies with terrain type. Width: 235→285mm tires add 0.5-1.0 PSI"
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Bias % = front brakes / (front brakes + rear brakes) × 100; No explicit front-to-rear ratio formula given",
+        "inputs": [
+          "Drivetrain type",
+          "Braking style (trail braking or threshold)",
+          "Vehicle weight distribution"
+        ],
+        "concreteNumbers": "RWD 50-55% front. AWD 52-56% front. FWD 55-62% front. Adjustments: understeer on turn-in → increase front bias. Oversteer on trail brake → decrease front bias (+1-2% rear)",
+        "goalVariation": "Road racing: 50-56% typical. Drift: 45-50% (rear-biased). Drag: front-biased for stability on power. Rally: similar to road racing",
+        "edgeCases": "FH5 and earlier had inverted brake bias slider (bug fixed in FH6). Trail braking may require +1-2% rear bias for corner stability"
+      },
+      {
+        "category": "differential",
+        "formula": "No explicit formula; empirical lock percentages by type and phase",
+        "inputs": [
+          "Drivetrain type (RWD/AWD/FWD)",
+          "Race discipline",
+          "Acceleration vs deceleration phase",
+          "Weight distribution"
+        ],
+        "concreteNumbers": "RWD Road Racing: Acceleration 40-65%, Deceleration 15-30%. RWD Drift: Acceleration 80-100% (near-welded). AWD Road Racing: Front 45% accel/0% decel, Rear 65% accel/15% decel. AWD Center Balance: Road 70-85% rear bias (meaning % torque to rear); Rally 65-75%; Cross-country 55-65%",
+        "goalVariation": "Circuit road racing: moderate accel lock (40-65% RWD), low decel (15-30%). Drift: extreme accel lock (80-100%). Rally: mixed (65-75% AWD center). Off-road: variable terrain dependent",
+        "edgeCases": "AWD has 3 differentials (front, rear, center); center balance displayed as % rear torque. FWD accel lock reduces wheel spin on power. Deceleration lock too high causes lift-off understeer; too low causes lift-off oversteer"
+      },
+      {
+        "category": "gearing",
+        "formula": "Wheel RPM = Engine RPM / (Gear Ratio × Final Drive); V (km/h) = [RPM / (Gear × FD)] × (π × Tire Diameter mm / 1000) × (60 / 1000); Suggested FDR = (Max Engine RPM / (Target Top Speed km/h × Top Gear)) × (π × Tire Diameter mm / 1000) × (60 / 1000)",
+        "inputs": [
+          "Engine RPM (max)",
+          "Gear ratios (each gear)",
+          "Final drive ratio",
+          "Tire diameter (mm)",
+          "Target top speed (km/h)",
+          "Desired acceleration (0-60 or 0-100 time)"
+        ],
+        "concreteNumbers": "No specific value ranges provided in sources; calculated per-vehicle. Higher Final Drive = shorter gears (better accel, worse top speed). Power band optimization: keep engine RPM in sweet spot across gear changes",
+        "goalVariation": "Drag: maximize acceleration, ignore top speed (high FD). Circuit: balance accel and top speed per track. Drag: highest FD possible. Rally: varies by stage length. Touge: moderate FD for acceleration consistency",
+        "edgeCases": "Tire diameter affects all calculations directly. Supercharged/turbocharged engines may have different power band peaks. Max engine RPM varies by tune"
+      },
+      {
+        "category": "aero",
+        "formula": "Downforce scales with wing angle and vehicle speed (no explicit formula given); Aero Balance = Front Downforce / (Front + Rear Downforce)",
+        "inputs": [
+          "Drivetrain type",
+          "Race discipline",
+          "Top speed of vehicle",
+          "Track corner speeds"
+        ],
+        "concreteNumbers": "AWD: Maximum front downforce, Minimum rear downforce. RWD: 60-80% slider front, 60-90% slider rear. FWD: High to maximum front, Low to moderate rear. Aero Balance targets: Neutral 0.50; Front-biased (AWD road) 0.40-0.45; Neutral-to-rear (RWD) 0.50-0.55; Slightly front (FWD/Drift) 0.45-0.55. Efficiency benchmarks: Excellent >0.85, Average 0.70-0.85, Poor <0.70",
+        "goalVariation": "Circuit high-speed: rear downforce matters. Drag: minimal aero (all drag, no benefit). Rally: low aero. Cross-country: minimal aero. Drift: balanced front bias. Touge: moderate front-to-rear balance",
+        "edgeCases": "AWD inherent understeer compensated by max front aero. Downforce only effective at speed (negligible <80 km/h). FWD front handles steering+power+braking, needs front downforce. RWD can run more rear balanced"
+      },
+      {
+        "category": "rideheight",
+        "formula": "No explicit formula; suspension telemetry must not max out during driving. Increase ride height if telemetry bar reaches maximum",
+        "inputs": [
+          "Race discipline",
+          "Track bumps/roughness",
+          "Spring stiffness",
+          "Vehicle type"
+        ],
+        "concreteNumbers": "Road Racing: Minimum both ends (lowest CG). Dirt Rally: 70-80% slider range. Cross Country: Maximum both ends (clearance). Drag: Minimum front, slightly higher rear (rake forward). Drift: Minimum both ends",
+        "goalVariation": "Circuit: minimize for CG advantage. Off-road: maximize for terrain clearance. Drag: front rake for traction. Rally: moderate for debris clearance while maintaining CG",
+        "edgeCases": "Bottom-out detection via telemetry bar graph; adjust springs if ride height already maxed. Drag racing may use intentional front rake (weight transfer)"
+      }
+    ]
+  },
+  {
+    "source": "ForzaTune (forzatune.com), Forza.guide, Dialed Racing, ForzaFire Platform & Handling Guide, Official Forza Forums, DRTuned Racing",
+    "reachable": "partial",
+    "fh6Specific": "partial",
+    "reliability": "High for formulas and ranges; concrete per-car/per-mode numbers are minimal. Most sources provide starting-point baselines requiring track-specific refinement.",
+    "categories": [
+      {
+        "category": "springs",
+        "formula": "Rate = ((Max Rate - Min Rate) × Weight Distribution %) + Min Rate. Front Bump = Min Bump + (Front Weight in lb / 200) × 0.1. Front Rebound = Front Bump / 0.6 (bump is 60% of rebound). For frequency approach: K = (Hz² × M) / 19.56 (imperial) where K = spring rate, M = weight over axle in lbs.",
+        "inputs": [
+          "vehicle weight",
+          "weight distribution (front %)",
+          "car class",
+          "target frequency (Hz)",
+          "suspension upgrade tier"
+        ],
+        "concreteNumbers": "Min Spring Rates (lbs/in): 138.3-1279.8. Metric: 40.1-239.7 KGF/MM. Frequency targets: OEM cars 0.5-1.0Hz, lowering 1.0-1.5Hz, rally 1.5-2.0Hz, moderate aero 2.5-3.5Hz, high aero 3.5-5.0+Hz. Frequency multipliers (imperial): 1.21Hz=0.10, 1.98Hz=0.20, 2.42Hz=0.30, 2.80Hz=0.40, 3.13Hz=0.50, 3.43Hz=0.60. Weight distribution adjustment: shift ~4 kgf/mm per 1% deviation from 50/50.",
+        "goalVariation": "Circuit: 85-98% front (Sports), 58-80% rear. Drag: rear stiff / front soft for weight transfer. Rally: 70-80% ride height, softer springs. Drift: 50-75% bump stiffness (start 50%, adjust up). Off-Road: raise ride height max.",
+        "edgeCases": "FWD swaps front/rear percentages. Race Springs unlock full suspension tuning; without upgrade, alignment/spring/damping locked at factory. Bump = 40-70% of Rebound depending on class."
+      },
+      {
+        "category": "damping",
+        "formula": "Bump = 40-70% of Rebound, target ~60% baseline. Front Bump = Min Bump (class-dependent) + (Front Weight in lb / 200) × 0.1. Front Rebound = Front Bump / 0.6. Rear offset determined by spring rate difference: 0-1.5% diff = rear -0.2 rebound/-0.1 bump; 1.5-35% = -0.3 rebound/-0.2 bump; 36-40% = -0.6 rebound/-0.4 bump; >40% = -1.2 rebound/-0.8 bump.",
+        "inputs": [
+          "car weight",
+          "weight distribution",
+          "car class",
+          "suspension type",
+          "driving discipline"
+        ],
+        "concreteNumbers": "Min Bump by class: Sports 4.4-4.8, High Performance 4.5-4.9, Race Car 4.7-4.9. Rally/Off-Road: add +1.0 to rebound. Typical range: bump 5-8, rebound 8-14.",
+        "goalVariation": "Circuit: 60% bump/rebound ratio, track-specific. Drag: aggressive damping for weight transfer. Rally: +1.0 rebound to handle terrain. Drift: softer damping for predictability. Off-Road: higher rebound for compliance.",
+        "edgeCases": "Heavier cars need higher base values. Stiffer chassis requires higher rebound. Unsprung mass estimation needed for precision."
+      },
+      {
+        "category": "alignment",
+        "formula": "No explicit formula provided. Camber, toe, caster are independent sliders tuned to target negative camber at dynamic apex around 0° for max grip. Caster typically 5.0-7.0°; toe defaults 0.0° both ends; camber negative for cornering.",
+        "inputs": [
+          "driving discipline",
+          "car weight",
+          "suspension stiffness",
+          "tire compound"
+        ],
+        "concreteNumbers": "Circuit: camber front -1.0° to -2.0°, rear -0.5° to -1.0° (higher for slicks, lower for sport). Rally: front -0.8° to -1.2°, rear -0.5° to -0.8°. Drift: front -3.0° to -5.0°, rear -1.0°. Cross-country: front/rear -0.5°. Caster: light/agile 5.0-5.5°, mid-road 5.5-6.5°, heavy/high-speed 6.5-7.0°. Toe: slight front toe-out -0.1° to -0.2°, rear toe-in +0.1° to +0.3° (causes tire scrub).",
+        "goalVariation": "Circuit: moderate negative camber. Drift: aggressive front camber (-5.0°) with front toe-out (+1.0°). Rally: less aggressive. Drag: neutral alignment. Off-Road: minimal camber for flat contact patch.",
+        "edgeCases": "Dynamic camber varies with suspension flex (older cars more flex, modern cars more rigid). Static camber set so dynamic camber ≈ 0° at corner apex. Toe increases tire wear; minimize where possible."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base = (Weight in lb / 2) / (200 - 200 × Stiffness%). Distribution by drivetrain: RWD (+1 ARB per 1% front weight above 50%), AWD (+0.66 per 1%), FWD (-1 per 1%). Alternative: (Max Rate - Min Rate) × Weight Distribution % + Min Rate.",
+        "inputs": [
+          "vehicle weight",
+          "weight distribution (front %)",
+          "drivetrain type",
+          "car class"
+        ],
+        "concreteNumbers": "RWD front 18-25, rear 25-35. AWD front 22-30, rear 28-38. FWD front 8-15, rear 25-40. Example (1,400kg AWD, 60% front, High Performance 43%): Base=13.5, Front=20.1, Rear=6.9. Mechanical Balance target: 0.55-0.65 (sweet spot 0.60).",
+        "goalVariation": "Circuit: balance toward 0.60 mechanical balance. Drift: front soft/rear stiff for rotation. Rally: softer ARBs overall. Drag: stiff rear. Aero-heavy: maxed ARBs for chassis preservation.",
+        "edgeCases": "Max out both ARBs first as baseline, soften toward target. Stiff bars sharpen response and preserve alignment under load. Springs and dampers also affect balance."
+      },
+      {
+        "category": "rideheight",
+        "formula": "No explicit formula; ride height is a slider. Raising RH increases braking/accel capability but raises center of mass (hurts turning). Optimal: lowest possible without violating car-type minimum.",
+        "inputs": [
+          "driving discipline",
+          "car type minimum limit",
+          "aero package"
+        ],
+        "concreteNumbers": "Circuit: minimum both ends. Rally: 70-80% slider range. Cross-country: maximum both ends. Drag: minimum front, slightly higher rear (rake). Drift: minimum both ends.",
+        "goalVariation": "High-speed/circuit: minimize. Off-road: maximize. Drag: rake setup (front low, rear higher). Aero-heavy: raise slightly to maintain aero angle.",
+        "edgeCases": "Car-type minimum not tunable; suspension upgrade status determines full range access."
+      },
+      {
+        "category": "tires",
+        "formula": "No explicit formula; pressure varies by compound and weight. General principle: lower pressure = larger contact patch (more grip, softer ride, faster heat). Higher pressure = smaller patch (less peak grip, firmer, slower heat).",
+        "inputs": [
+          "tire compound type",
+          "vehicle weight",
+          "driving discipline",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Stock/Street 31.0 PSI, Sport 31.5 PSI, Semi-Slick 32.0 PSI, Race Slicks 32.5 PSI, Rally 29-30 PSI, Off-Road 28-30 PSI, Drift 20-26 PSI. Weight adjustment: 600kg kei car 28-30 PSI sport, 1,800kg muscle 33-35 PSI same compound. Road race slicks 31.5-32.5 PSI (front slightly higher). Drag: ~25 PSI rear, 32 PSI front. Cross-country: 1.9 BAR (~27.5 PSI).",
+        "goalVariation": "Circuit slicks: 31.5-32.5 PSI. Drift: 20-22 PSI both ends. Rally: 22-27 PSI. Drag: asymmetric (32F/25R). Off-Road: 27-30 PSI.",
+        "edgeCases": "FWD: front 1-2 PSI higher than rear. RWD: front 0.5-1.0 PSI higher. AWD: symmetric or near-equal. Grippier tires (slicks) need more pressure due to stiffer sidewalls."
+      },
+      {
+        "category": "gearing",
+        "formula": "Speed = (RPM × Tire Circumference) / (Overall Gear Ratio × 60). Final Drive for 6-speed default: (400 - Car HP) / 600 + 4.25. Custom transmission: (Stock HP - Current HP) / 600 + Stock FD. Power series model: Gear Ratio = A × n^B (starting A=3.00, B=-0.65). Top Speed per gear: (Top Speed × Last Gear Ratio) / Target Gear Ratio.",
+        "inputs": [
+          "max engine RPM",
+          "tire diameter (mm)",
+          "target top speed",
+          "horsepower",
+          "car weight",
+          "transmission type"
+        ],
+        "concreteNumbers": "Suggested FDR = (Max RPM / (Target Speed km/h × Top Gear Ratio)) × (π × Tire Diameter mm / 1000) × (60/1000). Power series example produces: 3.00, 1.91, 1.47, 1.22, 1.05, 0.94 (starting FD 3.75). Frequency values (imperial): 1.21Hz→0.10, 1.98Hz→0.20, 2.42Hz→0.30, 2.80Hz→0.40, 3.13Hz→0.50, 3.43Hz→0.60.",
+        "goalVariation": "Circuit: redline in top gear near max track speed. Drag: high FD (short gears, quicker accel, lower top speed). Top Speed: low FD (long gears, minimal aero). Rally: gears for mid-range torque.",
+        "edgeCases": "Redline in top gear at your target top speed. Engine upgrades change max RPM (recalculate). Tire size changes affect speed calculations. Weight affects acceleration feel but not ratio math."
+      },
+      {
+        "category": "differential",
+        "formula": "No explicit formula provided. Acceleration lock % = throttle-on traction behavior (higher = both wheels equal speed, massive drive, induces understeer). Deceleration/Coast lock % = braking/coasting behavior.",
+        "inputs": [
+          "drivetrain type (RWD/AWD/FWD)",
+          "car handling balance",
+          "driving mode"
+        ],
+        "concreteNumbers": "RWD acceleration lock: 40-65% for road racing (no universal formula). No concrete decel/coast percentages published. General principle: higher accel lock = oversteer reduction but turn-in reduction.",
+        "goalVariation": "Circuit: moderate accel lock (40-50%) for stability. Drift: lower accel lock for rotation. Rally: balanced per terrain. Drag: high accel lock for straight-line traction.",
+        "edgeCases": "Deceleration only functions off-throttle (during coasting/braking); game description may be inaccurate. AWD benefits from lower accel lock than RWD due to inherent traction."
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Bias is a slider: 0-100%, where 100% = front only, 0% = rear only, 50% = default balanced. No weight-distribution formula provided; tuners use starting points and adjust. General principle: weight shifts forward under braking.",
+        "inputs": [
+          "drivetrain type",
+          "weight distribution (front %)",
+          "car center of gravity",
+          "driving style"
+        ],
+        "concreteNumbers": "RWD: 50-55% front bias. AWD: 52-56%. FWD: 55-62%. Drift/Dirt: 45-50%. Brake Pressure: 100% default, 105-115% for heavy cars, 85-95% for light cars. Starting points by weight: 52% RWD (52% front weight), 54% mid/rear-engine cars (42% front weight). Conservative: 43-47% front. Aggressive (ABS on): 40-45% front.",
+        "goalVariation": "Circuit trail-braking: 53-54% rear bias (more rotation). Drag: minimal braking focus. Off-Road: softer bias (45-50%).",
+        "edgeCases": "Repeated emphasis: these are starting points; individual cars require testing. Rear lock-up more likely if bias too rear-heavy. ABS and driving style (early vs. trail-brake) affect tuning direction."
+      },
+      {
+        "category": "aero",
+        "formula": "General physics (not Forza-specific): Downforce = 1/2 × Air Density × Wing Area × Lift Coefficient × Velocity². Forza uses front splitter & rear wing angle sliders; more angle = more downforce + more drag.",
+        "inputs": [
+          "car class",
+          "weight distribution",
+          "driving discipline",
+          "target top speed",
+          "drivetrain"
+        ],
+        "concreteNumbers": "Aero Balance (front/total ratio) targets: AWD road racing 0.40-0.45, RWD 0.50-0.55, FWD 0.45-0.55, Drift 0.45-0.50. Efficiency benchmarks: >0.85 excellent, 0.70-0.85 average, <0.70 poor. Slider position: AWD road = max front / min rear, RWD road = 60-80% front / 60-90% rear, FWD road = high-max front / low-mod rear. Drag: both sliders ~zero.",
+        "goalVariation": "Circuit high-speed: maximize downforce. Top Speed runs: minimize aero (zero if possible). Drag: zero/floor both. Rally: low-moderate aero. Drift: 0.45-0.50 balance.",
+        "edgeCases": "Rear wing produces more drag per downforce unit than front splitter. Aero values are car-specific; no universal numbers. AWD needs less rear aero due to drivetrain traction."
+      }
+    ]
+  },
+  {
+    "source": "https://www.forzafire.com/guides/forza-horizon-6-platform-and-handling-tuning-guide (primary source for spring, damper, ARB, brake, alignment formulas)",
+    "reachable": "yes",
+    "fh6Specific": "yes",
+    "reliability": "High — concrete formulas with specific numerical ranges; formulas are equation-based with example calculations provided. FH6-specific and validated across multiple tuning guides.",
+    "categories": [
+      {
+        "category": "springs",
+        "formula": "Rate = ((Max Rate - Min Rate) × Slider Position %) + Min Rate. Adjust approximately 4 kgf/mm per 1% deviation from 50/50 weight distribution.",
+        "goalVariation": "Sports: Front 87-98% / Rear 58-80% (RWD/AWD, reversed for FWD); High Performance: Front 85-93% / Rear 63-84% (RWD/AWD, reversed for FWD); Race Car: Front 83-93% / Rear 59-85% (RWD/AWD, reversed for FWD)",
+        "inputs": [
+          "car weight",
+          "weight distribution",
+          "PI class",
+          "slider position",
+          "tire compound"
+        ],
+        "concreteNumbers": "Sports class example: 4 kgf/mm adjustment per 1% weight distribution difference; slider range for front 83-98%, rear 58-85%"
+      },
+      {
+        "category": "damping",
+        "formula": "Front Bump = Minimum Bump (by class) + (Front Weight in lb / 200) × 0.1; Front Rebound = Front Bump ÷ 0.6; Bump should be 40-70% of Rebound, target ~60% baseline. Rear Damping Offsets: if spring difference 0-1.5% then Rear Rebound -0.2 and Bump -0.1; if 1.5-35% then Rear Rebound -0.3 and Bump -0.2; if 36-40% then Rear Rebound -0.6 and Bump -0.4; if above 40% then Rear Rebound -1.2 and Bump -0.8",
+        "goalVariation": "Sports/All classes prioritize stability; Drift prioritizes responsiveness with lower damping values",
+        "inputs": [
+          "car weight in lbs",
+          "weight distribution",
+          "PI class",
+          "spring rate difference front/rear"
+        ],
+        "concreteNumbers": "Sports minimum bump: 4.4-4.8; High Performance: 4.5-4.9; Race Car: 4.7-4.9. Example: 1,400 kg car (3,086 lbs) at 60% front on Sports = Front Bump 4.6 + 0.93 = 5.5; Rebound = 9.2. Baseline range: Rebound 9-14, Bump 50-75% of rebound"
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base = (Weight in lb / 2) / (200 - 200 × Stiffness%). RWD distribution: +1 ARB per 1% front weight above 50%. FWD distribution: -1 ARB per 1% front weight above 50%. AWD distribution: +0.66 ARB per 1% front weight above 50%.",
+        "goalVariation": "Sports stiffness 61-65%; High Performance 40-46%; Race Car 35-62%. RWD typical 18-25 front / 25-35 rear; AWD typical 22-30 front / 28-38 rear; FWD typical 8-15 front / 25-40 rear",
+        "inputs": [
+          "car weight in lbs",
+          "weight distribution %",
+          "PI class/stiffness%",
+          "drivetrain type"
+        ],
+        "concreteNumbers": "RWD: Front 18-25, Rear 25-35; AWD: Front 22-30, Rear 28-38; FWD: Front 8-15, Rear 25-40. Example: 1,400 kg (3,086 lbs) AWD at 60% front, High Performance (43% stiffness) = Base 13.5, with +6.6 front/-6.6 rear distribution = Front 20.1, Rear 6.9"
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber: varies by discipline. Toe: keep close to zero general rule. Caster: target 5.0-7.0 degrees with light cars 5.0-5.5, mid-weight road cars 5.5-6.5, heavy/high-speed 6.5-7.0",
+        "goalVariation": "Circuit: Front camber -1.0 to -2.0°, Rear -0.5 to -1.0°; Drift: Front -3.0 to -5.0°, Rear -1.0°; Dirt Rally: Front -0.8 to -1.2°, Rear -0.5 to -0.8°; Cross-country: Front/Rear -0.5° minimal; Drag: minimum both ends with slight rear rise",
+        "inputs": [
+          "discipline",
+          "car weight",
+          "driving style"
+        ],
+        "concreteNumbers": "Camber baselines: AWD front -1.5 to -2.0°, rear -1.0 to -1.5°. Caster 5.0-7.0° depending on weight class. Toe: front +0.1 to +0.3°, rear -0.1 to -0.3°"
+      },
+      {
+        "category": "rideheight",
+        "formula": "Adjust as percentage of slider range based on discipline. Slider positions vary by car.",
+        "goalVariation": "Circuit: minimum both ends; Dirt Rally: 70-80% slider range; Cross-country: maximum both ends; Drag: minimum front, slightly higher rear",
+        "inputs": [
+          "discipline",
+          "car type",
+          "aero configuration"
+        ],
+        "concreteNumbers": "Race cars 4-6, Street cars 5-7, Prototypes 3.5-4.5, Off-roaders 5-7. Road racing: minimum both ends; Dirt rally: 70-80% of slider range; Cross-country: maximum both ends"
+      },
+      {
+        "category": "tires",
+        "formula": "Pressure directly affects contact patch size and grip. Lower pressure = more grip/smoother load transfer. Higher pressure = sharper response/reduced grip ceiling.",
+        "goalVariation": "Stock/Street/Rally: 26-28 PSI; Semi-slicks/Slicks/Drift: 30-33 PSI; AWD starting: 28 PSI front, 27-28 PSI rear; Heavy vehicles: 32 PSI; Asphalt road racing: 1.8-1.9 bar cold / 2.1-2.2 bar hot; Dirt/Rally: 1.5-1.6 bar cold / 1.8-1.9 bar hot; Off-road: 1.2-1.4 bar cold / 1.4-1.6 bar hot",
+        "inputs": [
+          "tire compound",
+          "surface type",
+          "car weight",
+          "driving style"
+        ],
+        "concreteNumbers": "AWD: 28 PSI front, 27-28 PSI rear; Heavy vehicles: 32 PSI; Racing: 30-33 PSI typical"
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Bias = front-biased percentage. RWD: 50-55% front; AWD: 52-56% front; FWD: 55-62% front; Drift/Dirt: 45-50% (rear-biased). Brake Pressure: default 100%, range typically 70-200%",
+        "goalVariation": "Road racing (RWD): 50-55% front; Road racing (AWD): 52-56% front; Road racing (FWD): 55-62% front; Drift/Dirt: 45-50% rear bias",
+        "inputs": [
+          "drivetrain type",
+          "discipline",
+          "surface"
+        ],
+        "concreteNumbers": "RWD: 50-55% front bias; AWD: 52-56% front bias; FWD: 55-62% front bias; Drift/Dirt: 45-50% (rear-biased). Brake Pressure: 70-200% range (default 100%)"
+      },
+      {
+        "category": "differential",
+        "formula": "Acceleration and Deceleration percentages apply independently. RWD/FWD Road Racing: Acceleration 40-65%, Deceleration 15-30%. Drift: Acceleration 80-100% (near-welded). AWD Road Racing recommended: Front Accel 28% / Front Decel 0%; Rear Accel 100% / Rear Decel 45%; Center Balance 70-85% (rear bias)",
+        "goalVariation": "Circuit Road Racing RWD: Accel 45-65%, Decel 15-30%; Drift RWD: Accel 80-100%, Decel variable; AWD Road: Front Accel 28%, Rear Accel 100%, Center 70-85%; AWD Rally: Front Accel 30-40%/Rear 55-70%, Center 65-75%; AWD Cross-Country: Front Accel 35-45%/Rear 65-75%, Center 55-65%",
+        "inputs": [
+          "drivetrain",
+          "discipline",
+          "surface type"
+        ],
+        "concreteNumbers": "RWD Road: Accel 45-65%, Decel 15-30%; FWD: Accel 30-60%, Decel 5-15%; AWD Front: Accel 15-25%, Decel 5-15%; AWD Rear: Accel 45-75%, Decel 5-15%"
+      },
+      {
+        "category": "aero",
+        "formula": "Aero Balance stat target: 0.40-0.45 (0 = perfectly balanced; higher = front-heavy). Adjust front and rear downforce sliders until Aero Balance reads target. More downforce = more drag and speed loss.",
+        "goalVariation": "Time attack: near-max downforce with 0.40-0.45 balance; Sprint cars: much less downforce; Circuit balanced: 0.40-0.45 target; Drag racing: minimal aero required",
+        "inputs": [
+          "car class",
+          "aerodynamic package",
+          "target discipline"
+        ],
+        "concreteNumbers": "Aero Balance target 0.40-0.45; more downforce increases drag; typical ranges provided as slider adjustments (no absolute kN values published)"
+      },
+      {
+        "category": "gearing",
+        "formula": "Final Drive adjusts all gears uniformly: lower final drive = longer gears (higher top speed, slower acceleration); higher final drive = shorter gears (lower top speed, faster acceleration). No published formula; tune by visual feedback on speed graph.",
+        "goalVariation": "Drag: drag top gear to right, curve lower gears smoothly, iterate 1st gear on strip; Circuit: balance for track top speed vs. exit acceleration; Rally/Dirt: shorter gearing for loose surface traction; Touge: medium gearing for sustained power band",
+        "inputs": [
+          "target top speed",
+          "track layout",
+          "power-to-weight ratio",
+          "engine RPM range"
+        ],
+        "concreteNumbers": "6, 7, 8, 9, or 10-speed transmission available for Race Transmission; PI cost increases with engine power; no specific numerical gear ratios (e.g., 3.5:1) are published by Forza formula"
+      }
+    ]
+  },
+  {
+    "source": "Multiple sources: ForzaTune (forzatune.com), ForzaFire (forzafire.com), forza.guide, FH6Guide (fh6guide.com), Forza Community Forums (forums.forza.net), SkyCoach, and additional tuning guides",
+    "reachable": "partial",
+    "fh6Specific": "partial",
+    "reliability": "High for tire pressure, camber/toe/caster, suspension damping, brake bias; Medium for gearing (community formulas), differential ranges; Low for aero (lacks specific drag coefficients); Most data from FH6 guides, some from FH5/FM tuning carried forward",
+    "categories": [
+      {
+        "category": "tires",
+        "formula": "Cold tire PSI set to warm target: cold pressure 27-30 PSI (1.90-2.07 bar), warm pressure target 32-34 PSI (2.20-2.35 bar). Adjustment by 0.5 PSI / 0.05 BAR increments. Weight-based rule: lighter vehicles (600 kg) 28-30 PSI on sport; heavier vehicles (1800 kg) 33-35 PSI on same compound.",
+        "inputs": [
+          "tire compound type",
+          "vehicle weight",
+          "driving goals",
+          "ambient/track conditions"
+        ],
+        "concreteNumbers": "Stock/Street 31.0 PSI, Sport 31.5 PSI, Semi-Slick 32.0 PSI, Race Slicks 32.5 PSI, Rally 29-30 PSI, Off-Road 28-30 PSI, Drift 20-26 PSI. FWD: front +1.0-2.0 PSI over rear; RWD: front +0.5-1.0 PSI over rear; AWD: equal or front +0.2-0.5 PSI; Drift: both ends ~20 PSI, symmetric or rear slightly lower",
+        "goalVariation": "Circuit (31.5-32.5 PSI race compounds) > Rally/Off-Road (28-30 PSI) > Drift (20-26 PSI low pressure for predictable slides); Drag (32+ PSI for launch stability)",
+        "edgeCases": "Weight distribution heavily affects baseline—kei cars need lower pressures than muscle cars on identical compounds. RWD vs FWD split differs due to weight transfer characteristics. AWD more uniform. Drift uses extremely low pressures (1.38-1.79 bar) to maximize tire scrub and controllability."
+      },
+      {
+        "category": "gearing",
+        "formula": "Three community-published methods: (1) HP-based for 6-speed race box: FD = 4.25 + ((400 - HP) / 600); (2) Power series: Ratio = A × n^B where A = first gear, B = -0.65, recommended (3.00, 1.91, 1.47, 1.22, 1.05, 0.94) with FD 3.75; (3) Weight-based: FD = Stock FD + ((Weight/HP) × (1st Gear - Last Gear) / 100). General principle: raising final drive shortens all gears (better acceleration, lower top speed); lowering lengthens gears (worse acceleration, higher top speed). Target: make final gear barely hit top speed at end of longest straight. Keep engine in power band (max torque to max RPM).",
+        "inputs": [
+          "vehicle horsepower",
+          "vehicle weight",
+          "drivetrain type",
+          "desired top speed",
+          "acceleration priority",
+          "track characteristics"
+        ],
+        "concreteNumbers": "Race 6-speed default (2.89, 1.99, 1.49, 1.19, 0.94, 0.78). Recommended power series (3.00, 1.91, 1.47, 1.22, 1.05, 0.94) with FD 3.75. No universal drag/rally-specific ratios published; community formulas imply FD range 2.5-5.0 depending on HP and weight.",
+        "goalVariation": "Drag: maximize FD for lowest 0-100 mph time (shorter gears, higher RPM exits). Circuit: balanced FD targeting end-of-straight top speed. Rally/Off-Road: generally higher FD than circuit for exit acceleration. Drag-specific: first gear critical for launch traction.",
+        "edgeCases": "Custom race boxes allow full gear tuning; stock boxes limited to final drive only. Turbo/naturally aspirated engines may shift power band. AWD vs RWD weight distribution affects optimal ratios. Low-HP vehicles need higher FD multipliers; high-HP vehicles lower. No FH6-specific formula published—community relying on FH5/Motorsport math."
+      },
+      {
+        "category": "alignment",
+        "formula": "Camber: negative angle (e.g., -2.0° = wheel top tilts inward). No calculation formula; specific angle targets given per discipline. Toe: default 0.0°; non-zero causes tire scrub and speed loss. Small toe-out (0.1-0.3°) can sharpen turn-in. Caster: positive angle (5.0-7.0° typical range) increases straight-line stability and self-centering; higher caster = more stable on straights, higher steering effort.",
+        "inputs": [
+          "driving discipline",
+          "drivetrain type",
+          "tire compound",
+          "weight distribution"
+        ],
+        "concreteNumbers": "Camber: Road racing asphalt -1.0 to -2.0° front, -0.5 to -1.0° rear; Dirt rally -0.8 to -1.2° front, -0.5 to -0.8° rear; Cross-country -0.5° both; Drift -3.0 to -5.0° front, -1.0° rear. Toe: 0.0° standard; max toe-out ±0.1 to ±0.3° front; toe-in ±0.1 to ±0.3° rear. Caster: 5.0-5.5° (light/agile), 5.5-6.5° (mid-weight road race), 6.5-7.0° (heavy/high-speed); AWD starting ~-1.5 to -2.0° front, -1.0 to -1.5° rear.",
+        "goalVariation": "Circuit/Road race: Camber -1.5 to -2.0° (moderate negative). Drift: Camber -3.0 to -5.0° (aggressive negative for extreme lean). Off-Road: Camber -0.5 to -0.8° (minimal, maintains contact). Toe: near 0° for all except minor toe-out adjustments. Caster: 6.5-7.0° for high-speed stability (circuit/drag), lower (5.0-5.5°) for agility (drift).",
+        "edgeCases": "Camber changes when ride height adjusts—need re-tuning after ride height modifications. FWD vs RWD: front camber more critical on FWD (steering tires). Extreme drift camber (-4 to -5°) trades braking grip for slide responsiveness. Toe scrub costs ~1-2% top speed per 0.1° deviation from 0.0°."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base ARB calculation: Base = (Weight in lb / 2) / (200 - 200 × Stiffness%). Then adjust for weight distribution and drivetrain: RWD +1 ARB per 1% weight above 50% front; FWD -1 ARB per 1% (very soft front); AWD +0.66 per 1%. General principle: stiffer front reduces understeer; stiffer rear reduces oversteer. Target ARB stiffness window 0.55-0.65 (sweet spot ~0.60). Below 0.55 understeer; above 0.65 instability.",
+        "inputs": [
+          "vehicle weight in lb/kg",
+          "weight distribution (% front)",
+          "drivetrain type (RWD/FWD/AWD)",
+          "vehicle class/stiffness tier"
+        ],
+        "concreteNumbers": "Example 1400 kg AWD, 60% front, High Performance class (43% stiffness): Base = 13.5, Front = 20.1, Rear = 6.9. Typical ranges: RWD Front 18-25 / Rear 25-35; AWD Front 22-30 / Rear 28-38; FWD Front 8-15 / Rear 25-40. Class stiffness % values: Sports 61-65%, High Performance 40-46%, Race Car 35-62%.",
+        "goalVariation": "Road race: ARB stiffness window 0.55-0.65. Drift: higher front ARB (stiffer) for weight transfer control. Off-Road: lower ARB (more compliance for rough terrain). Drag: moderate, balanced for launch stability.",
+        "edgeCases": "FWD front ARB must stay very soft (8-15) to preserve turn-in grip on steering tires. AWD center balance also influences ARB tuning perception. Weight distribution heavily impacts calculation—50/50 = base; each 1% deviation multiplied by drivetrain factor. Rally/off-road add +1.0 to rebound across board."
+      },
+      {
+        "category": "springs",
+        "formula": "Primary formula: Rate = ((Max Rate - Min Rate) × WeightRatio %) + Min Rate. Alternative natural frequency method (imperial): K (lb/in) = (Hz² × M) / 19.56, or reverse Hz = √(K / M × 19.56). Simplified weight-based: Weight × Distribution % × Frequency Multiplier = Spring Rate. Adjustment rule: shift ~4 kgf/mm (15 lb/in) per 1% deviation from 50/50 weight distribution.",
+        "inputs": [
+          "vehicle weight",
+          "weight distribution (%)",
+          "vehicle class",
+          "driving discipline",
+          "frequency/stiffness target"
+        ],
+        "concreteNumbers": "Frequency reference (Hz to multiplier): 1.21 Hz = 0.10 (Very Soft), 1.98 Hz = 0.20 (Soft), 2.42 Hz = 0.30 (Moderate), 2.80 Hz = 0.40 (Stiff), 3.43 Hz = 0.60 (Heavy aero/limited travel). Example: 2133 lb car, 52% front × 0.2 multiplier = 221.8 lb/in front spring. Racing baselines (percentage sliders): Sports class Front 87-98%, Rear 58-80%; High Performance Front 85-93%, Rear 63-84%; Race Car Front 83-93%, Rear 59-85% (RWD/AWD; FWD reverses).",
+        "goalVariation": "Circuit/Road race: higher stiffness (0.40 multiplier, 70-80% slider range). Drift: split tuning Front 50%, Rear 85%. Off-Road: much softer (0.20-0.25 multiplier, 39-40% front / 6-7% rear slider). Drag: moderate stiffness for launch stability.",
+        "edgeCases": "Rally springs half Race Spring values. Off-Road springs ~40% front / 7% rear slider position. FWD reverses spring front/rear ratios compared to RWD (softer front for steering). Physical constraint: (Front SR × Front RH × 2) + (Rear SR × Rear RH × 2) ≥ Vehicle Weight ensures adequate load support."
+      },
+      {
+        "category": "damping",
+        "formula": "Front Bump = Min Bump + (Front Weight in lb / 200) × 0.1. Front Rebound = Front Bump / 0.6 (bump is 60% of rebound). Rear Damping Offset based on spring rate difference: 0-1.5% diff Rear Rebound -0.2 / Bump -0.1; 1.5-35% diff -0.3 / -0.2; 36-40% diff -0.6 / -0.4; above 40% diff -1.2 / -0.8. General rule: Rebound should be much higher than bump (1.5x to 1.7x ratio). Rally/Off-Road add +1.0 to all rebound values.",
+        "inputs": [
+          "vehicle weight (%front)",
+          "vehicle class/tier",
+          "spring rate difference",
+          "driving discipline",
+          "suspension type"
+        ],
+        "concreteNumbers": "Example 1400 kg (60% front), Sports tier: Bump 5.5, Rebound 9.2. Bump stiffness minimum by class: Sports 4.4-4.8, High Performance 4.5-4.9, Race Car 4.7-4.9. Baseline ranges: Circuit Racing Bump Front 5.0 / Rear 4.0, Rebound Front 8.0 / Rear 7.0; Street Racing Bump Front 4.0 / Rear 3.5, Rebound Front 6.0 / Rear 5.5; Drifting Bump Front 2.0 / Rear 1.0, Rebound Front 4.0 / Rear 3.0; Off-Road Bump Front 1.0 / Rear 1.0, Rebound Front 3.0 / Rear 3.0.",
+        "goalVariation": "Circuit/Road race: higher damping ratios (bump 5-6, rebound 8-10) for stability. Street/Casual: moderate (bump 4-5, rebound 6-8). Drift: low damping (bump 2-3, rebound 4-5) for tire responsiveness. Off-Road: very low (bump 1-2, rebound 3-4) for compliance.",
+        "edgeCases": "Bump must be 50-75% of rebound (typical 60%) for proper tire contact response. Rally/off-road adds +1.0 across rebound. Weight distribution heavily impacts front bump calculation. Spring rate stiffness changes require rebalanced damping."
+      },
+      {
+        "category": "rideheight",
+        "formula": "No numerical formula published. Strategy: select slider position 0-10 range based on discipline. Ride height changes affect camber (must be re-tuned). Physical constraint: (Front SR × Front RH × 2) + (Rear SR × Rear RH × 2) ≥ Vehicle Weight.",
+        "inputs": [
+          "driving discipline",
+          "aerodynamic downforce level",
+          "suspension compliance needs"
+        ],
+        "concreteNumbers": "Road race: minimum both ends. Dirt rally: 70-80% of slider range. Cross-country: maximum both ends. Drag: minimum front, slightly higher rear. Drift: minimum both ends. General race car ranges: 4-6 (low aero focus), Street cars: 5-7, Prototypes: 3.5-4.5, Off-roaders: 5-7.",
+        "goalVariation": "Circuit/Drag: minimize RH for aerodynamic efficiency and load transfer. Rally/Off-Road: raise RH (70-80%) for ground clearance and compliance. Cross-country: maximum RH for obstacle clearance. Drift: minimize for weight transfer control.",
+        "edgeCases": "Ride height changes trigger automatic camber recalculation—always re-check alignment after RH adjustments. Low RH improves aero but reduces suspension travel; high RH improves ground clearance but increases aero drag and CG height."
+      },
+      {
+        "category": "damping",
+        "formula": "See damping entry above (rebound/bump calculations).",
+        "inputs": [
+          "vehicle weight",
+          "spring rate",
+          "discipline"
+        ],
+        "concreteNumbers": "See damping concrete numbers above.",
+        "goalVariation": "See damping goal variation above.",
+        "edgeCases": "See damping edge cases above."
+      },
+      {
+        "category": "aero",
+        "formula": "No explicit drag coefficient or downforce formula published. Conceptual rule: higher front/rear downforce slider position = more aero load = more drag = lower top speed. Balance point: set overall downforce until Aero Balance = 0.40-0.45 (higher = more front downforce). Efficiency metric: Downforce / Drag = Aero Efficiency (target 0.70-0.85 normal range).",
+        "inputs": [
+          "track type (road/drag/offroad)",
+          "top speed priority",
+          "cornering grip requirement",
+          "aerodynamic package availability"
+        ],
+        "concreteNumbers": "Aero Balance targets: Road racing AWD 0.40-0.45, Road racing RWD 0.50-0.55, neutral 0.50. Aero Efficiency ranges: above 0.85 Excellent, 0.70-0.85 Average, below 0.70 Poor. Front/Rear strategy: AWD Front Max / Rear Min; RWD Front 60-80% / Rear 60-90%; FWD Front High-Max / Rear Low-Moderate. Unit conversion: 1 KGF ≈ 2.2 lb.",
+        "goalVariation": "Circuit/Time-attack: maximize downforce (both sliders high), Aero Balance 0.40-0.45. Sprint/Speed-focused: minimize rear downforce, moderate front. Drag: moderate to high front downforce for launch; minimize rear for top speed. Off-Road: typically aero disabled or minimal.",
+        "edgeCases": "Aero sliders interact with drag—each unit of front/rear downforce increases drag. Run both front AND rear aero or neither (running one without other creates high-speed imbalance). Drag racing needs front downforce for launch stability but minimized rear for top speed. Top-heavy aero builds may require suspension stiffening to handle increased downforce loads."
+      },
+      {
+        "category": "braking",
+        "formula": "Brake bias percentage represents front/rear pressure split: 50% = equal front/rear; >50% = more front bias (stability); <50% = more rear bias (rotation). Weight transfer principle: during braking, weight shifts forward, so rear tires become lighter (prone to locking first). Therefore bias should be set so front locks slightly before rear. Formula basis: bias should approximate inverse of static weight distribution—heavier rear requires more rear brake bias, heavier front requires more front bias. Specific formula: For cars with known forward weight %, start with approximately (100 - Forward Weight %) / 2 adjusted by ~2-4% based on brake pressure and trail-braking preference.",
+        "inputs": [
+          "vehicle weight distribution (%front)",
+          "engine position (front/mid/rear)",
+          "brake pressure setting",
+          "driving technique (stability vs trail-braking)"
+        ],
+        "concreteNumbers": "General range 48-55% front bias. Road racing circuit: 52-55% front (stability-first). Trail-braking: 54-58% rear bias (front-engine cars), 55-59% rear bias (mid/rear-engine). Examples: McLaren 12C GT3 (45% forward) = 52% bias, RWD 52% forward = ~48% bias, Mid/rear-engine ~42% forward = ~54% bias. Brake pressure: 100% default; 105-115% aggressive (heavy cars); 85-95% softer (trail-brake light cars). Drift/Dirt: 45-50% (rear-biased).",
+        "goalVariation": "Circuit/Stability-first: 52-55% front bias. Trail-braking (experienced): 53-59% rear bias (varies by engine position). Drag: stabilize launch (moderate front bias). Drift: rear-biased 45-50% for rotation control. Off-Road: moderate, ~50-52% (depends on terrain and weight).",
+        "edgeCases": "Mid/rear-engine cars need higher rear brake bias (54-59%) than front-engine (52-55%). Brake pressure settings above 100% require bias adjustment upward. Higher brake pressure may lock rear earlier—adjust bias forward. Trail-braking requires higher bias understanding and precision. ABS enabled: can run lower bias (43-40%) for shortest braking distance but loses trail-braking capability."
+      },
+      {
+        "category": "differential",
+        "formula": "No universal formula; percentage-based adjustment ranges depend on drivetrain. Acceleration (throttle): higher % locks wheels together (more traction, higher understeer tendency). Deceleration (lift-off/braking): higher % increases rear coupling for stability. RWD deceleration principle: 1% decrease reduces understeer in 2-3% increments; 1% decrease in acceleration reduces turn-exit understeer. AWD center differential (torque distribution): percentage to rear (higher = more rear power/bias).",
+        "inputs": [
+          "drivetrain type (RWD/FWD/AWD)",
+          "vehicle power/weight ratio",
+          "track type",
+          "handling balance goal"
+        ],
+        "concreteNumbers": "RWD Acceleration 40-65% (road race 40-65%, drift 80-100%); Deceleration 15-30% (road race). FWD Acceleration 25-35% (must avoid below 25%). AWD typical road race: Front Accel 28% / Decel 0%, Rear Accel 100% / Decel 45%, Center Balance 70-85% rear bias. AWD rally: Center Balance 65-75% rear bias. AWD cross-country: Center Balance 55-65% rear bias. Adjustment: reduce accel by 2-3% to decrease exit understeer; reduce decel by 1% to decrease entry understeer.",
+        "goalVariation": "Road race RWD: 50-55% accel / 15-30% decel. Drift RWD: 80-100% accel / higher decel for slide control. Road race AWD: 70-85% center rear bias. Rally AWD: 65-75% center rear bias. Cross-country AWD: 55-65% center rear bias. FWD: only adjust front diff (25-35% accel range). Drag RWD: higher accel % (55-65%) for launch traction.",
+        "edgeCases": "RWD above 75% accel risks severe understeer and poor turn-in. FWD below 25% accel causes loss of grip (wheelspin). AWD center differential heavily influences feel—rear bias (70-85%) for sport/neutral, front bias (30-40%) for stability. Power delivery and suspension setup significantly affect optimal diff settings (no universal formula). Trail-braking sensitivity: higher decel % reduces lift-off oversteer but increases on-throttle understeer."
+      }
+    ]
+  },
+  {
+    "source": "https://www.forzafire.com/guides/forza-horizon-6-platform-and-handling-tuning-guide (primary formula source); https://forzatune.com/guide/the-fully-updated-forza-tuning-guide/ (mechanical balance, tuning order); https://apexspeedcraft.wordpress.com/2026/04/25/forza-horizon-tuning-reference/ (AWD meta baseline, comprehensive settings)",
+    "reachable": "partial",
+    "fh6Specific": "yes",
+    "reliability": "High for alignment, springs damping, ARBs, and mechanical balance; Medium for differential and gearing (no proprietary formulas disclosed); Aero balance targets are present but formula is not disclosed",
+    "categories": [
+      {
+        "category": "alignment",
+        "formula": "Camber (negative degrees) = discipline-dependent range. Caster range = 5.0-7.0 degrees. Toe default = 0.0 degrees (minor adjustments only 0.1-0.3 degrees).",
+        "goalVariation": "Circuit: camber -1.0 to -2.0 front / -0.5 to -1.0 rear; Drift: camber -3.0 to -5.0 front / -1.0 rear, toe +1.0 front out / -0.1 to -0.2 rear in; Rally: camber -0.8 to -1.2 front / -0.5 to -0.8 rear, toe +0.1 front out; Off-road: camber -0.5 front/rear; Cross-country: camber -0.5 front/rear",
+        "concreteNumbers": "Caster: default 5.0 degrees, recommended 6.0-7.0 degrees for road racing; Camber typical road racing: -1.5 to -2.5 front, -1.0 to -2.0 rear; AWD meta baseline: -1.8 front / -1.2 rear; Toe: 0.0 neutral (no scrub)",
+        "inputs": [
+          "car type (road/dirt/cross-country/drift)",
+          "weight and weight distribution",
+          "grip preferences"
+        ],
+        "edgeCases": "Light/agile cars use lower caster (5.0-5.5°); heavy/high-speed cars use higher caster (6.5-7.0°). FWD may tolerate different camber than RWD due to weight transfer. Drift builds use extreme front camber (-5.0°). No thermal modeling in Forza; cold and hot camber behave identically."
+      },
+      {
+        "category": "springs",
+        "formula": "Rate = ((Max Rate - Min Rate) × Slider Position %) + Min Rate. Weight distribution adjustment: Shift 4 kgf/mm (or 15 lb/in) per 1% deviation from 50/50. Example: If front is 2% lighter, subtract 8 kgf/mm from front springs and add 8 kgf/mm to rear.",
+        "goalVariation": "Circuit: stiff baseline; Drag: very stiff (maximize transfer control); Drift: moderate to stiff; Rally/Off-road: softer (65-75% of max height for suspension travel); Cross-country: maximum height for articulation",
+        "concreteNumbers": "Absolute values are car-specific (shown in tune menu, min/max per vehicle). Tune by ratio instead of absolute. AWD road baseline example: 1,400 kg car at 60% front weight uses proportional front-to-rear stiffness. Off-road/rally: 65-75% max height.",
+        "inputs": [
+          "total vehicle weight (kg)",
+          "weight distribution percentage (% on front axle)",
+          "car class tier",
+          "suspension travel requirement (road vs. dirt)"
+        ],
+        "edgeCases": "Forza spring minima are well above real-world use. Front-to-rear ratio matters more than absolute values. FWD and RWD need different front/rear balance due to weight transfer characteristics. AWD changes weight distribution under power, affecting optimal spring ratio."
+      },
+      {
+        "category": "damping",
+        "formula": "Front Bump = Min Bump (class tier) + (Front Weight in lb / 200) × 0.1. Front Rebound = Front Bump / 0.6. Core ratio: rebound ≈ 1.5x to 1.8x bump damping. Rear applies offset adjustments based on spring rate difference: 0-1.5% diff = -0.2 rebound / -0.1 bump; 1.5-35% = -0.3 / -0.2; 36-40% = -0.6 / -0.4; above 40% = -1.2 / -0.8. (FWD setups with stiffer rear use negative offsets.)",
+        "goalVariation": "Circuit: balanced rebound ratio (1.5x bump); Drift: adjusted for mid-drift stability; Drag: slightly higher bump for launch; Rally/Off-road: may differ based on terrain and spring choice",
+        "concreteNumbers": "AWD road baseline: 5.4 bump / 13.5 rebound front; 5.2 / 13.0 rear. Sports tier min bump: 4.4-4.8. High Performance: 4.5-4.9. Race Car: 4.7-4.9. Starting point example (rebound 18.0 / bump 6.0) applies as a general reference.",
+        "inputs": [
+          "total vehicle weight (kg)",
+          "front weight percentage",
+          "spring rate ratio (front vs rear)",
+          "car class (Sports/High Performance/Race Car)"
+        ],
+        "edgeCases": "Rebound significantly higher than bump is critical for platform stability. FWD (front-heavy) and RWD (rear-heavy) require different bump/rebound ratios. Large spring rate differences between axles trigger larger offset adjustments. AWD center diff effects on damping behavior not explicitly disclosed."
+      },
+      {
+        "category": "antirollbars",
+        "formula": "Base = (Weight in lb / 2) / (200 - 200 × Stiffness%). Distribution by drivetrain: RWD +1 ARB per 1% front weight above 50%; FWD -1 ARB per 1% (front becomes soft); AWD +0.66 ARB per 1% front weight above 50%. Example (1400 kg AWD car, 60% front, High Performance 43% stiffness): Base = (3,087 / 2) / (200 - 86) = 13.5. AWD adjustment +0.66 × 10 = +6.6 front, -6.6 rear. Front ARB: 20.1 | Rear ARB: 6.9",
+        "goalVariation": "Circuit (road): target mechanical balance 0.55-0.65 (sweet spot 0.60); Drift: variable (stiffer rear for oversteer); Drag: may use extreme settings; Off-road/Rally: softer overall",
+        "concreteNumbers": "Stiffer front = understeer. Stiffer rear = oversteer. AWD meta exploit: 1.0 front / 65.0 rear (extreme, dominates competitive). Road baseline: 1-65 or 12-22 (rally). Off-road: 10-12. Scale 1-65.",
+        "inputs": [
+          "total vehicle weight (kg)",
+          "weight distribution (% front)",
+          "drivetrain type (RWD/FWD/AWD)",
+          "car class stiffness % (Sports 61-65, High Perf 40-46, Race 35-62)",
+          "desired mechanical balance target"
+        ],
+        "edgeCases": "AWD uses +0.66x multiplier (softer adjustment than RWD). FWD front becomes very soft due to weight. ARBs are the primary tool for hitting mechanical balance 0.55-0.65. Extreme ARB ratios (1/65 AWD) create exploitative handling but dominate meta."
+      },
+      {
+        "category": "rideheight",
+        "formula": "No formula. Slider-based selection per track type requirement.",
+        "goalVariation": "Road racing: minimum both ends (cornering clearance). Drag: minimum front, slightly higher rear (rake forward, weight transfer). Dirt rally: 70-80% of slider range (suspension travel). Cross-country: maximum both ends (articulation). Drift: variable.",
+        "concreteNumbers": "Minimum = 0% slider. Maximum = 100% slider. Off-road tracks require 70-80% to avoid bottoming. Road requires minimum for aerodynamic efficiency and cornering.",
+        "inputs": [
+          "track surface (asphalt/dirt/mixed)",
+          "suspension travel requirement",
+          "drag/weight transfer priority"
+        ],
+        "edgeCases": "Lower height improves aero but risks bottoming on bumps. Higher height provides articulation on rough surfaces. No numerical measurement unit disclosed; slider percentage only."
+      },
+      {
+        "category": "tires",
+        "formula": "No formula for compound selection. Pressure guidelines: Stock/Street/Rally = 26-28 psi front/rear; Semi-slick/Slick/Drift = 30-33 psi front/rear; Race Slick 28.0-32.5 psi; Off-Road 15.5-21.0 psi.",
+        "goalVariation": "Circuit: slick tires, 30-33 psi (heat-stable). Drag: soft compound for launch, 55 psi front / 15 psi rear (minimum setup). Drift: semi-slick or slick, 30-33 psi. Rally: rally compound, 24-26 psi. Off-road: off-road tire, 15.5-21 psi.",
+        "concreteNumbers": "No thermal modeling in Forza; cold and hot pressure behave identically. Target drag setup: 55 front / 15 rear (minimum pressure). Road racing general: 32-34 psi hot (regardless of real physics modeling).",
+        "inputs": [
+          "track type (road/dirt/mixed)",
+          "weather (no weather effects in FH6)",
+          "compound availability"
+        ],
+        "edgeCases": "Drag builds use extreme pressure imbalance (55f/15r) for weight transfer. Off-road uses lower pressures. No tire wear or degradation in Forza; pressure is a handling tool only."
+      },
+      {
+        "category": "braking",
+        "formula": "Brake Balance ranges 50% (equal) to higher (front-biased). Brake Pressure ranges 70% to 200% (100% default balanced). No explicit formula for pressure-balance interaction.",
+        "goalVariation": "Circuit (road, high-speed): 51-53% front balance. RWD road: 50-55% front. AWD road: 52-56% front. FWD road: 55-62% front. Drift/Dirt: 45-50% (rear-biased). Drag: varies.",
+        "concreteNumbers": "Balance: 50% = equal. RWD typical: 50-55% front. AWD typical: 52-56% front. FWD typical: 55-62% front. Pressure: 100% default; above 100% increases stopping force; below 100% reduces for trail-braking finesse. Never below 48% front balance.",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "track type (road/drift/dirt)",
+          "desired braking character (stability vs. lock-up)"
+        ],
+        "edgeCases": "RWD needs balanced to slightly front-biased (weight transfer benefit). AWD needs more front bias (center diff fights rotation). FWD needs heavy front bias (no rear braking help). Drift uses rear-biased (stability in slide). Pressure above 100% without ABS risks locking rear wheels."
+      },
+      {
+        "category": "differential",
+        "formula": "No disclosed formula. Acceleration (%) controls locking under throttle: higher = wheels forced to similar speeds. Deceleration (%) controls locking off-throttle/under braking: higher = rear-wheel coupling. Center Diff (AWD only, %) controls front-rear torque split: typically 70-85% toward rear for road.",
+        "goalVariation": "RWD road: Accel 40-65%, Decel 15-30%. RWD drift: Accel 80-100% (near-welded). AWD road: Accel 45% front / 65% rear, Decel 0% front / 15% rear, Center Diff 70-85% rear bias. FWD: Accel 40-60% (varies by platform).",
+        "concreteNumbers": "RWD typical road: 60% accel / 20% decel. AWD typical road: 45% accel front / 65% accel rear, 0% decel front / 15% decel rear. Center Diff: 70-75% neutral road, 80-85% off-road. Drift (all drivetrain): 100% accel / 100% decel (fully locked).",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "track type (road/drift/dirt)",
+          "weight distribution",
+          "desired handling character"
+        ],
+        "edgeCases": "RWD too high accel = understeer. Too low accel = wheelspin. Too high decel = lift-off understeer; too low = lift-off oversteer. AWD center diff 70-85% toward rear ensures rear bias in road racing (front-heavy AWD). Drift requires max lock (100/100) for predictability."
+      },
+      {
+        "category": "gearing",
+        "formula": "No official formula disclosed. Community standard: space gears logarithmically (wider gaps at bottom, tighter at top). Final Drive is a uniform multiplier applied to all gears: lower FD = taller gears (higher top speed, slower accel); higher FD = shorter gears (lower top speed, better accel). Calculators use power-to-weight ratio to suggest FD but don't publish the calculation.",
+        "goalVariation": "Circuit: FD tuned for optimal power band usage without bouncing rev limiter. Drag: short gears for low-end launch power, high FD. Drift: medium-short for throttle control. Rally/Off-road: variable per terrain and car.",
+        "concreteNumbers": "Final Drive has no disclosed numerical formula. Individual gear spacing: progressive logarithmic curve. More spread 1st-to-2nd (larger acceleration difference); tighter spacing at top end (air resistance grows exponentially). No exact ratios provided in sources.",
+        "inputs": [
+          "vehicle power-to-weight ratio",
+          "top speed target",
+          "acceleration preference",
+          "rev limiter position",
+          "track type (circuit/drag/drift)"
+        ],
+        "edgeCases": "Drag builds use extreme short gearing with high FD for 0-100 km/h. Circuit tunes balance top speed and power band. AWD distributes torque differently, affecting gear load. Engine type (ICE vs EV) affects power delivery curve but no explicit gearing formula change disclosed."
+      },
+      {
+        "category": "aero",
+        "formula": "No disclosed formula. Aero Balance = target value (0.40-0.55 depending on drivetrain). Front and rear downforce adjusted via slider to hit target balance. Relationship: more wing angle = more downforce + more drag (lower top speed).",
+        "goalVariation": "AWD road racing: Aero Balance 0.40-0.45 (front-biased, front max / rear min). RWD road racing: 0.50-0.55 (neutral to rear-biased). FWD road racing: 0.45-0.55 (slightly front-biased). Drift: 0.45-0.50. Circuit tight: maximize downforce. Top-speed tracks: minimize downforce.",
+        "concreteNumbers": "Aero Balance neutral = 0.50. AWD target: 0.40-0.45 (front biased). RWD target: 0.50-0.55. FWD target: 0.45-0.55. Aero Efficiency benchmark: Above 0.85 = Excellent, 0.70-0.85 = Average, Below 0.70 = Poor. Unit conversion: 1 kgf ≈ 2.2 lb downforce.",
+        "inputs": [
+          "drivetrain (RWD/FWD/AWD)",
+          "track type (tight circuit vs. top-speed)",
+          "aero package availability"
+        ],
+        "edgeCases": "AWD typically runs front max / rear min (extreme aero imbalance due to stability needs). RWD neutral-to-rear biased. Only effective at speed (no benefit at low speeds). No disclosed mathematical relationship between slider position and downforce magnitude."
+      },
+      {
+        "category": "gearing",
+        "formula": "Tuning sequence order (applied sequentially): Tires → Springs → Ride Height → Alignment → ARBs → Damping → Brakes → Differential → Aero → Gearing. Each adjustment cascades, so order matters.",
+        "goalVariation": "Order is universal across all disciplines but the values plugged into each step vary by goal (circuit/drift/drag/rally/off-road).",
+        "concreteNumbers": "This is a sequence framework, not numerical values. Apply in this exact order for reproducible results.",
+        "inputs": [
+          "all tuning categories (sequential application)"
+        ],
+        "edgeCases": "Skipping order or tuning in parallel reduces visibility into which change caused the effect. This sequence ensures methodical tuning and reproducibility."
+      }
+    ]
+  }
+]
