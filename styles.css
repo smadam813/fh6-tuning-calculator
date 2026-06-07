@@ -113,34 +113,79 @@ input:focus, select:focus { outline: none; border-color: var(--accent-2); box-sh
 .ghost-btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 13px; cursor: pointer; transition: .15s; }
 .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ---------- Handling-bias slider ---------- */
-.bias-row {
+/* ---------- Tuning dials (handling bias + overall stiffness) ---------- */
+.dials { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 14px; }
+.dial-row {
   background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
-  padding: 12px 14px 10px; margin: 0 0 14px;
+  padding: 12px 14px 10px;
 }
-.bias-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.bias-title { font-size: 13px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: .4px; }
-.bias-value { font-size: 13px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-.bias-value.under { color: var(--accent-2); }
-.bias-value.over { color: var(--warn); }
-.bias-row input[type="range"] {
+.dial-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.dial-title { font-size: 13px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: .4px; }
+.dial-value { font-size: 13px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+/* directional value colors: bias = blue↔orange, stiffness = teal↔red */
+.dial-value.under { color: var(--accent-2); }
+.dial-value.over { color: var(--warn); }
+.dial-value.soft { color: #5ec8c8; }
+.dial-value.hard { color: var(--danger); }
+.dial-row input[type="range"] {
   -webkit-appearance: none; appearance: none; width: 100%; height: 6px; padding: 0; margin: 4px 0;
-  background: linear-gradient(90deg, var(--accent-2) 0%, var(--line) 50%, var(--warn) 100%);
   border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
 }
-.bias-row input[type="range"]:focus { outline: none; box-shadow: 0 0 0 3px rgba(70,167,255,.18); }
-.bias-row input[type="range"]::-webkit-slider-thumb {
+.bias-row input[type="range"]  { background: linear-gradient(90deg, var(--accent-2) 0%, var(--line) 50%, var(--warn) 100%); }
+.stiff-row input[type="range"] { background: linear-gradient(90deg, #5ec8c8 0%, var(--line) 50%, var(--danger) 100%); }
+.dial-row input[type="range"]:focus { outline: none; box-shadow: 0 0 0 3px rgba(70,167,255,.18); }
+.dial-row input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
   background: var(--text); border: 2px solid var(--bg); box-shadow: var(--shadow); cursor: pointer;
 }
-.bias-row input[type="range"]::-moz-range-thumb {
+.dial-row input[type="range"]::-moz-range-thumb {
   width: 18px; height: 18px; border-radius: 50%;
   background: var(--text); border: 2px solid var(--bg); box-shadow: var(--shadow); cursor: pointer;
 }
-.bias-ends { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-.bias-reset { background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; font: inherit; font-size: 11.5px; cursor: pointer; transition: .15s; }
-.bias-reset:hover { color: var(--accent); border-color: var(--accent); }
-.bias-hint { margin-top: 9px; }
+.dial-ends { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.dial-reset { background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; font: inherit; font-size: 11.5px; cursor: pointer; transition: .15s; }
+.dial-reset:hover { color: var(--accent); border-color: var(--accent); }
+.dial-reset:focus-visible { outline: none; color: var(--accent); border-color: var(--accent-2); box-shadow: 0 0 0 3px rgba(70,167,255,.18); }
+.dial-hint { margin-top: 9px; }
+.dial-hint b { color: var(--text); }
+.dial-hint i { color: var(--accent-2); font-style: normal; }
+
+/* ---------- "What the sliders changed" panel ---------- */
+.slider-changes {
+  background: linear-gradient(180deg, rgba(61,220,132,.05), rgba(70,167,255,.04));
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 10px; padding: 12px 14px; margin: 0 0 14px;
+}
+.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.sc-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .4px; }
+.sc-sub { font-size: 11.5px; color: var(--muted); }
+.sc-sub b { color: var(--accent); }
+.sc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 7px 10px; }
+.sc-item {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 4px 8px; flex-wrap: wrap;
+  background: var(--bg); border: 1px solid var(--line-soft); border-radius: 7px; padding: 6px 9px;
+}
+.sc-eff { font-size: 12.5px; color: var(--text); }
+.sc-grp { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .3px; }
+.sc-delta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sc-delta .arr { font-style: normal; font-weight: 700; margin-left: 3px; }
+.sc-item.up .arr { color: var(--accent); }
+.sc-item.down .arr { color: var(--warn); }
+
+/* ---------- Inline highlight for rows a dial changed ---------- */
+.row.changed { background: rgba(61,220,132,.07); margin: 0 -8px; padding: 0 8px; border-radius: 6px; }
+.row.changed .v { color: var(--accent); }
+
+/* ---------- First-visit / empty welcome state ---------- */
+.welcome {
+  grid-column: 1 / -1; text-align: center; color: var(--muted);
+  background: var(--panel-2); border: 1px dashed var(--line); border-radius: 12px;
+  padding: 36px 24px;
+}
+.welcome .welcome-ico { font-size: 40px; line-height: 1; margin-bottom: 12px; }
+.welcome h3 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
+.welcome p { margin: 0 auto; max-width: 44ch; font-size: 13.5px; line-height: 1.55; }
+.welcome b { color: var(--accent); font-weight: 600; }
 
 .summary-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .chip { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12px; color: var(--muted); }
@@ -186,9 +231,11 @@ table.compare td.num { font-variant-numeric: tabular-nums; color: var(--text); }
 @media (max-width: 880px) {
   .layout { grid-template-columns: 1fr; }
   .inputs { position: static; }
+  .dials { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
   .grid2 { grid-template-columns: 1fr; }
   .output-cards { grid-template-columns: 1fr; }
+  .sc-list { grid-template-columns: 1fr; }
   .topbar { padding: 12px 14px; }
 }

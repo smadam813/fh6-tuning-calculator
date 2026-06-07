@@ -20,7 +20,10 @@ research/        the sourced formulas this engine is built on (provenance)
 
 **Inputs** — drivetrain, engine location, powertrain, PI class, power, torque, weight,
 front-weight %, gear count, tire compound, suspension type, aero, and the ride-height /
-spring-rate ranges read off the car's installed parts. Imperial **or** metric.
+spring-rate ranges read off the car's installed parts. Imperial **or** metric. The numeric
+fields **start blank** — on first visit you get a short welcome prompt rather than a tune,
+and the calculator only needs power, weight and front-weight % to get going (the part-range
+fields fall back to the placeholder defaults shown if left empty).
 
 **Outputs** (per goal, or all goals side-by-side):
 Tires (F/R psi) · Gearing (final drive + every gear ratio) · Alignment (camber F/R,
@@ -30,6 +33,29 @@ Differential (accel/decel lock, per driven axle + AWD center split).
 
 Every value is a concrete number, clamped to the legal Forza slider range, and adapts
 meaningfully across the six **goals**: Circuit · Drag · Drift · Off-Road · Rally · Touge.
+
+## Tuning dials
+
+Two −5…+5 dials reshape the recommended tune on top of the per-goal baseline. They're
+**orthogonal** — one changes *balance*, the other changes *firmness*:
+
+- **Handling Bias** (Understeer ↔ Oversteer) — a *balance* knob. Moves each end the
+  **opposite** way (soften front bar / stiffen rear, shift brakes & aero, tighten the diff)
+  to dial in more front grip or freer rotation **without** changing how firm the car is.
+- **Overall Stiffness** (Soft ↔ Hard) — a *firmness* knob. Scales springs, anti-roll bars
+  and damping the **same** way at both ends (and drops/raises ride height) to make the whole
+  car harder or softer **without** changing its balance.
+
+At **0**, each dial is a true no-op — the tune is returned byte-for-byte as the pure
+per-goal baseline (a hard contract verified by the test sweep). Stock suspension exempts the
+stiffness dial (nothing to firm), and Drift/Drag exempt the bias levers that define their
+character.
+
+**What the sliders changed.** Whenever a dial is off-center, a panel lists every setting that
+moved versus the centered baseline — in plain language ("stiffer front anti-roll bar",
+"more front brake bias") with the `before → after` value — and the affected rows in the
+output cards are highlighted in place with a `was X` marker. So when you nudge a dial to chase,
+say, a little more oversteer, you can see exactly *what all just changed* and by how much.
 
 ## The formulas (and why)
 
