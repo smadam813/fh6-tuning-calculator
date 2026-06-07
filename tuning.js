@@ -59,11 +59,21 @@
     const classTier = piIdx <= 1 ? "Sports" : piIdx <= 3 ? "HighPerf" : "Race";
     // tire grip factor: more grip tolerates/wants more negative camber, more diff lock, etc.
     const gripFactor = { Race: 1.0, Drag: 0.9, Sport: 0.8, Rally: 0.6, Street: 0.55, Stock: 0.5, Offroad: 0.45 }[i.tireCompound] || 0.7;
+    const pw = i.power / i.weight;
+    // Handling-tendency flags, shared by aero/arb/differential so the whole tune
+    // compensates in one direction. A car is oversteer-prone when its mass sits
+    // rearward — a rear engine (pendulum) or rear weight bias — or it's a powerful/
+    // rear-light RWD. FWD is never oversteer-prone (it's the understeer case).
+    const understeerProne = i.drivetrain === "FWD" || i.frontWeightPct >= 53;
+    const oversteerProne = i.drivetrain !== "FWD" &&
+      (i.engineLocation === "Rear" || i.frontWeightPct <= 46 ||
+        (i.drivetrain === "RWD" && (i.frontWeightPct <= 49 || pw >= 0.16)));
     return {
       frac, rearFrac, frontAxle, rearAxle,
       frontCorner: frontAxle / 2, rearCorner: rearAxle / 2,
-      pw: i.power / i.weight,
+      pw,
       piIdx, classTier, gripFactor,
+      understeerProne, oversteerProne,
       canTuneSusp: i.suspensionType !== "Stock",
       evFactor: i.powertrain === "EV" ? 1 : i.powertrain === "Hybrid" ? 0.5 : 0,
       isEV: i.powertrain === "EV",
@@ -296,6 +306,9 @@
     if (i.engineLocation !== "Front" && goal !== "Drift") rear *= 0.92;
     if (i.aeroInstalled && (goal === "Circuit" || goal === "Touge")) { front *= 1.08; rear *= 1.08; }
     if (d.isEV) { front *= 1.05; rear *= 1.05; }
+    // Oversteer-prone car: shift roll stiffness forward (firmer front bar, softer rear)
+    // so the loose rear axle keeps its grip. Drift wants the opposite, so leave it be.
+    if (d.oversteerProne && goal !== "Drift") { front *= 1.06; rear *= 0.80; }
 
     front = clamp(r2(front), 1, 65); rear = clamp(r2(rear), 1, 65);
     return {
@@ -445,8 +458,7 @@
     // With only ONE wing you can't rebalance the car — adding downforce to the end you
     // have shifts balance that way at speed, so the present wing is sized to the car's
     // existing tendency rather than to a target front/rear share.
-    const understeerProne = i.drivetrain === "FWD" || i.frontWeightPct >= 53;
-    const oversteerProne = i.drivetrain === "RWD" && (i.frontWeightPct <= 49 || d.pw >= 0.16);
+    const understeerProne = d.understeerProne, oversteerProne = d.oversteerProne;
 
     if (hasF && !hasR) {                          // front splitter only
       const fac = oversteerProne ? 0.6 : understeerProne ? 1.0 : 0.85;
@@ -485,18 +497,35 @@
       const k = 1 + Math.min((i.power - 600) / 600, 0.5) * 0.5;
       front = clamp(front * k, 0, 1); rear = clamp(rear * k, 0, 1);
     }
-    if (i.drivetrain === "AWD" && (goal === "Circuit" || goal === "Touge")) { front = 1.0; rear = 0.15; }
-    if (i.engineLocation === "Rear") rear = clamp(rear - 0.10, 0, 1);
-    if (i.engineLocation === "Mid") rear = clamp(rear - 0.05, 0, 1);
+    if (i.drivetrain === "AWD" && (goal === "Circuit" || goal === "Touge")) {
+      // Default AWD: max front / min rear — the rear axle already has drive traction and
+      // a big wing is mostly drag. But a tail-happy AWD (rear engine / rear weight bias)
+      // needs the rear planted at speed, so flip to a big rear wing + a moderate front.
+      if (oversteerProne) { front = 0.70; rear = 0.95; }
+      else { front = 1.0; rear = 0.15; }
+    }
+    // Trim rear downforce for rear/mid engine ONLY when the car isn't already tail-happy.
+    // An oversteer-prone car wants MORE rear wing, not less (this used to subtract it,
+    // lightening the very axle that was floating away at speed).
+    if (!oversteerProne) {
+      if (i.engineLocation === "Rear") rear = clamp(rear - 0.10, 0, 1);
+      if (i.engineLocation === "Mid") rear = clamp(rear - 0.05, 0, 1);
+    }
     if (goal === "Drag") { front = 0; rear = 0; }
 
     const fp = r5(front * 100), rp = r5(rear * 100);
-    const share = fp + rp > 0 ? Math.round(fp / (fp + rp) * 100) : 50;
+    const frontLbf = toLbf(front, fR), rearLbf = toLbf(rear, rR);
+    // Balance from ACTUAL downforce when the lbf ranges are known — comparing "% of
+    // range" across a small front splitter and a large rear wing is meaningless and
+    // used to report a wildly front-biased share for a rear-biased car.
+    const share = (frontLbf != null && rearLbf != null && frontLbf + rearLbf > 0)
+      ? Math.round(frontLbf / (frontLbf + rearLbf) * 100)
+      : (fp + rp > 0 ? Math.round(fp / (fp + rp) * 100) : 50);
     return {
-      applicable: true, front: fp, frontLbf: toLbf(front, fR), rear: rp, rearLbf: toLbf(rear, rR),
+      applicable: true, front: fp, frontLbf, rear: rp, rearLbf,
       why: {
         text: `Downforce trades top speed for grip. ${goalName(goal)} runs ${fp}% front / ${rp}% of each wing's range (aero balance ≈ ${share}% front)` +
-          (goal === "Circuit" ? `, near-max for the most grip` + (i.drivetrain === "AWD" ? `; AWD forces max front / min rear since the rear already has drive traction and a rear wing would only add drag.` : `.`) : goal === "Drag" ? `, floored to zero — every pound of downforce is drag that kills top speed.` : goal === "Drift" ? `, low so the car stays loose and easy to swing.` : `, a moderate amount for the surface and speed.`) + ((hasRange(fR) || hasRange(rR)) ? lbfNote : ``),
+          (goal === "Circuit" ? `, near-max for the most grip` + (i.drivetrain === "AWD" ? (oversteerProne ? `; this tail-happy AWD runs a big rear wing plus a moderate front to plant the rear at speed instead of letting it float away.` : `; AWD forces max front / min rear since the rear already has drive traction and a rear wing would only add drag.`) : `.`) : goal === "Drag" ? `, floored to zero — every pound of downforce is drag that kills top speed.` : goal === "Drift" ? `, low so the car stays loose and easy to swing.` : `, a moderate amount for the surface and speed.`) + ((hasRange(fR) || hasRange(rR)) ? lbfNote : ``),
         formula: `front = level(${LEVEL}) + balanceShift\nrear  = level − balanceShift + weightTrim   (% of wing range)` + ((hasRange(fR) || hasRange(rR)) ? lbfFormula : ``),
       },
     };
@@ -574,6 +603,9 @@
       if (i.power >= 600) center += 3;
       if (i.engineLocation !== "Front") rA -= 4;
       if (lowGrip) { rA -= 6; fA -= 6; }
+      // Tail-happy AWD: send less torque rearward and lighten the rear locks so it stops
+      // rotating like a sharpened RWD on power and lift-off. Drift/Drag want the bias.
+      if (d.oversteerProne && goal !== "Drift" && goal !== "Drag") { center -= 14; rA -= 22; rD -= 12; }
       return {
         driveline: "AWD",
         accel: rEven(clamp(rA, 0, 100)), decel: rInt(clamp(rD, 0, 100)),
@@ -594,7 +626,9 @@
 
   function diffWhy(dl, goal, accel, decel, i, center) {
     let t = "";
-    if (dl === "AWD") t = `AWD runs three diffs. Center sends ${center}% torque to the rear (floored at 50%) so it rotates like a sharpened RWD; rear locks harder than front. ${goalName(goal)}: rear ${accel}/${decel}%.`;
+    if (dl === "AWD") t = center >= 70
+      ? `AWD runs three diffs. Center sends ${center}% torque to the rear (floored at 50%) so it rotates like a sharpened RWD; rear locks harder than front. ${goalName(goal)}: rear ${accel}/${decel}%.`
+      : `AWD runs three diffs. Center sends ${center}% torque to the rear — held closer to balanced to settle a tail-happy chassis; rear locks ${accel}/${decel}%. ${goalName(goal)}.`;
     else if (dl === "FWD") t = `Front accel ${accel}% (capped 95) puts power down without killing turn-in; decel ${decel}% keeps it stable on lift. ${goalName(goal)} tune.`;
     else t = `Accel lock ${accel}% controls corner-exit traction; decel ${decel}% sets off-throttle stability. ${goalName(goal)}` + (goal === "Drift" ? " runs a near-welded rear to hold angle." : goal === "Drag" ? " locks both rears for an even launch." : ".");
     return { text: t, formula: `${dl} base ± power-trim ± powertrain ± ${goalName(goal)} adj ; accel even %, clamp 0–100` };
@@ -893,7 +927,18 @@
     return tune;
   }
 
-  const API = { GOALS, GOAL_META, compute, validate };
+  // Overall (rolling) tire diameter in inches from the FH6 tire spec the game
+  // prints on its Tires screen — WIDTH/ASPECT R RIM, e.g. 315/30R17 → 24.44".
+  // width in mm, aspect % (sidewall height as % of width), rim in inches.
+  // Ø = rim + 2 × sidewall, where sidewall(mm) = width × aspect/100, mm→in via /25.4.
+  // Returns null on any non-positive/blank part so callers fall back to the HP heuristic.
+  function overallTireDiameter(widthMm, aspectPct, rimIn) {
+    const w = Number(widthMm), a = Number(aspectPct), r = Number(rimIn);
+    if (!(w > 0) || !(a > 0) || !(r > 0)) return null;
+    return r + 2 * (w * (a / 100)) / 25.4;
+  }
+
+  const API = { GOALS, GOAL_META, compute, validate, overallTireDiameter };
   if (typeof window !== "undefined") window.TUNING = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();
