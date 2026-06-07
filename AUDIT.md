@@ -22,7 +22,7 @@ now fixed · (#) = community-heuristic lever with no single published source.
 
 | Parameter | Formula Used | Source | In-Range? | Goal-Sensitive? | Issues Found |
 |---|---|---|---|---|---|
-| **Tires (F/R psi)** | `psi = compoundBase + (weight−3000)/1323 + classBonus ± split/2 + aero/width + engineLoc + goal override`; clamp 15–55, step 0.5 | spec-tires-braking §1.1–1.9; findings.json (ForzaFire/SkyCoach) | ✔ 15–55 | ✔ | 2 low (doc rounding nit; `Offroad`/`OffRoad` key naming). Doc nit fixed. No code bug. |
+| **Tires (F/R psi)** | `psi = compoundBase + (weight−3000)/1323 + classBonus ± split/2 + aero/width + goal override`; clamp 15–55, step 0.5 | spec-tires-braking §1.1–1.9; findings.json (ForzaFire/SkyCoach) | ✔ 15–55 | ✔ | ✦ 1 med (engine-location term over-widened the F/R spread vs drivetrain-only references) **FIXED** — removed; 2 low (doc rounding nit; `Offroad`/`OffRoad` key naming). |
 | **Gearing (FD + ratios)** | `FD = 4.25 + clamp((400−hp)/600,±0.6) + weightAdj + goalFD + aero/dt/engine/EV mods`; `Rₙ = A·n^B`, strictly descending; FD∈[2,7], gear∈[0.5,5.5] | spec-gearing §1–7; findings.json | ✔ | ✔ | ✦ 1 high (EV single ratio hardcoded 1.30) **FIXED**; ✦ 1 med (FWD/AWD FD direction wording) **FIXED**; 2 low (no advisory gear count / out-of-range FD note) — accepted. |
 | **Alignment — Camber F/R** | `camF = −(0.6+(grip−0.45)/0.55×1.4) + dtBias + loadTrim → goal`; `camR = camF×0.55 + dtBias − rearLoad → goal`; round 0.1, clamp −5..0 | spec-alignment-arb §1.1–1.2; findings.json | ✔ −5..0 | ✔ | None |
 | **Alignment — Toe F/R** | per-goal toe table (− out / + in), RWD high-torque +0.1 rear; clamp −5..5 | spec-alignment-arb §1.3–1.4; critique #9, #10 | ✔ −5..5 | ✔ | ✦ 1 med (OffRoad front toe collapsed onto Circuit/Drag) **FIXED**; 1 low (Circuit −0.05 deviation) — documented. |
@@ -43,9 +43,15 @@ now fixed · (#) = community-heuristic lever with no single published source.
 **Tires.** Cold-pressure model traces directly to `spec-tires-braking.md` §1.1–1.8
 and the FH6 baselines in `findings.json` (ForzaFire/SkyCoach): a compound base
 psi, a `(weight−3000)/1323` mass term (≈ +1 psi / 600 kg), a high-class bonus, a
-drivetrain front/rear split, engine-location nudge, and mutually-exclusive
+drivetrain front/rear split, and mutually-exclusive
 per-goal overrides (Drag floods the driven axle, Drift runs 30/27, OffRoad/Rally
-drop for a bigger patch). Clamp 15–55, step 0.5. Two low nits only: a prose
+drop for a bigger patch). Clamp 15–55, step 0.5. **Engine location intentionally
+does not bias tire pressure** (removed 2026-06): it over-widened the front/rear
+spread relative to the drivetrain-only references — an AWD rear-engine car spread
+~1.5 psi where AWD guidance is ~0.2–0.5 — and pointed the wrong way, since a
+rear-heavy car's loaded axle wants equal-or-more pressure, not less. The
+drivetrain split alone now governs the F/R delta (FWD 1.5 / RWD 0.75 / AWD 0.35,
+all inside ForzaFire's ranges). Two low nits remain: a prose
 rounding error in the spec's Drag example (now corrected to F 35.5 / R 22.5) and
 the deliberate `tireCompound:'Offroad'` vs `goal:'OffRoad'` key distinction
 (safe via fallthrough default, noted in code).

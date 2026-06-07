@@ -113,16 +113,22 @@ rearPsi  -= split / 2;
 
 **Why:** The front axle does the steering (FWD also the driving), so slightly higher front pressure sharpens turn-in and resists rollover of the contact patch.
 
-### 1.6 Engine-location refinement
+### 1.6 Engine-location refinement — REMOVED (deviation, 2026-06)
 
-Mid/rear-engine cars carry rear mass → bleak a little of the front bias back.
+Earlier revisions nudged front psi up / rear down for mid/rear-engine cars. This
+is **no longer applied** — engine location does not affect tire pressure.
 
 ```js
-if (engineLocation === 'Mid')  { frontPsi += 0.25; rearPsi -= 0.25; }
-if (engineLocation === 'Rear') { frontPsi += 0.5;  rearPsi -= 0.5;  } // rear loaded, front light
+// (removed) engine-location F/R nudge — drivetrain split (§1.5) governs the spread
 ```
 
-**Why:** With weight behind the axle line, the rear tire is already loaded; lowering its pressure enlarges its patch for traction while the light front gets a bit more.
+**Why removed:** The community references set the front/rear pressure split by
+**drivetrain only**; layering an engine-location nudge on top over-widened the
+F/R spread — e.g. an AWD rear-engine car spread ~1.5 psi where AWD guidance is
+~0.2–0.5 psi. It also pointed the wrong way: a rear/mid-engine car is rear-heavy,
+and the more heavily loaded axle wants equal-or-*more* pressure, not less.
+Removing it lets the drivetrain split (§1.5) alone set the F/R delta, which keeps
+every layout inside the referenced ranges.
 
 ### 1.7 Per-GOAL modifier table (applied last, before clamps)
 
@@ -329,7 +335,7 @@ brakePressure = Math.round(clamp(brakePressure, 80, 130) / 5) * 5;  // step 5, s
 ## Implementation summary (drop-in order)
 
 1. Compute shared derived quantities (`frontWeightFrac`, axle weights, `engBias`, `evFactor`, `piIdx`).
-2. **Tires:** compound base → weight adj → HP bonus → aero/width → drivetrain split → engine-loc → goal table → clamp(15–55, step 0.5).
+2. **Tires:** compound base → weight adj → HP bonus → aero/width → drivetrain split → goal table → clamp(15–55, step 0.5). (Engine location does **not** bias tire pressure — see §1.6.)
 3. **Brakes balance:** drivetrain base → weight-dist → engine-loc → EV → low-grip → goal table/override (Drift=48) → clamp(40–65, step 1).
 4. **Brakes pressure:** 100 base → mass → grip compound → EV → goal table → clamp(80–130, step 5).
 

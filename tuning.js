@@ -80,11 +80,14 @@
     if (i.aeroInstalled) { f += 0.5; r += 0.5; }
     if (d.piIdx >= PI_INDEX.S1) { f += 0.5; r += 0.5; }        // wide sticky tire proxy
 
-    // drivetrain split (front does the steering / often driving)
+    // drivetrain split (front does the steering / often driving). Engine
+    // location intentionally does NOT bias tire pressure: the community
+    // references set the F/R split by drivetrain only, and a mid/rear-engine
+    // nudge over-widened the spread (e.g. AWD rear-engine to ~1.5 psi when AWD
+    // guidance is ~0.2–0.5) and pointed the wrong way — a rear-heavy car's
+    // loaded axle wants equal-or-more psi, not less. (See spec §1.6.)
     const split = { FWD: 1.5, RWD: 0.75, AWD: 0.35 }[i.drivetrain] || 0.5;
     f += split / 2; r -= split / 2;
-    if (i.engineLocation === "Mid") { f += 0.25; r -= 0.25; }
-    if (i.engineLocation === "Rear") { f += 0.5; r -= 0.5; }
 
     // per-goal
     if (goal === "Drag") {
