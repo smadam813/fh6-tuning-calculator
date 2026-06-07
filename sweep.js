@@ -12,7 +12,7 @@
 const { compute, GOALS } = require("./tuning.js");
 
 const DT = ["FWD", "RWD", "AWD"], PT = ["ICE", "EV", "Hybrid"], EL = ["Front", "Mid", "Rear"];
-const PI = ["D", "C", "B", "A", "S1", "S2", "X"];
+const PI = ["D", "C", "B", "A", "S1", "S2", "R", "X"];
 const TC = ["Stock", "Street", "Sport", "Race", "Rally", "Drag", "Offroad"];
 const SUS = ["Stock", "Street", "Sport", "Race", "Drift", "Offroad"];
 const WEIGHTS = [1800, 3300, 4600], POWERS = [90, 400, 1100], FWP = [42, 52, 62];
@@ -34,7 +34,7 @@ let n = 0;
 for (const dt of DT) for (const pt of PT) for (const el of EL) {
   const idx = n++;
   configs.push({
-    drivetrain: dt, engineLocation: el, powertrain: pt, piClass: PI[idx % 7],
+    drivetrain: dt, engineLocation: el, powertrain: pt, piClass: PI[idx % 8],
     power: POWERS[idx % 3], torque: 200 + (idx % 5) * 90, weight: WEIGHTS[idx % 3], frontWeightPct: FWP[idx % 3],
     gears: [4, 6, 8][idx % 3], tireCompound: TC[idx % 7], suspensionType: SUS[idx % 6],
     hasFrontAero: idx % 2 === 0, hasRearAero: idx % 3 !== 0, aeroInstalled: true,

@@ -195,7 +195,7 @@ if (!canTuneSuspension) rearToe = 0.0;
 let caster = 5.0 + clamp((weight - 2400) / 1800, 0, 1) * (7.0 - 5.0);
 
 // High-speed PI classes push toward upper end (more straight-line stability)
-const classCasterBump = { D:-0.3, C:-0.1, B:0.0, A:+0.1, S1:+0.3, S2:+0.4, X:+0.5 }[piClass] ?? 0;
+const classCasterBump = { D:-0.3, C:-0.1, B:0.0, A:+0.1, S1:+0.3, S2:+0.4, R:+0.45, X:+0.5 }[piClass] ?? 0;
 caster += classCasterBump;
 
 // Aero installed → higher speeds → more caster for stability
@@ -240,7 +240,7 @@ ARB legal range **1.00–65.00**. The accepted community equation is the ForzaFi
 ```js
 // Class stiffness % (midpoints of published ranges)
 const stiffnessPct = {
-  D:0.63, C:0.63, B:0.55, A:0.50, S1:0.45, S2:0.42, X:0.40
+  D:0.63, C:0.63, B:0.55, A:0.50, S1:0.45, S2:0.42, R:0.41, X:0.40
 }[piClass] ?? 0.50;
 // (Sports/Street ≈ 0.61-0.65, High-Perf ≈ 0.40-0.46, Race ≈ 0.35-0.62)
 

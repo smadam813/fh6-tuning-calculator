@@ -26,8 +26,8 @@ const evFactor = powertrain === 'EV'     ? 1
                : powertrain === 'Hybrid' ? 0.5
                : 0;                                                   // 0..1
 
-// PI class index 0..6 (D..X), used for "high-performance +0.5 PSI" rule
-const PI_INDEX = { D:0, C:1, B:2, A:3, S1:4, S2:5, X:6 };
+// PI class index 0..7 (D..X; R sits between S2 and X), used for "high-performance +0.5 PSI" rule
+const PI_INDEX = { D:0, C:1, B:2, A:3, S1:4, S2:5, R:6, X:7 };
 const piIdx = PI_INDEX[piClass] ?? 3;
 
 // Universal clamp helper
@@ -78,7 +78,7 @@ basePsi += weightPsiAdj;
 Community rule: "High Performance / Race / Prototype / GP cars add ~+0.5 psi." Map to PI class A and above.
 
 ```js
-if (piIdx >= PI_INDEX.A) basePsi += 0.5;   // A, S1, S2, X
+if (piIdx >= PI_INDEX.A) basePsi += 0.5;   // A, S1, S2, R, X
 ```
 
 **Why:** High-PI cars carry more cornering load and aero, so a touch more pressure stabilizes the sidewall.

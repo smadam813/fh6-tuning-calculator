@@ -294,3 +294,23 @@ test("summary strip + derived populated", () => {
     assert.ok(pwChip.v.startsWith((Math.round(car.power / car.weight * 100) / 100).toString()), "pw chip matches");
   }
 });
+
+/* ---------------- R CLASS (between S2 and X) ---------------- */
+// R must be a first-class entry in the PI ladder, NOT silently fall back to the
+// A-class default (the bug: R missing from the dropdown left piIdx → 3).
+test("piClass R — resolves to its own ladder slot between S2 and X, classTier Race", () => {
+  const t = TUNING.compute(baseInput({ piClass: "R" }), "Circuit");
+  assert.equal(t.derived.piIdx, 6, "R sits at index 6 (between S2=5 and X=7)");
+  assert.equal(t.derived.classTier, "Race");
+  assertAllInRange(t); // R must produce a fully legal tune, not just a fallback
+});
+test("piClass R — per-class tune math (caster, ARB) interpolates between S2 and X", () => {
+  const caster = (pi) => TUNING.compute(baseInput({ piClass: pi, weight: 3000 }), "Circuit").alignment.caster;
+  const arb = (pi) => TUNING.compute(baseInput({ piClass: pi, weight: 3000 }), "Circuit").arb.front;
+  assert.ok(caster("S2") <= caster("R") && caster("R") <= caster("X"),
+    `caster S2(${caster("S2")}) ≤ R(${caster("R")}) ≤ X(${caster("X")})`);
+  assert.ok(caster("R") > caster("A"), "R caster must exceed A (proves no A fallback)");
+  // ARB stiffness % decreases with class; R sits between S2 and X → front bar between them
+  assert.ok(arb("S2") >= arb("R") && arb("R") >= arb("X"),
+    `arb.front S2(${arb("S2")}) ≥ R(${arb("R")}) ≥ X(${arb("X")})`);
+});
