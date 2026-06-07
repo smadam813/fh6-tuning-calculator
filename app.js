@@ -129,8 +129,8 @@
     const dd = t.differential;
     if (dd.driveline === "AWD") {
       return [
-        { k: "Rear accel", v: dd.accel + "%" }, { k: "Rear decel", v: dd.decel + "%" },
         { k: "Front accel", v: dd.frontAccel + "%" }, { k: "Front decel", v: dd.frontDecel + "%" },
+        { k: "Rear accel", v: dd.accel + "%" }, { k: "Rear decel", v: dd.decel + "%" },
         { k: "Center (→rear)", v: dd.centerRear + "%" },
       ];
     }
@@ -230,15 +230,22 @@
       { group: "Braking" },
       { label: "Balance", get: (t) => t.braking.balance + "%" },
       { label: "Pressure", get: (t) => t.braking.pressure + "%" },
-      { group: "Differential" },
-      { label: "Accel lock", get: (t) => t.differential.accel + "%" },
-      { label: "Decel lock", get: (t) => t.differential.decel + "%" }
+      { group: "Differential" }
     );
-    if (input.drivetrain === "AWD") defs.push(
-      { label: "Front accel", get: (t) => (t.differential.frontAccel ?? "—") + "%" },
-      { label: "Front decel", get: (t) => (t.differential.frontDecel ?? "—") + "%" },
-      { label: "Center→rear", get: (t) => (t.differential.centerRear ?? "—") + "%" }
-    );
+    if (input.drivetrain === "AWD") {
+      defs.push(
+        { label: "Front accel", get: (t) => (t.differential.frontAccel ?? "—") + "%" },
+        { label: "Front decel", get: (t) => (t.differential.frontDecel ?? "—") + "%" },
+        { label: "Rear accel", get: (t) => t.differential.accel + "%" },
+        { label: "Rear decel", get: (t) => t.differential.decel + "%" },
+        { label: "Center→rear", get: (t) => (t.differential.centerRear ?? "—") + "%" }
+      );
+    } else {
+      defs.push(
+        { label: "Accel lock", get: (t) => t.differential.accel + "%" },
+        { label: "Decel lock", get: (t) => t.differential.decel + "%" }
+      );
+    }
     return defs;
   }
 
@@ -270,7 +277,7 @@
     L.push(`— Aero: ${!t.aero.applicable ? "none installed" : `F ${af} / R ${ar}`}`);
     L.push(`— Brakes: balance ${t.braking.balance}% front, pressure ${t.braking.pressure}%`);
     if (t.differential.driveline === "AWD")
-      L.push(`— Diff: rear ${t.differential.accel}/${t.differential.decel}%, front ${t.differential.frontAccel}/${t.differential.frontDecel}%, center ${t.differential.centerRear}% rear`);
+      L.push(`— Diff: front ${t.differential.frontAccel}/${t.differential.frontDecel}%, rear ${t.differential.accel}/${t.differential.decel}%, center ${t.differential.centerRear}% rear`);
     else
       L.push(`— Diff: ${t.differential.driveline} accel ${t.differential.accel}% / decel ${t.differential.decel}%`);
     return L.join("\n");
