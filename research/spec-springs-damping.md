@@ -44,9 +44,9 @@ const engBias = { Front: 0.00, Mid: -0.02, Rear: -0.04 }[input.engineLocation] ?
 const effFrontPct = clamp(frontPct + engBias, 0.20, 0.80);
 
 // ---- PI class -> stiffness "tier" used for frequency target & min-bump ----
-// D/C = Sports-ish, B/A = High-Performance, S1/S2/X = Race.
+// D/C = Sports-ish, B/A = High-Performance, S1/S2/R/X = Race.
 const classTier = ({ D:'Sports', C:'Sports', B:'HighPerf', A:'HighPerf',
-                     S1:'Race', S2:'Race', X:'Race' })[input.piClass] ?? 'HighPerf';
+                     S1:'Race', S2:'Race', R:'Race', X:'Race' })[input.piClass] ?? 'HighPerf';
 
 // ---- helpers ----
 function num(v,d){ return Number.isFinite(+v) ? +v : d; }
