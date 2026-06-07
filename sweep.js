@@ -38,7 +38,7 @@ for (const dt of DT) for (const pt of PT) for (const el of EL) {
     power: POWERS[idx % 3], torque: 200 + (idx % 5) * 90, weight: WEIGHTS[idx % 3], frontWeightPct: FWP[idx % 3],
     gears: [4, 6, 8][idx % 3], tireCompound: TC[idx % 7], suspensionType: SUS[idx % 6],
     hasFrontAero: idx % 2 === 0, hasRearAero: idx % 3 !== 0, aeroInstalled: true,
-    rideHeightMin: 3.5, rideHeightMax: 6.5, springRateMin: 200, springRateMax: 1100,
+    rideHeightMinF: 3.5, rideHeightMaxF: 6.5, rideHeightMinR: 3.5, rideHeightMaxR: 6.5, springRateMinF: 200, springRateMaxF: 1100, springRateMinR: 200, springRateMaxR: 1100,
     aeroFront: [30, 165], aeroRear: [50, 300], redlineRpm: 7000, tireDiameter: 26, targetTopSpeed: null,
   });
 }

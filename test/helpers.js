@@ -56,10 +56,10 @@ function assertAllInRange(t) {
 
 // assert spring rate within the supplied part min/max
 function assertSpringInPart(t, input) {
-  inRange(t.springs.front, [input.springRateMin, input.springRateMax], "springs.front");
-  inRange(t.springs.rear, [input.springRateMin, input.springRateMax], "springs.rear");
-  inRange(t.springs.rideF, [input.rideHeightMin, input.rideHeightMax], "springs.rideF");
-  inRange(t.springs.rideR, [input.rideHeightMin, input.rideHeightMax], "springs.rideR");
+  inRange(t.springs.front, [input.springRateMinF, input.springRateMaxF], "springs.front");
+  inRange(t.springs.rear, [input.springRateMinR, input.springRateMaxR], "springs.rear");
+  inRange(t.springs.rideF, [input.rideHeightMinF, input.rideHeightMaxF], "springs.rideF");
+  inRange(t.springs.rideR, [input.rideHeightMinR, input.rideHeightMaxR], "springs.rideR");
 }
 
 // every `why` field present must be {text, formula} strings

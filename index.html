@@ -98,20 +98,32 @@
         </label>
       </div>
       <div class="grid2 ranges">
-        <label><span class="lbl">Ride Height min <em id="rhUnit">(in)</em></span>
-          <input type="number" id="rideHeightMin" value="4.5" step="0.1" />
+        <label><span class="lbl">Ride Height front min <em id="rhUnitFmin">(in)</em></span>
+          <input type="number" id="rideHeightMinF" value="4.5" step="0.1" />
         </label>
-        <label><span class="lbl">Ride Height max <em id="rhUnit2">(in)</em></span>
-          <input type="number" id="rideHeightMax" value="7.0" step="0.1" />
+        <label><span class="lbl">Ride Height front max <em id="rhUnitFmax">(in)</em></span>
+          <input type="number" id="rideHeightMaxF" value="7.0" step="0.1" />
         </label>
-        <label><span class="lbl">Spring Rate min <em id="srUnit">(lb/in)</em></span>
-          <input type="number" id="springRateMin" value="150" step="1" />
+        <label><span class="lbl">Ride Height rear min <em id="rhUnitRmin">(in)</em></span>
+          <input type="number" id="rideHeightMinR" value="4.5" step="0.1" />
         </label>
-        <label><span class="lbl">Spring Rate max <em id="srUnit2">(lb/in)</em></span>
-          <input type="number" id="springRateMax" value="900" step="1" />
+        <label><span class="lbl">Ride Height rear max <em id="rhUnitRmax">(in)</em></span>
+          <input type="number" id="rideHeightMaxR" value="7.0" step="0.1" />
+        </label>
+        <label><span class="lbl">Spring Rate front min <em id="srUnitFmin">(lb/in)</em></span>
+          <input type="number" id="springRateMinF" value="150" step="1" />
+        </label>
+        <label><span class="lbl">Spring Rate front max <em id="srUnitFmax">(lb/in)</em></span>
+          <input type="number" id="springRateMaxF" value="900" step="1" />
+        </label>
+        <label><span class="lbl">Spring Rate rear min <em id="srUnitRmin">(lb/in)</em></span>
+          <input type="number" id="springRateMinR" value="150" step="1" />
+        </label>
+        <label><span class="lbl">Spring Rate rear max <em id="srUnitRmax">(lb/in)</em></span>
+          <input type="number" id="springRateMaxR" value="900" step="1" />
         </label>
       </div>
-      <p class="hint">Ranges come from the parts you installed — read them off the in-game slider's min/max.</p>
+      <p class="hint">Ranges come from the parts you installed — read them off the in-game slider's min/max. Front and rear sliders can have different ranges, so enter each separately.</p>
       <label class="aero-kit-label">Aero (adjustable)
         <select id="aeroKit">
           <option value="Full" selected>Full kit (front + rear)</option>

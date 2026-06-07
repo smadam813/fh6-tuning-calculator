@@ -17,8 +17,8 @@
   };
   const FIELD_DIM = {
     weight: "weight", torque: "torque",
-    rideHeightMin: "ride", rideHeightMax: "ride",
-    springRateMin: "spring", springRateMax: "spring",
+    rideHeightMinF: "ride", rideHeightMaxF: "ride", rideHeightMinR: "ride", rideHeightMaxR: "ride",
+    springRateMinF: "spring", springRateMaxF: "spring", springRateMinR: "spring", springRateMaxR: "spring",
     aeroFrontMin: "aero", aeroFrontMax: "aero", aeroRearMin: "aero", aeroRearMax: "aero",
     tireDiameter: "ride", targetTopSpeed: "speed",
   };
@@ -78,10 +78,14 @@
       hasFrontAero: (function () { const k = $("aeroKit").value; return k === "Front" || k === "Full"; })(),
       hasRearAero: (function () { const k = $("aeroKit").value; return k === "Rear" || k === "Full"; })(),
       aeroInstalled: $("aeroKit").value !== "None", // any wing -> secondary downforce effects apply
-      rideHeightMin: toImp("ride", num("rideHeightMin")),
-      rideHeightMax: toImp("ride", num("rideHeightMax")),
-      springRateMin: toImp("spring", num("springRateMin")),
-      springRateMax: toImp("spring", num("springRateMax")),
+      rideHeightMinF: toImp("ride", num("rideHeightMinF")),
+      rideHeightMaxF: toImp("ride", num("rideHeightMaxF")),
+      rideHeightMinR: toImp("ride", num("rideHeightMinR")),
+      rideHeightMaxR: toImp("ride", num("rideHeightMaxR")),
+      springRateMinF: toImp("spring", num("springRateMinF")),
+      springRateMaxF: toImp("spring", num("springRateMaxF")),
+      springRateMinR: toImp("spring", num("springRateMinR")),
+      springRateMaxR: toImp("spring", num("springRateMaxR")),
       // optional downforce ranges (imperial lbf, or null = show % of slider)
       aeroFront: optAeroRange("aeroFrontMin", "aeroFrontMax"),
       aeroRear: optAeroRange("aeroRearMin", "aeroRearMax"),
@@ -348,8 +352,10 @@
     const lbl = UNIT_LABEL[units];
     $("powerUnit").textContent = lbl.power; $("torqueUnit").textContent = lbl.torque;
     $("weightUnit").textContent = lbl.weight;
-    $("rhUnit").textContent = lbl.ride; $("rhUnit2").textContent = lbl.ride;
-    $("srUnit").textContent = lbl.spring; $("srUnit2").textContent = lbl.spring;
+    $("rhUnitFmin").textContent = lbl.ride; $("rhUnitFmax").textContent = lbl.ride;
+    $("rhUnitRmin").textContent = lbl.ride; $("rhUnitRmax").textContent = lbl.ride;
+    $("srUnitFmin").textContent = lbl.spring; $("srUnitFmax").textContent = lbl.spring;
+    $("srUnitRmin").textContent = lbl.spring; $("srUnitRmax").textContent = lbl.spring;
     $("afUnit").textContent = lbl.aero; $("afUnit2").textContent = lbl.aero;
     $("arUnit").textContent = lbl.aero; $("arUnit2").textContent = lbl.aero;
     $("tireUnit").textContent = lbl.ride; $("topSpeedUnit").textContent = lbl.speed;

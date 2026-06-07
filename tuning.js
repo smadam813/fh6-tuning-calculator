@@ -308,7 +308,17 @@
      SPRINGS + RIDE HEIGHT   (ride-frequency model)
      ===================================================================== */
   function springs(i, d, goal) {
-    const min = i.springRateMin, max = i.springRateMax;
+    // Per-axle part ranges: front and rear sliders can have independent ranges
+    // in-game. Fall back to the legacy shared key if an axle-specific value is
+    // absent (keeps older saved inputs / callers working).
+    const srMinF = i.springRateMinF != null ? i.springRateMinF : i.springRateMin;
+    const srMaxF = i.springRateMaxF != null ? i.springRateMaxF : i.springRateMax;
+    const srMinR = i.springRateMinR != null ? i.springRateMinR : i.springRateMin;
+    const srMaxR = i.springRateMaxR != null ? i.springRateMaxR : i.springRateMax;
+    const rhMinF = i.rideHeightMinF != null ? i.rideHeightMinF : i.rideHeightMin;
+    const rhMaxF = i.rideHeightMaxF != null ? i.rideHeightMaxF : i.rideHeightMax;
+    const rhMinR = i.rideHeightMinR != null ? i.rideHeightMinR : i.rideHeightMin;
+    const rhMaxR = i.rideHeightMaxR != null ? i.rideHeightMaxR : i.rideHeightMax;
     const FREQ_BASE = { Sports: 1.9, HighPerf: 2.2, Race: 2.5 }[d.classTier];
     const SUSP_CAP = { Stock: 1.6, Street: 2.2, Sport: 2.8, Race: 5.0, Drift: 3.2, Offroad: 2.0 }[i.suspensionType] || 5.0;
 
@@ -334,30 +344,29 @@
     if (i.powertrain === "EV") { front *= 1.08; rear *= 1.08; }
     if (i.powertrain === "Hybrid") { front *= 1.04; rear *= 1.04; }
 
-    front = clamp(front, min, max); rear = clamp(rear, min, max);
+    front = clamp(front, srMinF, srMaxF); rear = clamp(rear, srMinR, srMaxR);
     // Physics floor: springs must support the car without bottoming. If the goal's
     // soft frequency target lands too soft to hold the static load, raise BOTH just
     // enough (proportional) — not all the way to max, so soft goals stay soft.
     let rangeNote = "";
-    const support = (front + rear) * 2 * i.rideHeightMin;
+    const support = front * 2 * rhMinF + rear * 2 * rhMinR;
     if (support < i.weight) {
       const scale = i.weight / support;
-      front = clamp(front * scale, min, max); rear = clamp(rear * scale, min, max);
+      front = clamp(front * scale, srMinF, srMaxF); rear = clamp(rear * scale, srMinR, srMaxR);
       rangeNote = " (raised to the support floor for this weight)";
     }
     front = rInt(front); rear = rInt(rear);
 
-    // RIDE HEIGHT — fraction of part range per goal + modifiers
-    const rhMin = i.rideHeightMin, rhMax = i.rideHeightMax;
+    // RIDE HEIGHT — fraction of each axle's own part range per goal + modifiers
     let [pF, pR] = { Circuit: [0, 0], Drag: [0, 0.30], Drift: [0.05, 0.05], OffRoad: [1, 1], Rally: [0.75, 0.75], Touge: [0.05, 0.05] }[goal];
     const rhComp = { Rally: 0.10, Offroad: 0.15 }[i.tireCompound] || 0;
     pF = clamp(pF + rhComp, 0, 1); pR = clamp(pR + rhComp, 0, 1);
     if (i.aeroInstalled && (goal === "Circuit" || goal === "Touge" || goal === "Drag")) pR = clamp(pR + 0.05, 0, 1);
-    const softFront = (front - min) < 0.25 * (max - min);
+    const softFront = (front - srMinF) < 0.25 * (srMaxF - srMinF);
     if (softFront && pF < 0.15) { pF = clamp(pF + 0.10, 0, 1); pR = clamp(pR + 0.10, 0, 1); }
     if (i.weight > 4000) { pF = clamp(pF + 0.05, 0, 1); pR = clamp(pR + 0.05, 0, 1); }
-    const rideF = r1(clamp(rhMin + (rhMax - rhMin) * pF, rhMin, rhMax));
-    const rideR = r1(clamp(rhMin + (rhMax - rhMin) * pR, rhMin, rhMax));
+    const rideF = r1(clamp(rhMinF + (rhMaxF - rhMinF) * pF, rhMinF, rhMaxF));
+    const rideR = r1(clamp(rhMinR + (rhMaxR - rhMinR) * pR, rhMinR, rhMaxR));
 
     return {
       front, rear, rideF, rideR, _fFront: fFront, _fRear: fRear,
@@ -623,9 +632,12 @@
     /* ---- Front/rear spring ratio  (front ±12%, rear ±4%, exp 1.1) ---- */
     if (t.springs && d.canTuneSusp) {
       const s = biasScale(bias, 1.1);              // + → softer front / stiffer rear
-      const min = input.springRateMin, max = input.springRateMax;
-      t.springs.front = rInt(clamp(t.springs.front * (1 - 0.12 * s), min, max));
-      t.springs.rear  = rInt(clamp(t.springs.rear  * (1 + 0.04 * s), min, max));
+      const minF = input.springRateMinF != null ? input.springRateMinF : input.springRateMin;
+      const maxF = input.springRateMaxF != null ? input.springRateMaxF : input.springRateMax;
+      const minR = input.springRateMinR != null ? input.springRateMinR : input.springRateMin;
+      const maxR = input.springRateMaxR != null ? input.springRateMaxR : input.springRateMax;
+      t.springs.front = rInt(clamp(t.springs.front * (1 - 0.12 * s), minF, maxF));
+      t.springs.rear  = rInt(clamp(t.springs.rear  * (1 + 0.04 * s), minR, maxR));
       biasNote(t.springs.why, bias > 0
         ? "front springs softened ~12% / rear stiffened ~4% → rear-biased frequency, front loads up → promotes oversteer"
         : "front springs stiffened ~12% / rear softened ~4% → front-biased frequency, rear plants → promotes understeer");
@@ -747,18 +759,21 @@
       if (!isNum(g)) errors.push("Number of gears must be a number.");
       else if (g < 1) errors.push("Number of gears must be at least 1.");
     }
-    // spring range, when both supplied, must be a real (non-inverted, positive) span
-    const srMin = Number(i.springRateMin), srMax = Number(i.springRateMax);
-    if (isNum(srMin) && isNum(srMax)) {
-      if (srMin <= 0) errors.push("Spring rate min must be greater than 0.");
-      if (srMax < srMin) errors.push("Spring rate max must be greater than or equal to spring rate min.");
-    }
-    // ride-height range, when both supplied, must not be inverted or non-positive
-    const rhMin = Number(i.rideHeightMin), rhMax = Number(i.rideHeightMax);
-    if (isNum(rhMin) && isNum(rhMax)) {
-      if (rhMin <= 0) errors.push("Ride height min must be greater than 0.");
-      if (rhMax < rhMin) errors.push("Ride height max must be greater than or equal to ride height min.");
-    }
+    // spring-rate and ride-height ranges are per-axle (front/rear) and may differ
+    // in-game; fall back to the legacy shared key when an axle value is absent.
+    // When both ends of a span are supplied it must be real (positive, non-inverted).
+    const pick = (a, b) => (a !== undefined && a !== null && a !== "" ? a : b);
+    const checkRange = (loRaw, hiRaw, label) => {
+      const lo = Number(loRaw), hi = Number(hiRaw);
+      if (isNum(lo) && isNum(hi)) {
+        if (lo <= 0) errors.push(`${label} min must be greater than 0.`);
+        if (hi < lo) errors.push(`${label} max must be greater than or equal to ${label.toLowerCase()} min.`);
+      }
+    };
+    checkRange(pick(i.springRateMinF, i.springRateMin), pick(i.springRateMaxF, i.springRateMax), "Front spring rate");
+    checkRange(pick(i.springRateMinR, i.springRateMin), pick(i.springRateMaxR, i.springRateMax), "Rear spring rate");
+    checkRange(pick(i.rideHeightMinF, i.rideHeightMin), pick(i.rideHeightMaxF, i.rideHeightMax), "Front ride height");
+    checkRange(pick(i.rideHeightMinR, i.rideHeightMin), pick(i.rideHeightMaxR, i.rideHeightMax), "Rear ride height");
 
     return { valid: errors.length === 0, errors };
   }

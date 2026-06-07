@@ -114,17 +114,17 @@ test("springs.front — exact + within part min/max", () => {
   assert.equal(L.springs.front, 379);
   assert.equal(E.springs.front, 900);
   assert.equal(M.springs.front, 676);
-  inRange(L.springs.front, [CAR_LIGHT_RWD.springRateMin, CAR_LIGHT_RWD.springRateMax], "L.springs.front");
-  inRange(E.springs.front, [CAR_HEAVY_AWD_EV.springRateMin, CAR_HEAVY_AWD_EV.springRateMax], "E.springs.front");
-  inRange(M.springs.front, [CAR_MID_RWD_HIGHPI.springRateMin, CAR_MID_RWD_HIGHPI.springRateMax], "M.springs.front");
+  inRange(L.springs.front, [CAR_LIGHT_RWD.springRateMinF, CAR_LIGHT_RWD.springRateMaxF], "L.springs.front");
+  inRange(E.springs.front, [CAR_HEAVY_AWD_EV.springRateMinF, CAR_HEAVY_AWD_EV.springRateMaxF], "E.springs.front");
+  inRange(M.springs.front, [CAR_MID_RWD_HIGHPI.springRateMinF, CAR_MID_RWD_HIGHPI.springRateMaxF], "M.springs.front");
 });
 test("springs.rear — exact + within part min/max", () => {
   assert.equal(L.springs.rear, 240);
   assert.equal(E.springs.rear, 900);
   assert.equal(M.springs.rear, 786);
-  inRange(L.springs.rear, [CAR_LIGHT_RWD.springRateMin, CAR_LIGHT_RWD.springRateMax], "L.springs.rear");
-  inRange(E.springs.rear, [CAR_HEAVY_AWD_EV.springRateMin, CAR_HEAVY_AWD_EV.springRateMax], "E.springs.rear");
-  inRange(M.springs.rear, [CAR_MID_RWD_HIGHPI.springRateMin, CAR_MID_RWD_HIGHPI.springRateMax], "M.springs.rear");
+  inRange(L.springs.rear, [CAR_LIGHT_RWD.springRateMinR, CAR_LIGHT_RWD.springRateMaxR], "L.springs.rear");
+  inRange(E.springs.rear, [CAR_HEAVY_AWD_EV.springRateMinR, CAR_HEAVY_AWD_EV.springRateMaxR], "E.springs.rear");
+  inRange(M.springs.rear, [CAR_MID_RWD_HIGHPI.springRateMinR, CAR_MID_RWD_HIGHPI.springRateMaxR], "M.springs.rear");
 });
 test("springs.rideF / rideR — exact + within part min/max", () => {
   assert.equal(L.springs.rideF, 4.5);

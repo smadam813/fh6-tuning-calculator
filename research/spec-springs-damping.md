@@ -24,6 +24,12 @@ const springMin     = num(input.springRateMin, 100);  // lb/in
 const springMax     = num(input.springRateMax, 1000); // lb/in
 const rhMin         = num(input.rideHeightMin, 4.0);   // in
 const rhMax         = num(input.rideHeightMax, 7.0);   // in
+// IMPLEMENTATION NOTE (2026-06): front and rear part ranges are independent in
+// FH6, so the engine reads per-axle keys — springRateMin/MaxF, springRateMin/MaxR,
+// rideHeightMin/MaxF, rideHeightMin/MaxR — falling back to the shared keys above
+// when an axle value is absent. springF/rideF clamp to the FRONT range; springR/
+// rideR clamp to the REAR range. The shared *Min/*Max shorthand below covers the
+// (common) symmetric case where both axles use one range.
 
 // ---- Corner / axle weights ----
 const frontAxleWeight = weight * frontPct;   // lb carried by front axle

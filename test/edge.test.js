@@ -150,3 +150,31 @@ test("stock suspension locks alignment and centres ARBs", () => {
   assert.equal(t.arb.rear, 32.5);
   assertAllInRange(t);
 });
+
+/* ---------------- independent front/rear part ranges ---------------- */
+test("asymmetric front/rear part ranges clamp each axle to its OWN span", () => {
+  // Rear ranges are deliberately DISJOINT from (entirely above) the front ranges,
+  // so any axis swap — front using the rear range or vice versa, in the spring
+  // clamp OR the ride-height interpolation — lands out of band and fails hard.
+  const car = baseInput({
+    // Light car so the support-floor scale-up (which re-clamps with the correct
+    // per-axle range) can't trigger and mask a clamp swap — the line-347 clamp is
+    // then the binding constraint, so a swapped range surfaces in the output.
+    weight: 1800,
+    springRateMinF: 150, springRateMaxF: 400,
+    springRateMinR: 600, springRateMaxR: 1400,
+    rideHeightMinF: 3.0, rideHeightMaxF: 4.0,
+    rideHeightMinR: 6.0, rideHeightMaxR: 9.0,
+  });
+  const t = TUNING.compute(car, "OffRoad"); // OffRoad pins ride height to each axle's max
+  // spring rate: each axle clamped into its OWN (disjoint) range
+  inRange(t.springs.front, [150, 400], "springs.front in FRONT range");
+  inRange(t.springs.rear, [600, 1400], "springs.rear in REAR range");
+  assert.ok(t.springs.rear > 400, "rear spring uses the higher rear range, not the front one");
+  assert.ok(t.springs.front < 600, "front spring uses the lower front range, not the rear one");
+  // ride height: OffRoad pins each axle to its own max → front 4.0 / rear 9.0
+  assert.equal(t.springs.rideF, 4.0);
+  assert.equal(t.springs.rideR, 9.0);
+  inRange(t.springs.rideF, [3.0, 4.0], "rideF in FRONT range");
+  inRange(t.springs.rideR, [6.0, 9.0], "rideR in REAR range");
+});
