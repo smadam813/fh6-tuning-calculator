@@ -45,6 +45,7 @@
   const rInt = (x) => Math.round(x);
   const rEven = (x) => Math.round(x / 2) * 2;
 
+  // PI class index 0..7 (D..X; R sits between S2 and X)
   const PI_INDEX = { D: 0, C: 1, B: 2, A: 3, S1: 4, S2: 5, R: 6, X: 7 };
 
   /* =====================================================================
@@ -271,7 +272,7 @@
 
     // caster from weight + class + aero
     let caster = 5.0 + clamp((i.weight - 2400) / 1800, 0, 1) * 2.0;
-    caster += { D: -0.3, C: -0.1, B: 0, A: 0.1, S1: 0.3, S2: 0.4, R: 0.45, X: 0.5 }[i.piClass] || 0;
+    caster += { D: -0.3, C: -0.1, B: 0, A: 0.1, S1: 0.3, S2: 0.4, R: 0.45, X: 0.5 }[i.piClass] ?? 0;
     if (i.aeroInstalled) caster += 0.2;
     caster = { Circuit: (c) => c, Drag: () => 5.0, Drift: (c) => c + 1.0, OffRoad: (c) => c - 0.5, Rally: (c) => c - 0.3, Touge: (c) => c + 0.2 }[goal](caster);
     caster = clamp(r1(caster), 1, 7);
@@ -291,7 +292,7 @@
      ===================================================================== */
   function arb(i, d, goal) {
     if (!d.canTuneSusp) return { front: 32.5, rear: 32.5, why: { text: "Stock suspension can't meaningfully tune anti-roll bars — values centred. Upgrade the suspension to balance roll stiffness.", formula: "stock = centred" } };
-    const stiffPct = { D: 0.63, C: 0.63, B: 0.55, A: 0.50, S1: 0.45, S2: 0.42, R: 0.41, X: 0.40 }[i.piClass] || 0.5;
+    const stiffPct = { D: 0.63, C: 0.63, B: 0.55, A: 0.50, S1: 0.45, S2: 0.42, R: 0.41, X: 0.40 }[i.piClass] ?? 0.5;
     const base = (i.weight / 2) / (200 - 200 * stiffPct);     // ForzaFire base
     const splitPer1 = { RWD: 1.0, AWD: 0.66, FWD: -1.0 }[i.drivetrain];
     const splitDelta = splitPer1 * (i.frontWeightPct - 50);
