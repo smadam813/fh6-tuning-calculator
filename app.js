@@ -574,6 +574,97 @@
     }
   }
 
+  // Snapshot every input/select in the Car Setup panel (by element id), plus
+  // units, goal and both dials — the "full picture" a saved setup captures.
+  function snapshotSetup(name) {
+    const fields = {};
+    document.querySelectorAll(".inputs input, .inputs select").forEach((el) => {
+      if (!el.id || el.closest("#setupsBlock")) return;
+      fields[el.id] = el.value;
+    });
+    return {
+      name,
+      savedAt: new Date().toISOString(),
+      units,
+      goal: currentGoal,
+      dials: { handlingBias: $("handlingBias").value, overallStiffness: $("overallStiffness").value },
+      fields,
+    };
+  }
+
+  function applySetup(s) {
+    // Units first: setUnits converts the stale on-screen values, which is fine
+    // because every panel field is overwritten right after; it also fixes the
+    // unit labels and the toggle's active state.
+    setUnits(s.units === "metric" ? "metric" : "imperial");
+    Object.keys(s.fields).forEach((id) => {
+      const el = $(id);
+      // only fields that still exist, and only inside the Car Setup panel
+      if (el && el.closest(".inputs") && !el.closest("#setupsBlock")) el.value = String(s.fields[id]);
+    });
+    if (s.dials.handlingBias != null) $("handlingBias").value = s.dials.handlingBias;
+    if (s.dials.overallStiffness != null) $("overallStiffness").value = s.dials.overallStiffness;
+    if (GOALS.includes(s.goal)) currentGoal = s.goal;
+    refresh();
+  }
+
+  // Options are built via DOM (not innerHTML) so names with quotes are safe.
+  function renderSetupList(db, selectedName) {
+    const sel = $("setupList");
+    sel.innerHTML = "";
+    const sorted = [...db.setups].sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+    if (!sorted.length) {
+      const o = document.createElement("option");
+      o.value = ""; o.disabled = true; o.selected = true;
+      o.textContent = "— no saved setups —";
+      sel.appendChild(o);
+    }
+    for (const s of sorted) {
+      const o = document.createElement("option");
+      o.value = s.name; o.textContent = s.name;
+      if (s.name === selectedName) o.selected = true;
+      sel.appendChild(o);
+    }
+    const has = sorted.length > 0;
+    $("setupLoad").disabled = !has;
+    $("setupDelete").disabled = !has;
+    $("setupExport").disabled = !has;
+  }
+
+  function wireSetups() {
+    renderSetupList(loadSetupsDb(), null);
+
+    $("setupSave").addEventListener("click", () => {
+      const name = $("setupName").value.trim();
+      if (!name) { setupStatus("Give the setup a name first.", true); return; }
+      const db = loadSetupsDb();
+      if (db.setups.some((s) => s.name === name) && !window.confirm(`Overwrite the saved setup "${name}"?`)) return;
+      const next = SETUPS.upsertSetup(db, snapshotSetup(name));
+      if (saveSetupsDb(next)) { renderSetupList(next, name); setupStatus(`Saved "${name}" ✓`); }
+    });
+
+    $("setupList").addEventListener("change", () => {
+      if ($("setupList").value) $("setupName").value = $("setupList").value;
+    });
+
+    $("setupLoad").addEventListener("click", () => {
+      const name = $("setupList").value;
+      const s = loadSetupsDb().setups.find((x) => x.name === name);
+      if (!s) { setupStatus("Pick a setup to load.", true); return; }
+      applySetup(s);
+      $("setupName").value = s.name;
+      setupStatus(`Loaded "${s.name}" ✓`);
+    });
+
+    $("setupDelete").addEventListener("click", () => {
+      const name = $("setupList").value;
+      if (!name) { setupStatus("Pick a setup to delete.", true); return; }
+      if (!window.confirm(`Delete the saved setup "${name}"?`)) return;
+      const next = SETUPS.deleteSetup(loadSetupsDb(), name);
+      if (saveSetupsDb(next)) { renderSetupList(next, null); setupStatus(`Deleted "${name}" ✓`); }
+    });
+  }
+
   function init() {
     buildGoalTabs();
     // live updates on every input — except the setups controls, which manage
@@ -602,6 +693,7 @@
         window.prompt("Copy your tune:", text);
       }
     });
+    wireSetups();
     refresh();
   }
 
