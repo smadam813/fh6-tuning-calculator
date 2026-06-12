@@ -149,11 +149,12 @@ test("upsertSetup ignores an invalid entry (db returned unchanged)", () => {
   assert.deepEqual(db, SETUPS.emptyDb());
 });
 
-test("upsertSetup and deleteSetup do not mutate their input db", () => {
+test("upsertSetup, deleteSetup and mergeDb do not mutate their input dbs", () => {
   const before = SETUPS.upsertSetup(SETUPS.emptyDb(), entry({}));
   const snapshot = JSON.parse(JSON.stringify(before));
   SETUPS.upsertSetup(before, entry({ name: "Another" }));
   SETUPS.deleteSetup(before, "Test car");
+  SETUPS.mergeDb(before, { schema: 1, setups: [SETUPS.validateSetup(entry({ name: "Test car", fields: { power: "777" } }))] });
   assert.deepEqual(JSON.parse(JSON.stringify(before)), snapshot);
 });
 

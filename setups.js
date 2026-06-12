@@ -87,6 +87,7 @@
   // Merge a restored backup into the existing db: imported wins by name,
   // existing setups absent from the import are preserved, imported entries
   // keep their own savedAt. Pure; returns { db, added, updated }.
+  // Expects parseDb/emptyDb-produced dbs (names trimmed and unique per side).
   function mergeDb(existing, imported) {
     let added = 0, updated = 0;
     const byName = new Map(existing.setups.map((s) => [s.name, s]));
