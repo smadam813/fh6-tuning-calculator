@@ -18,7 +18,9 @@
   // one. Requires a non-empty (trimmed) string name and an object of raw
   // field strings; units/goal/dials/savedAt get safe defaults. Unknown extra
   // keys are kept so a backup written by a newer app version survives a
-  // round-trip through this one.
+  // round-trip through this one. The copy is shallow — callers hand over
+  // owned, disposable objects (fresh JSON.parse output or a fresh snapshot),
+  // so the returned entry's fields/dials aliasing the input is fine.
   function validateSetup(obj) {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
     if (typeof obj.name !== "string" || obj.name.trim() === "") return null;
