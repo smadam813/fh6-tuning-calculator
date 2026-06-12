@@ -65,6 +65,8 @@
     return JSON.stringify(db, null, 2);
   }
 
+  // NOTE: array position is meaningless throughout this module — the UI
+  // sorts by savedAt. (parseDb dedupes in place; upsert appends; both fine.)
   // Pure: returns a new db with `setup` replacing any same-name entry.
   // An object that doesn't validate leaves the db unchanged.
   function upsertSetup(db, setup) {
@@ -77,11 +79,26 @@
 
   // Pure: returns a new db without the named entry (exact, trimmed match).
   function deleteSetup(db, name) {
-    const n = String(name).trim();
+    const n = typeof name === "string" ? name.trim() : "";
+    if (!n) return db; // non-strings/blank can't name a stored setup — no-op
     return { schema: SCHEMA, setups: db.setups.filter((s) => s.name !== n) };
   }
 
-  const API = { STORAGE_KEY, SCHEMA, emptyDb, validateSetup, parseDb, serializeDb, upsertSetup, deleteSetup };
+  // Merge a restored backup into the existing db: imported wins by name,
+  // existing setups absent from the import are preserved, imported entries
+  // keep their own savedAt. Pure; returns { db, added, updated }.
+  function mergeDb(existing, imported) {
+    let added = 0, updated = 0;
+    const byName = new Map(existing.setups.map((s) => [s.name, s]));
+    for (const s of imported.setups) {
+      if (byName.has(s.name)) updated++;
+      else added++;
+      byName.set(s.name, s);
+    }
+    return { db: { schema: SCHEMA, setups: [...byName.values()] }, added, updated };
+  }
+
+  const API = { STORAGE_KEY, SCHEMA, emptyDb, validateSetup, parseDb, serializeDb, upsertSetup, deleteSetup, mergeDb };
   if (typeof window !== "undefined") window.SETUPS = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

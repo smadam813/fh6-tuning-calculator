@@ -166,3 +166,40 @@ test("deleteSetup removes exactly the named entry (trimmed)", () => {
   // deleting a name that isn't there is a no-op
   assert.equal(SETUPS.deleteSetup(db, "ghost").setups.length, 1);
 });
+
+test("deleteSetup ignores non-string names (nothing deleted)", () => {
+  let db = SETUPS.emptyDb();
+  db = SETUPS.upsertSetup(db, entry({ name: "undefined" }));
+  db = SETUPS.upsertSetup(db, entry({ name: "null" }));
+  assert.equal(SETUPS.deleteSetup(db, undefined).setups.length, 2);
+  assert.equal(SETUPS.deleteSetup(db, null).setups.length, 2);
+  assert.equal(SETUPS.deleteSetup(db, "  ").setups.length, 2);
+});
+
+/* ---------------- mergeDb ---------------- */
+test("mergeDb: imported wins by name, unrelated existing entries survive", () => {
+  let existing = SETUPS.emptyDb();
+  existing = SETUPS.upsertSetup(existing, entry({ name: "A", fields: { power: "100" } }));
+  existing = SETUPS.upsertSetup(existing, entry({ name: "B", fields: { power: "200" } }));
+  const imported = {
+    schema: 1,
+    setups: [
+      SETUPS.validateSetup(entry({ name: "B", fields: { power: "999" }, savedAt: "2026-01-01T00:00:00.000Z" })),
+      SETUPS.validateSetup(entry({ name: "C", fields: { power: "300" } })),
+    ],
+  };
+  const { db, added, updated } = SETUPS.mergeDb(existing, imported);
+  assert.equal(added, 1);
+  assert.equal(updated, 1);
+  assert.deepEqual([...db.setups.map((s) => s.name)].sort(), ["A", "B", "C"]);
+  const b = db.setups.find((s) => s.name === "B");
+  assert.equal(b.fields.power, "999", "imported entry replaced the existing one");
+  assert.equal(b.savedAt, "2026-01-01T00:00:00.000Z", "imported entry keeps its own savedAt");
+});
+
+test("mergeDb with an empty import changes nothing", () => {
+  const existing = SETUPS.upsertSetup(SETUPS.emptyDb(), entry({}));
+  const { db, added, updated } = SETUPS.mergeDb(existing, SETUPS.emptyDb());
+  assert.equal(added + updated, 0);
+  assert.deepEqual(db, existing);
+});
