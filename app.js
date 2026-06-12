@@ -560,7 +560,7 @@
       setupStatus("Stored setups were unreadable — starting fresh.", true);
       return SETUPS.emptyDb();
     }
-    if (res.skipped > 0) setupStatus(`${res.skipped} stored setup${res.skipped === 1 ? " was" : "s were"} unreadable and dropped.`, true);
+    if (res.skipped > 0) setupStatus(`${res.skipped} stored setup${res.skipped === 1 ? "" : "s"} couldn't be kept and ${res.skipped === 1 ? "was" : "were"} dropped.`, true);
     return res.db;
   }
 

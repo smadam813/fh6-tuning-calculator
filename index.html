@@ -30,16 +30,16 @@
     <fieldset class="setups" id="setupsBlock">
       <legend>Saved Setups</legend>
       <div class="setup-row">
-        <input type="text" id="setupName" placeholder="Setup name — e.g. Hummer EV S1" aria-label="Setup name" />
+        <input type="text" id="setupName" placeholder="e.g. Hummer EV S1" aria-label="Setup name" />
         <button id="setupSave" type="button" class="ghost-btn">Save</button>
       </div>
       <div class="setup-row">
         <select id="setupList" aria-label="Saved setups"></select>
-        <button id="setupLoad" type="button" class="ghost-btn">Load</button>
-        <button id="setupDelete" type="button" class="ghost-btn">Delete</button>
+        <button id="setupLoad" type="button" class="ghost-btn" disabled>Load</button>
+        <button id="setupDelete" type="button" class="ghost-btn" disabled>Delete</button>
       </div>
       <div class="setup-row">
-        <button id="setupExport" type="button" class="ghost-btn">Export JSON</button>
+        <button id="setupExport" type="button" class="ghost-btn" disabled>Export JSON</button>
         <button id="setupImport" type="button" class="ghost-btn">Import JSON</button>
         <input type="file" id="setupFile" accept=".json,application/json" hidden />
       </div>

@@ -109,7 +109,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent-2); box-sh
 .setups .setup-row > input[type="text"], .setups .setup-row > select { flex: 1; min-width: 0; }
 .ghost-btn:disabled { opacity: .45; cursor: default; }
 .ghost-btn:disabled:hover { border-color: var(--line); color: var(--text); }
-#setupDelete:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+#setupDelete:hover:not(:disabled), #setupDelete:focus-visible:not(:disabled) { border-color: var(--danger); color: var(--danger); }
 .setup-status { min-height: 1.2em; margin-top: 2px; }
 .setup-status.error { color: var(--danger); }
 
