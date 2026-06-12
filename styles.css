@@ -104,6 +104,15 @@ input:focus, select:focus { outline: none; border-color: var(--accent-2); box-sh
 .tire-size-row .sep { color: var(--muted); font-size: 14px; }
 .tire-dia-out { color: var(--accent-2); font-size: 13px; margin-left: 4px; white-space: nowrap; }
 
+/* ---------- Saved setups ---------- */
+.setups .setup-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.setups .setup-row > input[type="text"], .setups .setup-row > select { flex: 1; min-width: 0; }
+.ghost-btn:disabled { opacity: .45; cursor: default; }
+.ghost-btn:disabled:hover { border-color: var(--line); color: var(--text); }
+#setupDelete:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.setup-status { min-height: 1.2em; margin-top: 2px; }
+.setup-status.error { color: var(--danger); }
+
 /* ---------- Outputs ---------- */
 .outputs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .goal-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
