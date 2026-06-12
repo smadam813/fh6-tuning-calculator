@@ -32,7 +32,38 @@
     return entry;
   }
 
-  const API = { STORAGE_KEY, SCHEMA, emptyDb, validateSetup };
+  // Parse a JSON string (localStorage value or backup file) into a db.
+  // -> { ok:true, db, skipped } with invalid entries dropped & counted, or
+  // -> { ok:false, error } when the envelope itself is unusable.
+  // A schema NEWER than ours is still read entry-by-entry (best effort)
+  // rather than rejected.
+  function parseDb(jsonString) {
+    let raw;
+    try {
+      raw = JSON.parse(jsonString);
+    } catch (e) {
+      return { ok: false, error: "not valid JSON" };
+    }
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, error: "not a setups backup (expected an object)" };
+    if (typeof raw.schema !== "number" || raw.schema < 1) return { ok: false, error: "not a setups backup (bad schema)" };
+    if (!Array.isArray(raw.setups)) return { ok: false, error: "not a setups backup (missing setups list)" };
+    const setups = [];
+    let skipped = 0;
+    for (const item of raw.setups) {
+      const entry = validateSetup(item);
+      if (entry) setups.push(entry);
+      else skipped++;
+    }
+    return { ok: true, db: { schema: SCHEMA, setups }, skipped };
+  }
+
+  // Pretty-printed both in localStorage and in export files (identical
+  // format by design; size is irrelevant at this scale).
+  function serializeDb(db) {
+    return JSON.stringify(db, null, 2);
+  }
+
+  const API = { STORAGE_KEY, SCHEMA, emptyDb, validateSetup, parseDb, serializeDb };
   if (typeof window !== "undefined") window.SETUPS = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

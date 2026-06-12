@@ -63,3 +63,41 @@ test("validateSetup preserves unknown extra keys (forward compatibility)", () =>
   const e = SETUPS.validateSetup(entry({ futureThing: { x: 1 } }));
   assert.deepEqual(e.futureThing, { x: 1 });
 });
+
+/* ---------------- serializeDb / parseDb ---------------- */
+test("serializeDb -> parseDb round-trips a db losslessly", () => {
+  const db = { schema: 1, setups: [SETUPS.validateSetup(entry({}))] };
+  const res = SETUPS.parseDb(SETUPS.serializeDb(db));
+  assert.equal(res.ok, true);
+  assert.equal(res.skipped, 0);
+  assert.deepEqual(res.db, db);
+});
+
+test("parseDb rejects garbage JSON and wrong envelopes", () => {
+  for (const bad of ["{nope", "42", '"str"', "[]", "null",
+      '{"setups":[]}',                       // missing schema
+      '{"schema":"1","setups":[]}',          // schema not a number
+      '{"schema":0,"setups":[]}',            // schema below 1
+      '{"schema":1}',                        // missing setups
+      '{"schema":1,"setups":{}}']) {         // setups not an array
+    const res = SETUPS.parseDb(bad);
+    assert.equal(res.ok, false, `expected reject: ${bad}`);
+    assert.equal(typeof res.error, "string");
+  }
+});
+
+test("parseDb drops invalid entries and counts them, keeping the valid ones", () => {
+  const raw = JSON.stringify({ schema: 1, setups: [entry({}), { name: "" }, null, entry({ name: "Second" })] });
+  const res = SETUPS.parseDb(raw);
+  assert.equal(res.ok, true);
+  assert.equal(res.skipped, 2);
+  assert.deepEqual(res.db.setups.map((s) => s.name), ["Test car", "Second"]);
+});
+
+test("parseDb tolerates a future schema number, reading entry-by-entry", () => {
+  const raw = JSON.stringify({ schema: 2, setups: [entry({ newKey: "kept" })] });
+  const res = SETUPS.parseDb(raw);
+  assert.equal(res.ok, true);
+  assert.equal(res.db.schema, 1, "normalized to the schema this app writes");
+  assert.equal(res.db.setups[0].newKey, "kept");
+});
