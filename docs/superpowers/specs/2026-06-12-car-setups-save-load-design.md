@@ -47,6 +47,8 @@ pretty-printed with 2-space indent):
 - `fields` is keyed by element id; it contains every input/select in the panel
   at save time (including blanks). Snapshot/apply iterate the panel's elements
   automatically, so future panel fields are saved without touching this code.
+  (Caveat: capture is by `el.value`, so a future checkbox/radio field would
+  need explicit `checked` handling.)
 - Names are trimmed; matching (overwrite, delete, merge) is by exact
   case-sensitive trimmed name.
 - `setups` ordering in storage is irrelevant; the UI sorts by `savedAt`

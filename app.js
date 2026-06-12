@@ -546,7 +546,9 @@
 
   // localStorage can be unavailable (private mode) or unreadable — both
   // degrade to an empty db with a status note; the calculator keeps working.
+  let lastLoadSkipped = 0; // entries dropped by the most recent loadSetupsDb
   function loadSetupsDb() {
+    lastLoadSkipped = 0;
     let raw = null;
     try {
       raw = localStorage.getItem(SETUPS.STORAGE_KEY);
@@ -560,7 +562,10 @@
       setupStatus("Stored setups were unreadable — starting fresh.", true);
       return SETUPS.emptyDb();
     }
-    if (res.skipped > 0) setupStatus(`${res.skipped} stored setup${res.skipped === 1 ? "" : "s"} couldn't be kept and ${res.skipped === 1 ? "was" : "were"} dropped.`, true);
+    if (res.skipped > 0) {
+      lastLoadSkipped = res.skipped;
+      setupStatus(`${res.skipped} stored setup${res.skipped === 1 ? "" : "s"} couldn't be kept and ${res.skipped === 1 ? "was" : "were"} dropped.`, true);
+    }
     return res.db;
   }
 
@@ -602,8 +607,9 @@
       // only fields that still exist, and only inside the Car Setup panel
       if (el && el.closest(".inputs") && !el.closest("#setupsBlock")) el.value = String(s.fields[id]);
     });
-    if (s.dials.handlingBias != null) $("handlingBias").value = s.dials.handlingBias;
-    if (s.dials.overallStiffness != null) $("overallStiffness").value = s.dials.overallStiffness;
+    // absent dial keys (hand-edited imports) reset to center so a load is deterministic
+    $("handlingBias").value = s.dials.handlingBias != null ? s.dials.handlingBias : "0";
+    $("overallStiffness").value = s.dials.overallStiffness != null ? s.dials.overallStiffness : "0";
     if (GOALS.includes(s.goal)) currentGoal = s.goal;
     refresh();
   }
@@ -640,7 +646,7 @@
       const db = loadSetupsDb();
       if (db.setups.some((s) => s.name === name) && !window.confirm(`Overwrite the saved setup “${name}”?`)) return;
       const next = SETUPS.upsertSetup(db, snapshotSetup(name));
-      if (saveSetupsDb(next)) { renderSetupList(next, name); setupStatus(`Saved “${name}” ✓`); }
+      if (saveSetupsDb(next)) { renderSetupList(next, name); setupStatus(`Saved “${name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`); }
     });
 
     $("setupList").addEventListener("change", () => {
@@ -661,7 +667,7 @@
       if (!name) { setupStatus("Pick a setup to delete.", true); return; }
       if (!window.confirm(`Delete the saved setup “${name}”?`)) return;
       const next = SETUPS.deleteSetup(loadSetupsDb(), name);
-      if (saveSetupsDb(next)) { renderSetupList(next, null); setupStatus(`Deleted “${name}” ✓`); }
+      if (saveSetupsDb(next)) { renderSetupList(next, null); $("setupName").value = ""; setupStatus(`Deleted “${name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`); }
     });
   }
 
@@ -699,6 +705,3 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-
-
-
