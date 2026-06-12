@@ -45,6 +45,8 @@ test("validateSetup rejects entries without a usable name or fields object", () 
   assert.equal(SETUPS.validateSetup(entry({ fields: "nope" })), null);
   assert.equal(SETUPS.validateSetup(entry({ fields: ["nope"] })), null);
   assert.equal(SETUPS.validateSetup(entry({ fields: null })), null);
+  assert.equal(SETUPS.validateSetup([]), null);
+  assert.equal(SETUPS.validateSetup(entry({ fields: 7 })), null);
 });
 
 test("validateSetup defaults missing units/goal/dials/savedAt safely", () => {
@@ -100,4 +102,32 @@ test("parseDb tolerates a future schema number, reading entry-by-entry", () => {
   assert.equal(res.ok, true);
   assert.equal(res.db.schema, 1, "normalized to the schema this app writes");
   assert.equal(res.db.setups[0].newKey, "kept");
+});
+
+test("validateSetup neutralizes a smuggled __proto__ key from raw JSON", () => {
+  const raw = JSON.parse('{"name":"x","fields":{},"__proto__":{"evil":true}}');
+  const e = SETUPS.validateSetup(raw);
+  assert.ok(e);
+  assert.equal(e.evil, undefined, "prototype not replaced by smuggled object");
+  assert.equal(Object.getPrototypeOf(e), Object.prototype);
+});
+
+test("parseDb handles non-string input without throwing", () => {
+  for (const bad of [undefined, null, 42, {}]) {
+    const res = SETUPS.parseDb(bad);
+    assert.equal(res.ok, false, `expected reject: ${String(bad)}`);
+  }
+});
+
+test("parseDb dedupes same-name entries (last wins) and counts the drops", () => {
+  const raw = JSON.stringify({ schema: 1, setups: [
+    entry({ name: "Dup", fields: { power: "100" } }),
+    entry({ name: " Dup ", fields: { power: "999" } }),  // trims to the same name
+    entry({ name: "Other" }),
+  ]});
+  const res = SETUPS.parseDb(raw);
+  assert.equal(res.ok, true);
+  assert.equal(res.skipped, 1);
+  assert.deepEqual(res.db.setups.map((s) => s.name), ["Dup", "Other"]);
+  assert.equal(res.db.setups.find((s) => s.name === "Dup").fields.power, "999", "last entry wins");
 });

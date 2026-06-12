@@ -24,6 +24,7 @@
     if (typeof obj.name !== "string" || obj.name.trim() === "") return null;
     if (!obj.fields || typeof obj.fields !== "object" || Array.isArray(obj.fields)) return null;
     const entry = Object.assign({}, obj);
+    Object.setPrototypeOf(entry, Object.prototype); // JSON can smuggle an own "__proto__" key through Object.assign
     entry.name = obj.name.trim();
     entry.units = obj.units === "metric" ? "metric" : "imperial";
     entry.goal = typeof obj.goal === "string" ? obj.goal : "";
@@ -47,14 +48,15 @@
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, error: "not a setups backup (expected an object)" };
     if (typeof raw.schema !== "number" || raw.schema < 1) return { ok: false, error: "not a setups backup (bad schema)" };
     if (!Array.isArray(raw.setups)) return { ok: false, error: "not a setups backup (missing setups list)" };
-    const setups = [];
+    const byName = new Map(); // also dedupes by trimmed name: last entry wins
     let skipped = 0;
     for (const item of raw.setups) {
       const entry = validateSetup(item);
-      if (entry) setups.push(entry);
-      else skipped++;
+      if (!entry) { skipped++; continue; }
+      if (byName.has(entry.name)) skipped++;
+      byName.set(entry.name, entry);
     }
-    return { ok: true, db: { schema: SCHEMA, setups }, skipped };
+    return { ok: true, db: { schema: SCHEMA, setups: [...byName.values()] }, skipped };
   }
 
   // Pretty-printed both in localStorage and in export files (identical
