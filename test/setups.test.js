@@ -131,3 +131,38 @@ test("parseDb dedupes same-name entries (last wins) and counts the drops", () =>
   assert.deepEqual(res.db.setups.map((s) => s.name), ["Dup", "Other"]);
   assert.equal(res.db.setups.find((s) => s.name === "Dup").fields.power, "999", "last entry wins");
 });
+
+/* ---------------- upsertSetup / deleteSetup ---------------- */
+test("upsertSetup adds a new entry and replaces an existing one by trimmed name", () => {
+  let db = SETUPS.emptyDb();
+  db = SETUPS.upsertSetup(db, entry({}));
+  db = SETUPS.upsertSetup(db, entry({ name: "Other" }));
+  assert.equal(db.setups.length, 2);
+  // same trimmed name -> replace, not duplicate
+  db = SETUPS.upsertSetup(db, entry({ name: "  Test car ", fields: { power: "900" } }));
+  assert.equal(db.setups.length, 2);
+  assert.deepEqual(db.setups.find((s) => s.name === "Test car").fields, { power: "900" });
+});
+
+test("upsertSetup ignores an invalid entry (db returned unchanged)", () => {
+  const db = SETUPS.upsertSetup(SETUPS.emptyDb(), { name: "", fields: {} });
+  assert.deepEqual(db, SETUPS.emptyDb());
+});
+
+test("upsertSetup and deleteSetup do not mutate their input db", () => {
+  const before = SETUPS.upsertSetup(SETUPS.emptyDb(), entry({}));
+  const snapshot = JSON.parse(JSON.stringify(before));
+  SETUPS.upsertSetup(before, entry({ name: "Another" }));
+  SETUPS.deleteSetup(before, "Test car");
+  assert.deepEqual(JSON.parse(JSON.stringify(before)), snapshot);
+});
+
+test("deleteSetup removes exactly the named entry (trimmed)", () => {
+  let db = SETUPS.emptyDb();
+  db = SETUPS.upsertSetup(db, entry({}));
+  db = SETUPS.upsertSetup(db, entry({ name: "Keep me" }));
+  db = SETUPS.deleteSetup(db, " Test car ");
+  assert.deepEqual(db.setups.map((s) => s.name), ["Keep me"]);
+  // deleting a name that isn't there is a no-op
+  assert.equal(SETUPS.deleteSetup(db, "ghost").setups.length, 1);
+});

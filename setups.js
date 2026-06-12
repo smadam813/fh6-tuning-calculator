@@ -65,7 +65,23 @@
     return JSON.stringify(db, null, 2);
   }
 
-  const API = { STORAGE_KEY, SCHEMA, emptyDb, validateSetup, parseDb, serializeDb };
+  // Pure: returns a new db with `setup` replacing any same-name entry.
+  // An object that doesn't validate leaves the db unchanged.
+  function upsertSetup(db, setup) {
+    const entry = validateSetup(setup);
+    if (!entry) return db;
+    const setups = db.setups.filter((s) => s.name !== entry.name);
+    setups.push(entry);
+    return { schema: SCHEMA, setups };
+  }
+
+  // Pure: returns a new db without the named entry (exact, trimmed match).
+  function deleteSetup(db, name) {
+    const n = String(name).trim();
+    return { schema: SCHEMA, setups: db.setups.filter((s) => s.name !== n) };
+  }
+
+  const API = { STORAGE_KEY, SCHEMA, emptyDb, validateSetup, parseDb, serializeDb, upsertSetup, deleteSetup };
   if (typeof window !== "undefined") window.SETUPS = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();
