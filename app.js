@@ -6,6 +6,7 @@
 (function () {
   "use strict";
   const { GOALS, GOAL_META, compute, validate, overallTireDiameter } = window.TUNING;
+  const SETUPS = window.SETUPS;
 
   /* ---------- unit handling ---------- */
   // factor to convert a METRIC value to IMPERIAL (multiply); divide to go back.
@@ -533,10 +534,52 @@
     return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   }
 
+  /* ---------- saved setups: status + localStorage access ---------- */
+  let setupStatusTimer = null;
+  function setupStatus(msg, isError) {
+    const el = $("setupStatus");
+    el.textContent = msg;
+    el.classList.toggle("error", !!isError);
+    clearTimeout(setupStatusTimer);
+    if (msg) setupStatusTimer = setTimeout(() => { el.textContent = ""; el.classList.remove("error"); }, 4000);
+  }
+
+  // localStorage can be unavailable (private mode) or unreadable — both
+  // degrade to an empty db with a status note; the calculator keeps working.
+  function loadSetupsDb() {
+    let raw = null;
+    try {
+      raw = localStorage.getItem(SETUPS.STORAGE_KEY);
+    } catch (e) {
+      setupStatus("Browser storage unavailable — setups won't persist.", true);
+      return SETUPS.emptyDb();
+    }
+    if (raw == null) return SETUPS.emptyDb();
+    const res = SETUPS.parseDb(raw);
+    if (!res.ok) {
+      setupStatus("Stored setups were unreadable — starting fresh.", true);
+      return SETUPS.emptyDb();
+    }
+    if (res.skipped > 0) setupStatus(`${res.skipped} stored setup${res.skipped === 1 ? " was" : "s were"} unreadable and dropped.`, true);
+    return res.db;
+  }
+
+  function saveSetupsDb(db) {
+    try {
+      localStorage.setItem(SETUPS.STORAGE_KEY, SETUPS.serializeDb(db));
+      return true;
+    } catch (e) {
+      setupStatus("Couldn't write browser storage — setups not saved.", true);
+      return false;
+    }
+  }
+
   function init() {
     buildGoalTabs();
-    // live updates on every input
+    // live updates on every input — except the setups controls, which manage
+    // saved tunes rather than describing the car
     document.querySelectorAll("input, select").forEach((el) => {
+      if (el.closest("#setupsBlock")) return;
       el.addEventListener("input", refresh);
       el.addEventListener("change", refresh);
     });
