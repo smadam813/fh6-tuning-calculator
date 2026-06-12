@@ -638,9 +638,9 @@
       const name = $("setupName").value.trim();
       if (!name) { setupStatus("Give the setup a name first.", true); return; }
       const db = loadSetupsDb();
-      if (db.setups.some((s) => s.name === name) && !window.confirm(`Overwrite the saved setup "${name}"?`)) return;
+      if (db.setups.some((s) => s.name === name) && !window.confirm(`Overwrite the saved setup “${name}”?`)) return;
       const next = SETUPS.upsertSetup(db, snapshotSetup(name));
-      if (saveSetupsDb(next)) { renderSetupList(next, name); setupStatus(`Saved "${name}" ✓`); }
+      if (saveSetupsDb(next)) { renderSetupList(next, name); setupStatus(`Saved “${name}” ✓`); }
     });
 
     $("setupList").addEventListener("change", () => {
@@ -653,15 +653,15 @@
       if (!s) { setupStatus("Pick a setup to load.", true); return; }
       applySetup(s);
       $("setupName").value = s.name;
-      setupStatus(`Loaded "${s.name}" ✓`);
+      setupStatus(`Loaded “${s.name}” ✓`);
     });
 
     $("setupDelete").addEventListener("click", () => {
       const name = $("setupList").value;
       if (!name) { setupStatus("Pick a setup to delete.", true); return; }
-      if (!window.confirm(`Delete the saved setup "${name}"?`)) return;
+      if (!window.confirm(`Delete the saved setup “${name}”?`)) return;
       const next = SETUPS.deleteSetup(loadSetupsDb(), name);
-      if (saveSetupsDb(next)) { renderSetupList(next, null); setupStatus(`Deleted "${name}" ✓`); }
+      if (saveSetupsDb(next)) { renderSetupList(next, null); setupStatus(`Deleted “${name}” ✓`); }
     });
   }
 
@@ -699,3 +699,6 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+
+
+
