@@ -27,6 +27,25 @@
   <section class="panel inputs" aria-label="Car inputs">
     <h2 class="panel-title">Car Setup</h2>
 
+    <fieldset class="setups" id="setupsBlock">
+      <legend>Saved Setups</legend>
+      <div class="setup-row">
+        <input type="text" id="setupName" placeholder="e.g. Hummer EV S1" aria-label="Setup name" />
+        <button id="setupSave" type="button" class="ghost-btn">Save</button>
+      </div>
+      <div class="setup-row">
+        <select id="setupList" aria-label="Saved setups"></select>
+        <button id="setupLoad" type="button" class="ghost-btn" disabled>Load</button>
+        <button id="setupDelete" type="button" class="ghost-btn" disabled>Delete</button>
+      </div>
+      <div class="setup-row">
+        <button id="setupExport" type="button" class="ghost-btn" disabled>Export JSON</button>
+        <button id="setupImport" type="button" class="ghost-btn">Import JSON</button>
+        <input type="file" id="setupFile" accept=".json,application/json" hidden />
+      </div>
+      <p class="hint setup-status" id="setupStatus" role="status" aria-live="polite"></p>
+    </fieldset>
+
     <fieldset>
       <legend>Identity</legend>
       <div class="grid2">
@@ -239,6 +258,7 @@
 </footer>
 
 <script src="tuning.js"></script>
+<script src="setups.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

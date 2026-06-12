@@ -6,6 +6,7 @@
 (function () {
   "use strict";
   const { GOALS, GOAL_META, compute, validate, overallTireDiameter } = window.TUNING;
+  const SETUPS = window.SETUPS;
 
   /* ---------- unit handling ---------- */
   // factor to convert a METRIC value to IMPERIAL (multiply); divide to go back.
@@ -533,10 +534,183 @@
     return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   }
 
+  /* ---------- saved setups: status + localStorage access ---------- */
+  let setupStatusTimer = null;
+  function setupStatus(msg, isError) {
+    const el = $("setupStatus");
+    el.textContent = msg;
+    el.classList.toggle("error", !!isError);
+    clearTimeout(setupStatusTimer);
+    if (msg) setupStatusTimer = setTimeout(() => { el.textContent = ""; el.classList.remove("error"); }, 4000);
+  }
+
+  // localStorage can be unavailable (private mode) or unreadable — both
+  // degrade to an empty db with a status note; the calculator keeps working.
+  let lastLoadSkipped = 0; // entries dropped by the most recent loadSetupsDb
+  function loadSetupsDb() {
+    lastLoadSkipped = 0;
+    let raw = null;
+    try {
+      raw = localStorage.getItem(SETUPS.STORAGE_KEY);
+    } catch (e) {
+      setupStatus("Browser storage unavailable — setups won't persist.", true);
+      return SETUPS.emptyDb();
+    }
+    if (raw == null) return SETUPS.emptyDb();
+    const res = SETUPS.parseDb(raw);
+    if (!res.ok) {
+      setupStatus("Stored setups were unreadable — starting fresh.", true);
+      return SETUPS.emptyDb();
+    }
+    if (res.skipped > 0) {
+      lastLoadSkipped = res.skipped;
+      setupStatus(`${res.skipped} stored setup${res.skipped === 1 ? "" : "s"} couldn't be kept and ${res.skipped === 1 ? "was" : "were"} dropped.`, true);
+    }
+    return res.db;
+  }
+
+  function saveSetupsDb(db) {
+    try {
+      localStorage.setItem(SETUPS.STORAGE_KEY, SETUPS.serializeDb(db));
+      return true;
+    } catch (e) {
+      setupStatus("Couldn't write browser storage — setups not saved.", true);
+      return false;
+    }
+  }
+
+  // Snapshot every input/select in the Car Setup panel (by element id), plus
+  // units, goal and both dials — the "full picture" a saved setup captures.
+  function snapshotSetup(name) {
+    const fields = {};
+    document.querySelectorAll(".inputs input, .inputs select").forEach((el) => {
+      if (!el.id || el.closest("#setupsBlock")) return;
+      fields[el.id] = el.value;
+    });
+    return {
+      name,
+      savedAt: new Date().toISOString(),
+      units,
+      goal: currentGoal,
+      dials: { handlingBias: $("handlingBias").value, overallStiffness: $("overallStiffness").value },
+      fields,
+    };
+  }
+
+  function applySetup(s) {
+    // Units first: setUnits converts the stale on-screen values, which is fine
+    // because every panel field is overwritten right after; it also fixes the
+    // unit labels and the toggle's active state.
+    setUnits(s.units === "metric" ? "metric" : "imperial");
+    Object.keys(s.fields).forEach((id) => {
+      const el = $(id);
+      // only fields that still exist, and only inside the Car Setup panel
+      if (el && el.closest(".inputs") && !el.closest("#setupsBlock")) el.value = String(s.fields[id]);
+    });
+    // absent dial keys (hand-edited imports) reset to center so a load is deterministic
+    $("handlingBias").value = s.dials.handlingBias != null ? s.dials.handlingBias : "0";
+    $("overallStiffness").value = s.dials.overallStiffness != null ? s.dials.overallStiffness : "0";
+    if (GOALS.includes(s.goal)) currentGoal = s.goal;
+    refresh();
+  }
+
+  // Options are built via DOM (not innerHTML) so names with quotes are safe.
+  function renderSetupList(db, selectedName) {
+    const sel = $("setupList");
+    sel.innerHTML = "";
+    const sorted = [...db.setups].sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+    if (!sorted.length) {
+      const o = document.createElement("option");
+      o.value = ""; o.disabled = true; o.selected = true;
+      o.textContent = "— no saved setups —";
+      sel.appendChild(o);
+    }
+    for (const s of sorted) {
+      const o = document.createElement("option");
+      o.value = s.name; o.textContent = s.name;
+      if (s.name === selectedName) o.selected = true;
+      sel.appendChild(o);
+    }
+    const has = sorted.length > 0;
+    $("setupLoad").disabled = !has;
+    $("setupDelete").disabled = !has;
+    $("setupExport").disabled = !has;
+  }
+
+  function wireSetups() {
+    if (!SETUPS) return; // setups.js failed to load — core calculator still works
+    renderSetupList(loadSetupsDb(), null);
+
+    $("setupSave").addEventListener("click", () => {
+      const name = $("setupName").value.trim();
+      if (!name) { setupStatus("Give the setup a name first.", true); return; }
+      const db = loadSetupsDb();
+      if (db.setups.some((s) => s.name === name) && !window.confirm(`Overwrite the saved setup “${name}”?`)) return;
+      const next = SETUPS.upsertSetup(db, snapshotSetup(name));
+      if (saveSetupsDb(next)) { renderSetupList(next, name); setupStatus(`Saved “${name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`); }
+    });
+
+    $("setupList").addEventListener("change", () => {
+      if ($("setupList").value) $("setupName").value = $("setupList").value;
+    });
+
+    $("setupLoad").addEventListener("click", () => {
+      const name = $("setupList").value;
+      const s = loadSetupsDb().setups.find((x) => x.name === name);
+      if (!s) { setupStatus("Pick a setup to load.", true); return; }
+      applySetup(s);
+      $("setupName").value = s.name;
+      setupStatus(`Loaded “${s.name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
+    });
+
+    $("setupDelete").addEventListener("click", () => {
+      const name = $("setupList").value;
+      if (!name) { setupStatus("Pick a setup to delete.", true); return; }
+      if (!window.confirm(`Delete the saved setup “${name}”?`)) return;
+      const next = SETUPS.deleteSetup(loadSetupsDb(), name);
+      if (saveSetupsDb(next)) { renderSetupList(next, null); $("setupName").value = ""; setupStatus(`Deleted “${name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`); }
+    });
+
+    $("setupExport").addEventListener("click", () => {
+      const db = loadSetupsDb();
+      const blob = new Blob([SETUPS.serializeDb(db)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const d = new Date(), pad = (n) => String(n).padStart(2, "0");
+      a.href = url;
+      a.download = `fh6-setups-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setupStatus(`Exported ${db.setups.length} setup${db.setups.length === 1 ? "" : "s"} ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
+    });
+
+    $("setupImport").addEventListener("click", () => $("setupFile").click());
+    $("setupFile").addEventListener("change", () => {
+      const file = $("setupFile").files[0];
+      $("setupFile").value = ""; // so re-picking the same file fires change again
+      if (!file) return;
+      file.text().then((text) => {
+        const res = SETUPS.parseDb(text);
+        if (!res.ok) { setupStatus(`Import failed: ${res.error}.`, true); return; }
+        const merged = SETUPS.mergeDb(loadSetupsDb(), res.db);
+        if (!saveSetupsDb(merged.db)) return;
+        renderSetupList(merged.db, null);
+        $("setupName").value = $("setupList").value;
+        const parts = [`${merged.added} added`, `${merged.updated} updated`];
+        if (res.skipped) parts.push(`${res.skipped} skipped`);
+        setupStatus(`Imported: ${parts.join(", ")} ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
+      }, () => setupStatus("Couldn't read that file.", true));
+    });
+  }
+
   function init() {
     buildGoalTabs();
-    // live updates on every input
+    // live updates on every input — except the setups controls, which manage
+    // saved tunes rather than describing the car
     document.querySelectorAll("input, select").forEach((el) => {
+      if (el.closest("#setupsBlock")) return;
       el.addEventListener("input", refresh);
       el.addEventListener("change", refresh);
     });
@@ -559,6 +733,7 @@
         window.prompt("Copy your tune:", text);
       }
     });
+    wireSetups();
     refresh();
   }
 

@@ -12,7 +12,8 @@ in-game).
 index.html      structure + inputs/outputs
 styles.css      dark, mobile-first responsive theme
 tuning.js       the engine — pure compute(input, goal) -> tune
-app.js          UI: live binding, units, compare table, copy
+setups.js       saved setups — pure storage logic (validate/merge/serialize)
+app.js          UI: live binding, units, compare table, copy, saved setups
 research/        the sourced formulas this engine is built on (provenance)
 ```
 
@@ -56,6 +57,16 @@ moved versus the centered baseline — in plain language ("stiffer front anti-ro
 "more front brake bias") with the `before → after` value — and the affected rows in the
 output cards are highlighted in place with a `was X` marker. So when you nudge a dial to chase,
 say, a little more oversteer, you can see exactly *what all just changed* and by how much.
+
+## Saved setups
+
+Save the whole Car Setup panel — plus both dials and the selected goal — under a
+name, right in your browser (localStorage; no account, no server). Load or delete
+saved setups from the dropdown at the top of the panel. **Export JSON** downloads
+the whole collection as a backup file; **Import JSON** restores one, merging by
+name (the file wins on conflicts — everything else you've saved stays put).
+Setups store the raw field text plus the units they were entered in, so blanks
+stay blank and metric setups reload exactly as typed.
 
 ## The formulas (and why)
 
