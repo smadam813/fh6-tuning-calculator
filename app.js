@@ -156,7 +156,14 @@
     const g = t.gearing;
     const rows = [{ k: "Final drive", v: nf(g.final, 2) }];
     if (g.singleSpeed) {
-      rows.push({ k: "Gearbox", v: "Single-speed (EV)" });
+      // EVs are single-speed but the lone gear IS an adjustable in-game slider
+      // ("1st", e.g. Hummer EV defaults to 3.08) — the final drive above is only
+      // correct paired with this value, so it must be shown, not hidden.
+      rows.push({
+        k: "1st (only gear)",
+        v: nf(g.ratios[0], 2) + (g.speeds ? `  ·  ${speedDisp(g.speeds[0])}` : ""),
+        sub: true,
+      });
     } else {
       g.ratios.forEach((r, idx) => rows.push({
         k: `Gear ${idx + 1}`,
@@ -387,7 +394,7 @@
       L.push(`Dials: ${parts.join(", ")}`);
     }
     L.push(`— Tires: F ${nf(t.tires.front, 1)} / R ${nf(t.tires.rear, 1)} psi`);
-    L.push(`— Final drive: ${nf(t.gearing.final, 2)}${t.gearing.singleSpeed ? " (single-speed)" : "  Gears: " + t.gearing.ratios.map((r) => nf(r, 2)).join(", ")}${t.gearing.topSpeed != null ? `  | Top speed ~${speedDisp(t.gearing.topSpeed)}` : ""}`);
+    L.push(`— Final drive: ${nf(t.gearing.final, 2)}${t.gearing.singleSpeed ? `  1st (only gear): ${nf(t.gearing.ratios[0], 2)}` : "  Gears: " + t.gearing.ratios.map((r) => nf(r, 2)).join(", ")}${t.gearing.topSpeed != null ? `  | Top speed ~${speedDisp(t.gearing.topSpeed)}` : ""}`);
     L.push(`— Camber: F ${nf(t.alignment.camberF, 1)} / R ${nf(t.alignment.camberR, 1)}  Toe: F ${nf(t.alignment.toeF, 1)} / R ${nf(t.alignment.toeR, 1)}  Caster: ${nf(t.alignment.caster, 1)}`);
     L.push(`— ARB: F ${t.arb.front} / R ${t.arb.rear}`);
     L.push(`— Springs: F ${springDisp(t.springs.front)} / R ${springDisp(t.springs.rear)} ${units === "metric" ? "kgf/mm" : "lb/in"}  Ride: F ${rideDisp(t.springs.rideF)} / R ${rideDisp(t.springs.rideR)} ${units === "metric" ? "cm" : "in"}`);

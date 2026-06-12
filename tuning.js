@@ -157,20 +157,25 @@
     // a taller (numerically lower) single ratio, a weaker one wants it shorter.
     if (d.isEV) {
       const evRatio = r2(clamp(1.20 + (1 - d.pw / 0.40) * 0.30, 0.90, 1.60));
+      // FH6 EV motors lose power approaching redline (verified in-game: a tune
+      // geared redline-at-target topped out ~3% short; ~7% rpm headroom reached
+      // the target). Gear the limiter ~7% PAST the target so the actual,
+      // power-limited top speed lands ON the target.
+      const EV_HEADROOM = 1.07;
       const RL = i.redlineRpm, TD = i.tireDiameter, TT = i.targetTopSpeed;
       const canSpeed = RL > 0 && TD > 0;
       let fdSource = "heuristic";
-      if (canSpeed && TT > 0) { fd = clamp(r2((RL * Math.PI * TD * 60) / (63360 * TT * evRatio)), FD_MIN, FD_MAX); fdSource = "target"; }
+      if (canSpeed && TT > 0) { fd = clamp(r2((RL * Math.PI * TD * 60) / (63360 * TT * EV_HEADROOM * evRatio)), FD_MIN, FD_MAX); fdSource = "target"; }
       const speeds = canSpeed ? [RL / (evRatio * fd) * Math.PI * TD * 60 / 63360] : null;
       return {
         final: fd, ratios: [evRatio], singleSpeed: true, speeds, topSpeed: speeds ? speeds[0] : null, fdSource,
         why: {
           text: (fdSource === "target"
-              ? `This EV is single-speed; the final drive is back-solved from physics so it reaches your target top speed at the ${RL} rpm redline — exact, not an estimate. The lone ratio (${evRatio}) is sized to this car's ${r2(d.pw)} hp/lb. `
-              : `This EV is single-speed, so only the final drive (${fd}) and the lone ratio set the speed/accel trade-off; that ratio (${evRatio}) is tuned to this car's ${r2(d.pw)} hp/lb (taller for stronger cars) and the final drive runs slightly long because flat instant torque has no power band to keep. `) +
-            (canSpeed ? `Top speed is computed from your redline and tire diameter.` : ``),
+              ? `This EV is single-speed: set BOTH in-game sliders — final drive ${fd} and the lone "1st" ratio ${evRatio} (sized to this car's ${r2(d.pw)} hp/lb); the final drive is only correct paired with that 1st value. The pair is back-solved so the ${RL} rpm limiter arrives ~7% past your target: FH6 EV motors lose power near redline, so gearing the limiter exactly at the target tops out short. Expect the in-game gearing graph to max at the "@ redline" speed shown, and the simulated top speed to land on your target. `
+              : `This EV is single-speed: set BOTH in-game sliders — final drive ${fd} and the lone "1st" ratio ${evRatio}. That ratio is tuned to this car's ${r2(d.pw)} hp/lb (taller for stronger cars) and the final drive runs slightly long because flat instant torque has no power band to keep. `) +
+            (canSpeed && fdSource !== "target" ? `Top speed is computed from your redline and tire diameter.` : ``),
           formula: (fdSource === "target"
-              ? `evRatio = clamp(1.20 + (1 − pw/0.40)×0.30, 0.90, 1.60)\nFD = redline × π × tireØ × 60 / (63360 × targetMph × evRatio)`
+              ? `evRatio = clamp(1.20 + (1 − pw/0.40)×0.30, 0.90, 1.60)\nFD = redline × π × tireØ × 60 / (63360 × targetMph × 1.07 × evRatio)\n1.07 = rpm headroom (FH6 EV power falls off near redline)`
               : `evRatio = clamp(1.20 + (1 − pw/0.40)×0.30, 0.90, 1.60)\nFD = 4.25 + clamp((400−hp)/600, ±0.6) + weight&goal adj − 0.15 (EV)`),
         },
       };

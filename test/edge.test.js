@@ -47,12 +47,15 @@ test("EV is single-speed regardless of the gears field (8 requested -> 1 ratio)"
   inRange(t.gearing.final, RANGES.fd, "EV final");
 });
 
-test("EV back-solves final drive to hit target top speed when speed inputs given", () => {
+test("EV target solve gears the limiter ~7% past target (FH6 EV power falloff headroom)", () => {
   const t = TUNING.compute(baseInput({ powertrain: "EV", redlineRpm: 9000, tireDiameter: 26, targetTopSpeed: 180 }), "Circuit");
   assert.equal(t.gearing.fdSource, "target");
   assert.equal(t.gearing.singleSpeed, true);
-  // top speed should land within a couple mph of target (FD rounds to 2 dp)
-  assert.ok(Math.abs(t.gearing.topSpeed - 180) < 2.5, `EV top speed ${t.gearing.topSpeed} ~ 180`);
+  // FH6 EV motors lose power near redline (verified in-game on the Hummer EV:
+  // redline-at-target topped out ~3% short; ~7% rpm headroom reached the target).
+  // So the gearing-limited speed must land ~7% PAST the target, not at it.
+  assert.ok(Math.abs(t.gearing.topSpeed - 180 * 1.07) < 2.5, `EV redline speed ${t.gearing.topSpeed} ~ ${180 * 1.07}`);
+  assert.ok(t.gearing.topSpeed > 185, `redline speed ${t.gearing.topSpeed} must exceed target (headroom)`);
 });
 
 test("non-EV ICE keeps a multi-gear box matching the gears field", () => {
