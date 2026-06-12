@@ -669,6 +669,38 @@
       const next = SETUPS.deleteSetup(loadSetupsDb(), name);
       if (saveSetupsDb(next)) { renderSetupList(next, null); $("setupName").value = ""; setupStatus(`Deleted “${name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`); }
     });
+
+    $("setupExport").addEventListener("click", () => {
+      const db = loadSetupsDb();
+      const blob = new Blob([SETUPS.serializeDb(db)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const d = new Date(), pad = (n) => String(n).padStart(2, "0");
+      a.href = url;
+      a.download = `fh6-setups-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setupStatus(`Exported ${db.setups.length} setup${db.setups.length === 1 ? "" : "s"} ✓`);
+    });
+
+    $("setupImport").addEventListener("click", () => $("setupFile").click());
+    $("setupFile").addEventListener("change", () => {
+      const file = $("setupFile").files[0];
+      $("setupFile").value = ""; // so re-picking the same file fires change again
+      if (!file) return;
+      file.text().then((text) => {
+        const res = SETUPS.parseDb(text);
+        if (!res.ok) { setupStatus(`Import failed: ${res.error}.`, true); return; }
+        const merged = SETUPS.mergeDb(loadSetupsDb(), res.db);
+        if (!saveSetupsDb(merged.db)) return;
+        renderSetupList(merged.db, null);
+        const parts = [`${merged.added} added`, `${merged.updated} updated`];
+        if (res.skipped) parts.push(`${res.skipped} skipped`);
+        setupStatus(`Imported: ${parts.join(", ")} ✓`);
+      }, () => setupStatus("Couldn't read that file.", true));
+    });
   }
 
   function init() {
