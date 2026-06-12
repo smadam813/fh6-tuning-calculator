@@ -458,7 +458,7 @@ Update the export line:
 - [ ] **Step 4: Run the full suite to verify everything passes**
 
 Run: `node --test`
-Expected: PASS — all existing tests plus 15 setups tests, 0 fail
+Expected: PASS — all existing tests plus the setups tests (19 after review-round additions), 0 fail
 
 - [ ] **Step 5: Commit**
 
@@ -983,6 +983,6 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ## Done criteria
 
-- `node --test` fully green (existing suite + 15 new setups tests).
+- `node --test` fully green (existing suite + 19 new setups tests).
 - All Task 9 browser checks pass.
 - Branch `car-setups` contains the spec, this plan, and one commit per task, ready for a PR to `main` (user squash-merges).

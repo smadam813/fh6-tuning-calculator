@@ -638,6 +638,7 @@
   }
 
   function wireSetups() {
+    if (!SETUPS) return; // setups.js failed to load — core calculator still works
     renderSetupList(loadSetupsDb(), null);
 
     $("setupSave").addEventListener("click", () => {
@@ -659,7 +660,7 @@
       if (!s) { setupStatus("Pick a setup to load.", true); return; }
       applySetup(s);
       $("setupName").value = s.name;
-      setupStatus(`Loaded “${s.name}” ✓`);
+      setupStatus(`Loaded “${s.name}” ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
     });
 
     $("setupDelete").addEventListener("click", () => {
@@ -696,6 +697,7 @@
         const merged = SETUPS.mergeDb(loadSetupsDb(), res.db);
         if (!saveSetupsDb(merged.db)) return;
         renderSetupList(merged.db, null);
+        $("setupName").value = $("setupList").value;
         const parts = [`${merged.added} added`, `${merged.updated} updated`];
         if (res.skipped) parts.push(`${res.skipped} skipped`);
         setupStatus(`Imported: ${parts.join(", ")} ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
