@@ -682,7 +682,7 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setupStatus(`Exported ${db.setups.length} setup${db.setups.length === 1 ? "" : "s"} ✓`);
+      setupStatus(`Exported ${db.setups.length} setup${db.setups.length === 1 ? "" : "s"} ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
     });
 
     $("setupImport").addEventListener("click", () => $("setupFile").click());
@@ -698,7 +698,7 @@
         renderSetupList(merged.db, null);
         const parts = [`${merged.added} added`, `${merged.updated} updated`];
         if (res.skipped) parts.push(`${res.skipped} skipped`);
-        setupStatus(`Imported: ${parts.join(", ")} ✓`);
+        setupStatus(`Imported: ${parts.join(", ")} ✓${lastLoadSkipped ? ` (${lastLoadSkipped} dropped)` : ""}`);
       }, () => setupStatus("Couldn't read that file.", true));
     });
   }
