@@ -1,0 +1,80 @@
+name: Deploy Blazor WASM to GitHub Pages
+
+# Builds, tests and publishes the standalone Blazor WebAssembly app, then
+# deploys wwwroot to GitHub Pages. Runs on pushes to main (i.e. after the
+# Blazor port is merged) and on manual dispatch. The repo is a *project* Pages
+# site served from /fh6-tuning-calculator/, so the published <base href> is
+# rewritten from "/" to that subpath, a .nojekyll file is added (otherwise
+# Pages' Jekyll step strips the _framework folder Blazor needs), and index.html
+# is copied to 404.html for SPA deep-link fallback.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; let an in-flight production deploy finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  PAGES_BASE: /fh6-tuning-calculator/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # The parity test regenerates parity/cases.json from the legacy JS engine
+      # via the GenerateParityCases MSBuild target, which shells out to node.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test (engine parity + UI)
+        run: dotnet test Fh6Tuning.sln -c Release
+
+      - name: Publish Blazor WASM
+        run: dotnet publish Fh6Tuning.Web -c Release -o release --nologo
+
+      - name: Rewrite <base href> for the project Pages subpath
+        run: sed -i 's|<base href="/" />|<base href="${{ env.PAGES_BASE }}" />|g' release/wwwroot/index.html
+
+      - name: SPA 404 fallback + disable Jekyll (keep _framework)
+        run: |
+          cp release/wwwroot/index.html release/wwwroot/404.html
+          touch release/wwwroot/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

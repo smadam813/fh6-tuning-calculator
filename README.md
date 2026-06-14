@@ -40,17 +40,29 @@ dotnet test  Fh6Tuning.sln              # run all xUnit tests (parity, sweep, un
 dotnet run   --project Fh6Tuning.Web    # dev server at http://localhost:5221
 ```
 
-**Publish for GitHub Pages** — publish the Web project and deploy the WASM app's static `wwwroot`:
+**Deploy to GitHub Pages (automated).** [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)
+runs on every push to `main` (and on manual dispatch): it runs the full test suite, publishes the
+Web project, and then prepares the static bundle for a *project* Pages site at
+`/fh6-tuning-calculator/` before deploying it — specifically it
+
+- rewrites the app's `<base href>` from `/` to `/fh6-tuning-calculator/`,
+- adds a `.nojekyll` file so Pages serves the `_framework` runtime folder (Jekyll strips
+  underscore-prefixed paths otherwise), and
+- copies `index.html` to `404.html` for SPA deep-link fallback.
+
+The first run switches the repo's Pages source to **GitHub Actions** (`actions/configure-pages`
+with `enablement: true`); if your Pages site was previously "deploy from a branch", you may need
+to set the source to GitHub Actions once under **Settings → Pages**.
+
+**Publish manually** — the static site lands in `publish/wwwroot`:
 
 ```bash
 dotnet publish Fh6Tuning.Web -c Release -o publish
-# the complete static site is at:  publish/wwwroot
 ```
 
-When deploying to GitHub Pages: add a `.nojekyll` file (so the `_framework` runtime folder is
-served), copy `index.html` to `404.html` for SPA deep-link fallback, and if you host under a
-project sub-path set the app's `<base href>` to match (publish with
-`--base-href /your-repo-name/`).
+If publishing by hand, apply the same three steps as the workflow (`.nojekyll`, `404.html`, and the
+`<base href>` rewrite to your repo sub-path — there is no `dotnet publish` flag for it; edit the
+published `wwwroot/index.html`).
 
 ## What it does
 

@@ -42,10 +42,13 @@
        offline incremental build of an up-to-date tree still works.
        ============================================================================================ -->
   <PropertyGroup>
-    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)\..'))</RepoRoot>
-    <ParityCasesFile>$(RepoRoot)parity\cases.json</ParityCasesFile>
-    <ParityExporter>$(RepoRoot)legacy\parity-export.js</ParityExporter>
-    <ParityEngine>$(RepoRoot)legacy\tuning.js</ParityEngine>
+    <!-- Forward slashes so the paths are valid on both Windows and the Linux CI
+         runner (a literal backslash is a valid filename char on Linux, which
+         would break node + Exists() there). NormalizeDirectory trails a slash. -->
+    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)/..'))</RepoRoot>
+    <ParityCasesFile>$(RepoRoot)parity/cases.json</ParityCasesFile>
+    <ParityExporter>$(RepoRoot)legacy/parity-export.js</ParityExporter>
+    <ParityEngine>$(RepoRoot)legacy/tuning.js</ParityEngine>
   </PropertyGroup>
 
   <Target Name="GenerateParityCases"
