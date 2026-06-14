@@ -45,9 +45,7 @@ runs on every push to `main` (and on manual dispatch): it runs the full test sui
 Web project, and then prepares the static bundle for a *project* Pages site at
 `/fh6-tuning-calculator/` before deploying it — specifically it
 
-- rewrites the app's `<base href>` from `/` to `/fh6-tuning-calculator/`,
-- adds a `.nojekyll` file so Pages serves the `_framework` runtime folder (Jekyll strips
-  underscore-prefixed paths otherwise), and
+- rewrites the app's `<base href>` from `/` to `/fh6-tuning-calculator/`, and
 - copies `index.html` to `404.html` for SPA deep-link fallback.
 
 The first run switches the repo's Pages source to **GitHub Actions** (`actions/configure-pages`
@@ -60,9 +58,10 @@ to set the source to GitHub Actions once under **Settings → Pages**.
 dotnet publish Fh6Tuning.Web -c Release -o publish
 ```
 
-If publishing by hand, apply the same three steps as the workflow (`.nojekyll`, `404.html`, and the
-`<base href>` rewrite to your repo sub-path — there is no `dotnet publish` flag for it; edit the
-published `wwwroot/index.html`).
+If publishing by hand, apply the same two steps as the workflow: copy `index.html` to `404.html`, and
+rewrite the `<base href>` to your repo sub-path (there is no `dotnet publish` flag for it; edit the
+published `wwwroot/index.html`). A `.nojekyll` file is only needed if you deploy via a *branch*
+(Jekyll); the GitHub Actions path the workflow uses never runs Jekyll.
 
 ## What it does
 

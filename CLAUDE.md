@@ -45,6 +45,8 @@ The `springs._fFront`/`_fRear` JS values are documented internal scratch (target
 
 ## Testing conventions
 
+Run the suite with `dotnet test Fh6Tuning.sln` — Node.js must be on PATH (the parity gate regenerates `parity/cases.json` from `legacy/` via node).
+
 - `Fh6Tuning.Tests/Fixtures.cs` holds the canonical legal slider ranges and base input fixtures; `Helpers.cs` provides the shared range/shape assertions. New engine assertions should reuse these so range-checking stays centralized.
 - `SweepTests` is the invariant safety net (xUnit equivalent of `legacy/sweep.js`): no NaN/non-finite output, every output in its legal range, gears strictly descending, ride height within the part range, all six goals distinct per car, drivetrains distinct, and dial-0 byte-for-byte neutrality. Run it after any formula change.
 - `ParityTests` is the exact-value gate against the JS oracle (above). After any formula change, change `legacy/tuning.js` first, let the snapshot regenerate, then update the C# port until parity is green.
