@@ -68,7 +68,7 @@ const AERO_LEVEL = {
 };
 ```
 
-**Step C — Balanced-magnitude solve.** Front sits at `frontMin + frontSpan * level`. Rear targets the same lbf magnitude trimmed by weight distribution: `rearTarget = frontDF + (frontWeightPct - 47) * 1.867`. Rear-engine safeguard: clamp so `rearDF ≥ frontDF` (never below 0.50 front-share). Clamp each end to part range.
+**Step C — Balanced-magnitude solve.** Front sits at `frontMin + frontSpan * level`. Then, for cars with ≥600 hp, the front downforce is scaled up before the rear is solved: `frontDF *= 1 + min((hp − 600) / 600, 0.5) × 0.5` (up to +25% near ~1200 hp; applied for every goal **except OffRoad** — Drag never reaches this point because it floors aero to zero earlier). Rear targets the same lbf magnitude trimmed by weight distribution: `rearTarget = frontDF + (frontWeightPct - 47) * 1.867`. Because the rear is anchored to the (already boosted, then clamped) front, it inherits the same high-power boost indirectly. Rear-engine safeguard: clamp so `rearDF ≥ frontDF` (never below 0.50 front-share). Clamp each end to part range.
 
 ### 1.2 Fallback reference maxima (when part ranges unknown)
 
@@ -88,10 +88,10 @@ const frontMinRef = 30, rearMinRef = 50;        // part minimums
 | Goal | Level (×span) | Balance target (front share) | Override / notes |
 |---|---|---|---|
 | **Circuit** | 0.85 | Weight-anchored balanced-magnitude (see §1.1) | *(superseded — see revised §1.1: no drivetrain override)* |
-| **Touge** | 0.55 | DT default | Balance corner grip vs straight speed |
-| **Drift** | 0.30 | DT default −0.025 (more front) | Prefer splitter; if no wing, rear=null |
-| **OffRoad** | 0.05 | DT default | Aero negligible <150 km/h; near-zero |
-| **Rally** | 0.15 | DT default | Low; dirt speeds rarely benefit |
+| **Touge** | 0.55 | Weight-anchored balance (§1.1) | Balance corner grip vs straight speed |
+| **Drift** | 0.30 | Weight-anchored balance (§1.1) | Prefer splitter; if no wing, rear=null |
+| **OffRoad** | 0.05 | Weight-anchored balance (§1.1) | Aero negligible <150 km/h; near-zero |
+| **Rally** | 0.15 | Weight-anchored balance (§1.1) | Low; dirt speeds rarely benefit |
 | **Drag** | 0.00 | 0.50 (n/a) | **Override both ends to part min** (kill drag) |
 
 ### 1.4 Edge cases — AERO
@@ -101,7 +101,7 @@ const frontMinRef = 30, rearMinRef = 50;        // part minimums
 - **AWD / RWD / FWD** → *(superseded — see revised §1.1)*: drivetrain-specific balance ratios and AWD "force front=max, rear≈min" are removed; balance is now set by weight distribution only.
 - **Engine location** → *(superseded — see revised §1.1)*: the `-5%/-10%` mid/rear rear-shed is removed; engine location affects aero only through its contribution to weight distribution and the rear-engine safeguard (rear lbf ≥ front lbf).
 - **EV/Hybrid** → no aero difference; EVs are usually heavy, so the weight-scaling term naturally raises DF — correct behavior.
-- **High power (≥600 hp)** → scale total DF up to +25% for high-speed stability (skip for Drag/OffRoad).
+- **High power (≥600 hp)** → scale the **front** downforce up to +25% for high-speed stability; the rear, anchored to the boosted front, follows. Applied for all goals except OffRoad (Drag floors aero to zero before this point, so it is moot there).
 - **Clamp** every output to `[partMin, partMax]`, snap to 1 lbf step.
 
 ### 1.5 "Why" strings — AERO
