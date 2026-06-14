@@ -747,8 +747,9 @@ public sealed class TuningEngine : ITuningEngine
             ? JsMath.Round(frontLbf.Value / (frontLbf.Value + rearLbf.Value) * 100)
             : (fp2 + rp2 > 0 ? JsMath.Round(fp2 / (fp2 + rp2) * 100) : 50);
 
+        string balancePart = goal != Goal.Drag ? $" (aero balance ≈ {S(share)}% front)" : "";
         string text =
-            $"Downforce trades top speed for grip. {GoalName(goal)} runs {S(fp2)}% front / {S(rp2)}% of each wing's range (aero balance ≈ {S(share)}% front)" +
+            $"Downforce trades top speed for grip. {GoalName(goal)} runs {S(fp2)}% front / {S(rp2)}% of each wing's range{balancePart}" +
             (goal == Goal.Circuit ? ", near-max grip with rear sized to match front downforce so the car stays balanced at speed"
              : goal == Goal.Drag ? ", floored to zero — every pound of downforce is drag that kills top speed."
              : goal == Goal.Drift ? ", low so the car stays loose and easy to swing."
@@ -758,7 +759,7 @@ public sealed class TuningEngine : ITuningEngine
             + (goal != Goal.Drag && i.EngineLocation == EngineLocation.Rear ? " Rear-engine: rear downforce held at least even with the front." : "")
             + ((HasRange(fR) || HasRange(rR)) ? lbfNote : "");
         string formula =
-            $"front = level({S(level)}) × frontRange\nrear  = frontLbf + (frontWeight − 47) × 1.867   (balanced at 47%)" + ((HasRange(fR) || HasRange(rR)) ? lbfFormula : "");
+            $"front = level({S(level)}) × frontRange\nrear  = front + (frontWeight − 47) × 1.867   (balanced at 47%)" + ((HasRange(fR) || HasRange(rR)) ? lbfFormula : "");
 
         return new Aero(true, fp2, frontLbf, rp2, rearLbf, new Why(text, formula));
     }

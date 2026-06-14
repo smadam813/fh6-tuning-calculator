@@ -28,8 +28,12 @@ public sealed class AeroModelTests
         b.AeroFront = fr; b.AeroRear = rr;
     });
 
-    private static double Share(Tune t) =>
-        t.Aero.FrontLbf!.Value / (t.Aero.FrontLbf!.Value + t.Aero.RearLbf!.Value);
+    private static double Share(Tune t)
+    {
+        Assert.True(t.Aero.FrontLbf is not null && t.Aero.RearLbf is not null,
+            "Share() requires a car with aero ranges (non-null lbf)");
+        return t.Aero.FrontLbf!.Value / (t.Aero.FrontLbf!.Value + t.Aero.RearLbf!.Value);
+    }
 
     [Fact] // Regression: the exact failing case. Was 100/10 (share 0.69).
     public void UserCar_Circuit_IsBalanced_FrontStaysHigh()
@@ -64,6 +68,7 @@ public sealed class AeroModelTests
     public void RearEngine_NeverBelowBalanced()
     {
         Tune t = Engine.Compute(Car(Drivetrain.RWD, EngineLocation.Rear, 38, 450, BigF, BigR), Goal.Circuit);
+        // −1 lbf tolerance: JsMath.Round can differ by 1 even when pre-round front == rear.
         Assert.True(t.Aero.RearLbf!.Value >= t.Aero.FrontLbf!.Value - 1,
             $"rear-engine front-biased: front {t.Aero.FrontLbf} > rear {t.Aero.RearLbf}");
         Assert.InRange(Share(t), 0.40, 0.51);
