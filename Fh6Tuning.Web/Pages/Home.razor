@@ -1,0 +1,33 @@
+@page "/"
+
+<PageTitle>FH6 Tuning Calculator</PageTitle>
+
+@* Two-panel layout via the ported legacy .fh6-layout grid (minmax(320px,420px) 1fr, collapsing to
+   one column at 880px) rather than MudGrid — this matches the legacy responsive breakpoint exactly
+   (MudGrid's md collapse is 960px, which diverged in the 880–960px range). *@
+<div class="fh6-layout">
+    @* ===================== INPUTS (Car Setup) ===================== *@
+    <section class="fh6-panel fh6-inputs" aria-label="Car inputs">
+        <h2 class="fh6-panel-title">Car Setup</h2>
+        @* Saved Setups first (legacy index.html: #setupsBlock is the first fieldset in the
+           Car Setup panel, before Identity). *@
+        <SavedSetupsBlock />
+        <InputsPanel />
+    </section>
+
+    @* ===================== OUTPUTS (Recommended Tune) ===================== *@
+    <section class="fh6-panel fh6-outputs" aria-label="Recommended tune">
+        @* Goal tabs, compare/copy row, the two dials, summary strip, the nine cards, the
+           "what changed" panel and the compare table — all driven by the engine through the
+           shared CalculatorState (legacy refresh()). *@
+        <OutputsPanel />
+    </section>
+</div>
+
+<footer class="fh6-foot">
+    <p>
+        Forza Horizon 6 Tuning Calculator &mdash; values are math-derived starting points; fine-tune
+        with telemetry in-game. Slider conventions follow the standard Forza tuning UI (FH4/FH5/FH6).
+    </p>
+</footer>
+

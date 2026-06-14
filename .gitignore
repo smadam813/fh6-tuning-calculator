@@ -12,6 +12,11 @@ coverage/
 .nyc_output/
 *.lcov
 
+# Generated parity snapshot — reproduced from the legacy JS engine by
+# `node legacy/parity-export.js` (run automatically by the test project's
+# GenerateParityCases MSBuild target). Reproducible from source; not tracked.
+parity/cases.json
+
 # OS cruft
 .DS_Store
 Thumbs.db
@@ -22,3 +27,7 @@ desktop.ini
 .idea/
 *.swp
 *~
+
+# .NET build output
+bin/
+obj/

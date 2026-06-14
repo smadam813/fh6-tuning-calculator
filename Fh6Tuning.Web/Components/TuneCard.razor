@@ -1,0 +1,38 @@
+@* ============================================================================================
+   Tune card — port of legacy renderCards' per-card markup (app.js:227-243). One output card: the
+   icon + title header, its key/value rows (sub rows get the "sub" class; rows whose live value
+   differs from the centered-dial baseline get the "changed" highlight), and the Why & formula
+   expander. The card's rows + why come from a CardDef (TuneFormatter); Baseline is optional (only
+   set when a dial is off-center) and drives the inline change highlight.
+   ============================================================================================ *@
+
+<div class="card">
+    <h3><span class="ico">@Card.Icon</span>@Card.Title</h3>
+    <div class="rows">
+        @{
+            var liveRows = Card.Rows(Tune);
+            var baseRows = Baseline is not null ? Card.Rows(Baseline) : null;
+        }
+        @for (int i = 0; i < liveRows.Count; i++)
+        {
+            var row = liveRows[i];
+            // legacy: changed = baseRows && baseRows[i] && baseRows[i].v !== row.v
+            bool changed = baseRows is not null && i < baseRows.Count && baseRows[i].Value != row.Value;
+            var rowClass = "row" + (row.Sub ? " sub" : "") + (changed ? " changed" : "");
+            <div class="@rowClass">
+                <span class="k">@row.Key</span>
+                <span class="v">@row.Value</span>
+            </div>
+        }
+    </div>
+    <WhyExpander Why="Card.Why(Tune)" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardDef Card { get; set; } = default!;
+    [Parameter, EditorRequired] public Tune Tune { get; set; } = default!;
+
+    /// <summary>The both-dials-centered baseline; null when no dial is active. Drives the
+    /// inline "changed" row highlight (legacy renderCards' base parameter).</summary>
+    [Parameter] public Tune? Baseline { get; set; }
+}

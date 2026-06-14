@@ -1,0 +1,52 @@
+@* ============================================================================================
+   "What the sliders changed" panel — port of legacy renderChangesPanel (app.js:283-310). Diffs the
+   live tune against the both-dials-centered baseline (via TuneFormatter.CollectChanges), and for each
+   moved setting shows a plain-language effect with from→to and an up/down arrow. The header counts the
+   moved settings and names the active dials. Hidden entirely when no baseline or nothing moved
+   (legacy panel.hidden), matching the role="status" aria-live region.
+   ============================================================================================ *@
+@inject TuneFormatter Formatter
+@inject CalculatorState State
+
+@if (Baseline is not null)
+{
+    var items = Formatter.CollectChanges(Tune, Baseline, State.Units);
+    if (items.Count > 0)
+    {
+        var dials = ActiveDials();
+        <div class="slider-changes" role="status" aria-live="polite">
+            <div class="sc-head">
+                <h4 class="sc-title">What the sliders changed</h4>
+                <span class="sc-sub">
+                    @items.Count setting@(items.Count > 1 ? "s" : "") moved vs the centered baseline ·
+                    <b>@string.Join(" + ", dials)</b>
+                </span>
+            </div>
+            <ul class="sc-list">
+                @foreach (var it in items)
+                {
+                    <li class="sc-item @it.Dir">
+                        <span class="sc-eff">@it.Text</span>
+                        <span class="sc-delta">@it.From → @it.To <i class="arr">@(it.Up ? "▲" : "▼")</i></span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public Tune Tune { get; set; } = default!;
+
+    /// <summary>The both-dials-centered baseline; null when no dial is off-center (panel hidden).</summary>
+    [Parameter] public Tune? Baseline { get; set; }
+
+    // legacy: dials = [] ; push "handling bias" / "overall stiffness" when each is non-zero.
+    private List<string> ActiveDials()
+    {
+        var dials = new List<string>();
+        if (State.HandlingBias != 0) dials.Add("handling bias");
+        if (State.OverallStiffness != 0) dials.Add("overall stiffness");
+        return dials;
+    }
+}

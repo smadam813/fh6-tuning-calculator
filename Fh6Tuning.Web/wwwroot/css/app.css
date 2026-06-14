@@ -1,0 +1,460 @@
+/* App shell styles. MudBlazor supplies the component styling and theme; this file ports the
+   pieces MudBlazor tokens can't express from legacy/styles.css (the :root palette, the body
+   radial-gradient backdrop, the brand badge + unit-toggle gradients, the two-panel layout, and
+   the @media breakpoints), plus the pre-Blazor loading indicator and error UI. */
+
+/* ---------- legacy :root palette (verbatim) ---------- */
+:root {
+    --bg: #0d1117;
+    --bg-2: #131a24;
+    --panel: #161d28;
+    --panel-2: #1b2433;
+    --line: #263246;
+    --line-soft: #1e2836;
+    --text: #e6edf3;
+    --muted: #8b97a7;
+    --accent: #3ddc84;      /* Forza green */
+    --accent-2: #46a7ff;    /* electric blue */
+    --warn: #ffb454;
+    --danger: #ff6b6b;
+    --radius: 12px;
+    --shadow: 0 6px 24px rgba(0,0,0,.35);
+    font-synthesis: none;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    color: var(--text);
+    /* legacy body backdrop: two radial gradients over the base bg */
+    background:
+        radial-gradient(1200px 600px at 80% -10%, #16243a 0%, transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, #16322a 0%, transparent 55%),
+        var(--bg);
+    background-attachment: fixed;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    line-height: 1.45;
+    min-height: 100vh;
+}
+
+/* ---------- Top bar (legacy .topbar / .brand / .logo / .titles / .unit-toggle) ---------- */
+.fh6-appbar {
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(20,28,40,.85), rgba(13,17,23,.4)) !important;
+    backdrop-filter: blur(8px);
+}
+
+/* The appbar inner toolbar must never exceed the viewport: allow the brand + unit toggle to wrap
+   (legacy .topbar used flex-wrap:wrap) and let the flex children shrink instead of forcing a wider
+   row than the screen (the source of the 991px scrollWidth at a 375px viewport). */
+.fh6-topbar-inner { max-width: 100%; min-width: 0; }
+.fh6-topbar-inner > * { min-width: 0; }
+
+.fh6-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.fh6-titles { min-width: 0; }
+.fh6-titles h1 { overflow-wrap: anywhere; }
+.fh6-logo {
+    font-weight: 800; letter-spacing: .5px; font-size: 20px; line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #06121a; padding: 8px 12px; border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+.fh6-titles h1 { font-size: clamp(18px, 2.4vw, 24px); margin: 0; font-weight: 600; line-height: 1.2; }
+.fh6-tagline { margin: 2px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+.fh6-unit-toggle {
+    display: inline-flex; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+}
+.fh6-unit-toggle button {
+    background: transparent; color: var(--muted); border: 0; padding: 8px 14px;
+    font: inherit; cursor: pointer; transition: .15s; text-transform: none;
+    min-width: 0; height: auto; border-radius: 0;
+}
+.fh6-unit-toggle button:hover { color: var(--text); background: transparent; }
+.fh6-unit-toggle button.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #06121a; font-weight: 700;
+}
+
+/* ---------- Two-panel layout (legacy .layout / .panel) ---------- */
+.fh6-layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) 1fr;
+    gap: clamp(14px, 2vw, 26px);
+    padding: clamp(14px, 2.4vw, 28px);
+    align-items: start;
+}
+/* Grid (and the inner two-column) items must be allowed to shrink below their content's intrinsic
+   min-width, or a wide child (a MudBlazor field) forces the track wider than the viewport — the
+   remaining source of mobile horizontal overflow. */
+.fh6-layout > * { min-width: 0; }
+.fh6-panel {
+    background: linear-gradient(180deg, var(--panel), var(--bg-2));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: clamp(14px, 1.8vw, 22px);
+}
+.fh6-inputs { position: sticky; top: 86px; }
+.fh6-panel-title {
+    margin: 0 0 14px; font-size: 16px; letter-spacing: .3px;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+}
+
+.fh6-foot { color: var(--muted); font-size: 12px; text-align: center; padding: 8px 20px 30px; }
+
+/* ---------- Mobile breakpoints (legacy @media) ---------- */
+@media (max-width: 880px) {
+    .fh6-layout { grid-template-columns: 1fr; }
+    .fh6-inputs { position: static; }
+}
+@media (max-width: 480px) {
+    .fh6-topbar-inner { padding: 0; }
+}
+
+/* ---------- Car Setup inputs (legacy styles.css 81-110, scoped to .fh6-inputs) ---------- */
+/* Scoped under .fh6-inputs so the bare fieldset/legend/label rules don't leak into MudBlazor's
+   own internal markup. MudBlazor styles the actual controls via the theme; these rules port the
+   surrounding layout (fieldsets, two-column grid, label/hint typography, tire-size row). */
+.fh6-inputs fieldset {
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    margin: 0 0 14px;
+    padding: 12px 14px 16px;
+}
+.fh6-inputs legend {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    padding: 0 6px;
+}
+.fh6-inputs .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+/* Let the two-column cells shrink below their field's min-content so a column never overflows. */
+.fh6-inputs .grid2 > * { min-width: 0; }
+.fh6-inputs label {
+    display: flex; flex-direction: column; gap: 5px;
+    font-size: 13px; color: var(--muted);
+}
+.fh6-inputs .lbl { display: flex; gap: 6px; align-items: baseline; }
+.fh6-inputs .lbl em { color: var(--accent-2); font-style: normal; font-size: 11px; }
+.fh6-inputs .ranges { margin-top: 10px; }
+.fh6-inputs .aero-kit-label { margin: 12px 0 4px; }
+.fh6-inputs .hint { color: var(--muted); font-size: 12px; margin: 8px 2px 0; }
+
+/* drive-tire spec: three small inline boxes (width / aspect R rim) + computed Ø */
+.fh6-inputs .tire-size { grid-column: 1 / -1; }
+.fh6-inputs .tire-size-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.fh6-inputs .tire-size-row .fh6-tire-num { width: 4.5em; min-width: 4.5em; }
+.fh6-inputs .tire-size-row .fh6-tire-num input { text-align: center; }
+.fh6-inputs .tire-size-row .sep { color: var(--muted); font-size: 14px; }
+.fh6-inputs .tire-dia-out {
+    color: var(--accent-2); font-size: 13px; margin-left: 4px; white-space: nowrap;
+}
+
+/* tighten MudBlazor's default dense field margins inside the compact two-column grid */
+.fh6-inputs .mud-input-control { margin-top: 0; }
+
+/* ---------- Saved setups (legacy styles.css 107-130, scoped to .fh6-inputs) ---------- */
+.fh6-inputs .setups .setup-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+/* the name field and the saved-setups dropdown stretch; the buttons stay their content width */
+.fh6-inputs .setups .setup-row > .fh6-setup-name,
+.fh6-inputs .setups .setup-row > .fh6-setup-list { flex: 1; min-width: 0; }
+.fh6-inputs .setups .setup-row .fh6-setup-name,
+.fh6-inputs .setups .setup-row .fh6-setup-list { margin-top: 0; }
+/* Import: a styled <label> wrapping a hidden <InputFile> — clicking the label opens the picker
+   (legacy hidden file input + "Import JSON" button). Hide the native input, keep the label inline. */
+.fh6-inputs .setups .fh6-import-btn { display: inline-flex; align-items: center; margin: 0; }
+.fh6-inputs .setups .fh6-import-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+
+/* ghost buttons inside the inputs panel (legacy .ghost-btn, app.js setups controls) */
+.fh6-inputs .ghost-btn {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 13px; cursor: pointer; transition: .15s;
+    white-space: nowrap;
+}
+.fh6-inputs .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+.fh6-inputs .ghost-btn:disabled { opacity: .45; cursor: default; }
+.fh6-inputs .ghost-btn:disabled:hover { border-color: var(--line); color: var(--text); }
+
+.fh6-inputs .setup-status { min-height: 1.2em; margin-top: 2px; }
+.fh6-inputs .setup-status.error { color: var(--danger); }
+
+/* ---------- Output gate: welcome + validation errors (legacy styles.css 192-222, 196-204) ---------- */
+.output-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.output-cards .card {
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px 12px; display: flex; flex-direction: column;
+}
+.output-cards .card h3 { margin: 0 0 10px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.output-cards .card h3 .ico { font-size: 16px; }
+.output-cards .rows { display: flex; flex-direction: column; gap: 7px; }
+.output-cards .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 14px; }
+.output-cards .row .k { color: var(--muted); }
+.output-cards .row .v { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text); }
+.output-cards .error-card { border-color: var(--danger); }
+.output-cards .welcome {
+    grid-column: 1 / -1; text-align: center; color: var(--muted);
+    background: var(--panel-2); border: 1px dashed var(--line); border-radius: 12px;
+    padding: 36px 24px;
+}
+.output-cards .welcome .welcome-ico { font-size: 40px; line-height: 1; margin-bottom: 12px; }
+.output-cards .welcome h3 { margin: 0 0 8px; font-size: 16px; color: var(--text); }
+.output-cards .welcome p { margin: 0 auto; max-width: 44ch; font-size: 13.5px; line-height: 1.55; }
+.output-cards .welcome b { color: var(--accent); font-weight: 600; }
+
+/* ============================================================================================
+   OUTPUTS side (legacy styles.css 116-244) — goal tabs, mode row, dials, "what changed" panel,
+   inline change highlight, summary chips, card why-expander, and the compare table. Scoped to the
+   output panel where it matters; MudBlazor supplies the slider/switch internals which the .fh6-*
+   overrides re-skin to match the legacy look.
+   ============================================================================================ */
+
+/* ---------- Outputs head (title + goal tabs row) ---------- */
+.fh6-outputs .outputs-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.fh6-outputs .outputs-head .fh6-panel-title { margin: 0; }
+
+/* ---------- Goal tabs (legacy .goal-tabs pill row, rendered via MudTabs) ---------- */
+/* The MudTabs header is re-skinned into the legacy pill row; in compare mode the whole strip dims
+   (legacy goalTabs.style.opacity = .45) while staying selectable. */
+.goal-tabs.compare-dim { opacity: .45; }
+.fh6-outputs .fh6-goal-tabs .mud-tabs-toolbar {
+    background: transparent; min-height: 0; height: auto; box-shadow: none; border: 0;
+}
+/* MudTabs lays the pills out in a nested chain — .mud-tabs-tabbar > -inner > -wrapper > -content —
+   that defaults to a single non-wrapping flex row (so six pills at MudBlazor's 160px min-width need
+   ~960px and clip the 6th, Touge, off-screen, with no scroll buttons). Re-skin the WHOLE chain to a
+   wrapping flex row constrained to 100% width, and force each pill to its content width with enough
+   specificity to beat the 160px min-width. (The old rule targeted .mud-tabs-toolbar-content, which
+   does not exist.) */
+.fh6-outputs .fh6-goal-tabs .mud-tabs-tabbar,
+.fh6-outputs .fh6-goal-tabs .mud-tabs-tabbar-content,
+.fh6-outputs .fh6-goal-tabs .mud-tabs-tabbar-inner {
+    display: block; width: 100%; max-width: 100%; height: auto; overflow: visible;
+    white-space: normal;
+}
+/* The per-pill tooltip wrappers are direct children of .mud-tabs-tabbar-wrapper — make THAT the
+   wrapping flex row (and clear MudTabs' white-space:nowrap that otherwise pins them to one line). */
+.fh6-outputs .fh6-goal-tabs .mud-tabs-tabbar-wrapper {
+    display: flex; flex-wrap: wrap; gap: 6px; width: 100%; max-width: 100%; height: auto;
+    white-space: normal; transform: none;
+}
+.fh6-outputs .fh6-goal-tabs .mud-tab {
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--line);
+    padding: 7px 13px; border-radius: 999px; min-height: 0; height: auto;
+    min-width: 0 !important; width: auto !important; flex: 0 0 auto;
+    text-transform: none; font-size: 13px; margin: 0; transition: .15s; overflow: visible;
+}
+.fh6-outputs .fh6-goal-tabs .mud-tab:hover { color: var(--text); border-color: var(--accent-2); background: var(--panel-2); }
+.fh6-outputs .fh6-goal-tabs .mud-tab.mud-tab-active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #06121a; font-weight: 700; border-color: transparent;
+}
+/* hide MudTabs' sliding indicator + the empty panel body — we use the pills as a selector only */
+.fh6-outputs .fh6-goal-tabs .mud-tab-slider { display: none; }
+.fh6-outputs .fh6-goal-tabs .mud-tabs-panels { display: none; }
+/* the pills wrap (above), so MudTabs' horizontal scroll-arrow buttons are redundant — hide them. */
+.fh6-outputs .fh6-goal-tabs .mud-tabs-scroll-button { display: none; }
+
+/* ---------- Mode row (compare switch + Copy button) ---------- */
+.fh6-outputs .mode-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin: 14px 0 10px; flex-wrap: wrap;
+}
+.fh6-outputs .fh6-compare-switch .mud-switch-label { color: var(--text); font-size: 13px; }
+.fh6-outputs .ghost-btn {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 13px; cursor: pointer; transition: .15s;
+}
+.fh6-outputs .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Tuning dials (handling bias + overall stiffness) ---------- */
+.fh6-outputs .dials { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 14px; }
+.fh6-outputs .dial-row {
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px 10px;
+}
+.fh6-outputs .dial-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.fh6-outputs .dial-title { font-size: 13px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: .4px; }
+.fh6-outputs .dial-value { font-size: 13px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+/* directional value colors: bias = blue↔orange, stiffness = teal↔red */
+.fh6-outputs .dial-value.under { color: var(--accent-2); }
+.fh6-outputs .dial-value.over { color: var(--warn); }
+.fh6-outputs .dial-value.soft { color: #5ec8c8; }
+.fh6-outputs .dial-value.hard { color: var(--danger); }
+
+/* re-skin MudSlider into the legacy gradient track + light thumb */
+.fh6-outputs .fh6-dial { margin: 4px 0; }
+.fh6-outputs .fh6-dial .mud-slider-track-container { height: 6px; }
+.fh6-outputs .fh6-dial .mud-slider-track {
+    height: 6px; border: 1px solid var(--line); border-radius: 999px; opacity: 1;
+}
+/* legacy: the FULL track is a left→right gradient (not a filled portion); flatten the "filled" half */
+.fh6-outputs .fh6-dial .mud-slider-track-filled { background: transparent !important; }
+.fh6-outputs .fh6-dial-bias .mud-slider-track {
+    background: linear-gradient(90deg, var(--accent-2) 0%, var(--line) 50%, var(--warn) 100%);
+}
+.fh6-outputs .fh6-dial-stiff .mud-slider-track {
+    background: linear-gradient(90deg, #5ec8c8 0%, var(--line) 50%, var(--danger) 100%);
+}
+.fh6-outputs .fh6-dial .mud-slider-thumb,
+.fh6-outputs .fh6-dial .mud-slider-thumb .mud-slider-thumb-dot {
+    width: 18px; height: 18px; background: var(--text); border: 2px solid var(--bg); box-shadow: var(--shadow);
+}
+.fh6-outputs .fh6-dial .mud-slider-thumb .mud-slider-thumb-dot::before,
+.fh6-outputs .fh6-dial .mud-slider-thumb .mud-slider-thumb-dot::after { background: transparent; }
+
+.fh6-outputs .dial-ends {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 11.5px; color: var(--muted); margin-top: 2px;
+}
+.fh6-outputs .dial-reset {
+    background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 6px;
+    padding: 3px 9px; font: inherit; font-size: 11.5px; cursor: pointer; transition: .15s;
+}
+.fh6-outputs .dial-reset:hover { color: var(--accent); border-color: var(--accent); }
+.fh6-outputs .dial-hint { margin-top: 9px; }
+.fh6-outputs .dial-hint b { color: var(--text); }
+.fh6-outputs .dial-hint i { color: var(--accent-2); font-style: normal; }
+
+/* ---------- "What the sliders changed" panel ---------- */
+.fh6-outputs .slider-changes {
+    background: linear-gradient(180deg, rgba(61,220,132,.05), rgba(70,167,255,.04));
+    border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 12px 14px; margin: 0 0 14px;
+}
+.fh6-outputs .sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.fh6-outputs .sc-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .4px; }
+.fh6-outputs .sc-sub { font-size: 11.5px; color: var(--muted); }
+.fh6-outputs .sc-sub b { color: var(--accent); }
+.fh6-outputs .sc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 7px 10px; }
+.fh6-outputs .sc-item {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 4px 8px; flex-wrap: wrap;
+    background: var(--bg); border: 1px solid var(--line-soft); border-radius: 7px; padding: 6px 9px;
+}
+.fh6-outputs .sc-eff { font-size: 12.5px; color: var(--text); }
+.fh6-outputs .sc-delta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fh6-outputs .sc-delta .arr { font-style: normal; font-weight: 700; margin-left: 3px; }
+.fh6-outputs .sc-item.up .arr { color: var(--accent); }
+.fh6-outputs .sc-item.down .arr { color: var(--warn); }
+
+/* ---------- Inline highlight for rows a dial changed ---------- */
+.fh6-outputs .row.changed { background: rgba(61,220,132,.07); margin: 0 -8px; padding: 0 8px; border-radius: 6px; }
+.fh6-outputs .row.changed .v { color: var(--accent); }
+
+/* ---------- Summary strip chips ---------- */
+.fh6-outputs .summary-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.fh6-outputs .chip { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12px; color: var(--muted); }
+.fh6-outputs .chip b { color: var(--text); font-weight: 600; }
+
+/* ---------- Card rows: sub gears + why expander ---------- */
+.fh6-outputs .row .v.pos { color: var(--accent); }
+.fh6-outputs .row .v.neg { color: var(--warn); }
+.fh6-outputs details.why { margin-top: 11px; border-top: 1px dashed var(--line); padding-top: 9px; }
+.fh6-outputs details.why summary { cursor: pointer; color: var(--accent-2); font-size: 12px; list-style: none; user-select: none; }
+.fh6-outputs details.why summary::-webkit-details-marker { display: none; }
+.fh6-outputs details.why summary::before { content: "▸ "; }
+.fh6-outputs details.why[open] summary::before { content: "▾ "; }
+.fh6-outputs details.why .body { margin-top: 8px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.fh6-outputs details.why .body code { background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; color: var(--accent); font-size: 12px; }
+.fh6-outputs details.why .body .formula {
+    display: block; margin: 6px 0; padding: 7px 9px; background: var(--bg);
+    border-left: 2px solid var(--accent); border-radius: 4px; color: var(--text);
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; white-space: pre-wrap;
+}
+
+/* ---------- Compare table ---------- */
+.fh6-outputs .compare-wrap { overflow-x: auto; }
+.fh6-outputs table.compare { border-collapse: collapse; width: 100%; font-size: 13px; }
+.fh6-outputs table.compare th, .fh6-outputs table.compare td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+.fh6-outputs table.compare th:first-child, .fh6-outputs table.compare td:first-child { text-align: left; position: sticky; left: 0; background: var(--panel); color: var(--text); }
+.fh6-outputs table.compare thead th { color: var(--accent); border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+.fh6-outputs table.compare tbody tr:hover td { background: rgba(70,167,255,.06); }
+.fh6-outputs table.compare .group td { background: var(--panel-2); color: var(--accent-2); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; font-size: 11px; }
+.fh6-outputs table.compare td.num { font-variant-numeric: tabular-nums; color: var(--text); }
+
+/* ---------- Mobile (legacy @media 880 / 480) ---------- */
+@media (max-width: 880px) {
+    .fh6-outputs .dials { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+    .fh6-inputs .grid2 { grid-template-columns: 1fr; }
+    .output-cards { grid-template-columns: 1fr; }
+    .fh6-outputs .sc-list { grid-template-columns: 1fr; }
+}
+
+.blazor-error-boundary {
+    background: #b32121;
+    padding: 1rem 1rem 1rem 1rem;
+    color: white;
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred."
+    }
+
+#blazor-error-ui {
+    color-scheme: dark only;
+    background: #1b2433;
+    color: #ffb454;
+    border-top: 1px solid #263246;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.loading-progress {
+    position: absolute;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    inset: 20vh 0 auto 0;
+    margin: 0 auto 0 auto;
+}
+
+    .loading-progress circle {
+        fill: none;
+        stroke: #263246;
+        stroke-width: 0.6rem;
+        transform-origin: 50% 50%;
+        transform: rotate(-90deg);
+    }
+
+        .loading-progress circle:last-child {
+            stroke: #3ddc84;
+            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+            transition: stroke-dasharray 0.05s ease-in-out;
+        }
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: bold;
+    color: #e6edf3;
+    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+}
+
+    .loading-progress-text:after {
+        content: var(--blazor-load-percentage-text, "Loading");
+    }

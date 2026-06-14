@@ -1,0 +1,77 @@
+@* ============================================================================================
+   Compare table — port of legacy renderCompare (app.js:374-384) + compareRowDefs (via TuneFormatter).
+   Computes every goal's tune for the current car, then renders the grouped comparison: a header of
+   "Setting" + one column per goal (icon + label), group separator rows spanning all columns, and a
+   value cell per goal for each setting. Conditional rows (EV gear suppression, top-speed when redline
+   + tire Ø present, aero lbf-vs-% header, AWD 5 diff rows) are decided in CompareRowDefs.
+
+   The six-goal compute (Engine.Compute ×6) + row defs are MEMOIZED: recomputed once per state change
+   (OnStateChanged → Recompute), not on every render. Row and per-goal cell loops are @key'd so the
+   table diff stays stable when conditional rows appear/disappear.
+   ============================================================================================ *@
+@implements IDisposable
+@inject ITuningEngine Engine
+@inject TuneFormatter Formatter
+@inject CalculatorState State
+
+<div class="compare-wrap">
+    <table class="compare">
+        <thead>
+            <tr>
+                <th>Setting</th>
+                @foreach (var g in Engine.Goals)
+                {
+                    var meta = Engine.GoalMeta[g];
+                    <th @key="g">@meta.Icon @meta.Label</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in _defs)
+            {
+                if (d.Group is not null)
+                {
+                    <tr class="group" @key="d"><td colspan="@(Engine.Goals.Count + 1)">@d.Group</td></tr>
+                }
+                else
+                {
+                    <tr @key="d">
+                        <td>@d.Label</td>
+                        @for (int gi = 0; gi < _tunes.Count; gi++)
+                        {
+                            var t = _tunes[gi];
+                            <td class="num" @key="Engine.Goals[gi]">@d.Get!(t)</td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private IReadOnlyList<Tune> _tunes = Array.Empty<Tune>();
+    private IReadOnlyList<CompareRow> _defs = Array.Empty<CompareRow>();
+
+    protected override void OnInitialized()
+    {
+        State.Changed += OnStateChanged;
+        Recompute();
+    }
+
+    private void OnStateChanged()
+    {
+        Recompute();
+        InvokeAsync(StateHasChanged);
+    }
+
+    // Compute the six per-goal tunes for the current car + the row defs once per state change.
+    private void Recompute()
+    {
+        var input = State.BuildTuneInput();
+        _tunes = Engine.Goals.Select(g => Engine.Compute(input, g)).ToList();
+        _defs = Formatter.CompareRowDefs(input, State.Units);
+    }
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+}
