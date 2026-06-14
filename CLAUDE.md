@@ -39,7 +39,7 @@ The differential parity gate is what guarantees the C# port matches the JS oracl
 2. It writes **`parity/cases.json`** (2340 cases). This file is **git-ignored** — it is regenerated, not committed.
 3. **`ParityTests`** (with `ParityHarness`) loads `parity/cases.json`, replays each input through the Core `TuningEngine`, serializes the result to a JSON tree with the same camelCase/enum-token shape the JS emits, and asserts the snapshot is reproduced **exactly**. The gate is bidirectional and covers every numeric leaf (bit-for-bit after `-0` normalization), every boolean leaf (`singleSpeed`/`applicable`/`isEV`/over- & understeer-prone/`canTuneSusp` — these define tune *shape*), and every `summary[].k`/`summary[].v` chip string. Only `why.text`/`why.formula` wording is a **separate soft category** so prose drift can never mask a math/shape regression.
 
-**Regeneration is automatic.** `Fh6Tuning.Tests.csproj` has a `GenerateParityCases` MSBuild target that runs `node legacy/parity-export.js` before build when `parity/cases.json` is missing or older than `legacy/tuning.js` or `legacy/parity-export.js`. If Node is unavailable and the snapshot is missing/stale, the build **fails loudly** rather than testing against an absent or stale baseline. **Node.js must be on PATH** to (re)generate the snapshot.
+**Regeneration is automatic.** `Fh6Tuning.Tests.csproj` has a `GenerateParityCases` MSBuild target that runs `node legacy/parity-export.js` before build when `parity/cases.json` is missing or older than `legacy/tuning.js` or `legacy/parity-export.js`. If Node is unavailable and the snapshot is missing/stale, the build **fails loudly** rather than testing against an absent or stale baseline. **Node.js must be on PATH** to (re)generate the snapshot (incl. on CI). Keep the target's paths forward-slashed — a `\` is a literal filename char on the Linux runner.
 
 The `springs._fFront`/`_fRear` JS values are documented internal scratch (target ride frequencies used only for the damping handoff and the why string); the exporter strips them and the C# `Springs` record omits them, so they are deliberately out of the tune contract.
 
@@ -54,7 +54,7 @@ dotnet test  Fh6Tuning.Tests            # engine + storage + parity only
 dotnet run   --project Fh6Tuning.Web    # dev server (http://localhost:5221 / https://localhost:7083)
 ```
 
-Running the tests (or building `Fh6Tuning.Tests`) regenerates `parity/cases.json` from `legacy/`, so **Node.js must be installed** for the parity gate. The dev server is the WASM DevServer (`Microsoft.AspNetCore.Components.WebAssembly.DevServer`); hot reload works while editing Razor.
+Running the tests (or building `Fh6Tuning.Tests`) regenerates `parity/cases.json` from `legacy/`, so **Node.js must be installed** for the parity gate. `dotnet run` does **not** hot-reload — **restart the server after editing `.razor`/`.css`** (or use `dotnet watch` for HMR). The `.claude/launch.json` `web` config (port 5221) is what the preview/verify tooling launches.
 
 **Publish for GitHub Pages** — publish the Web project and deploy the WASM app's `wwwroot`:
 
@@ -67,6 +67,13 @@ dotnet publish Fh6Tuning.Web -c Release -o publish
 - Add a `.nojekyll` file so the `_framework` folder is served.
 - If hosting under a project sub-path (`/fh6-tuning-calculator/`), set the `<base href>` accordingly (publish with `--base-href /fh6-tuning-calculator/` or edit `wwwroot/index.html`, which currently uses `<base href="/" />`).
 - Provide a SPA 404 fallback (copy `index.html` to `404.html`) so deep links resolve.
+
+All three steps above are automated by **`.github/workflows/deploy-pages.yml`** (push to `main`: test → publish → rewrite `<base href>` → `.nojekyll` + `404.html` → deploy via GitHub Actions; flips the Pages source to GitHub Actions on first run).
+
+## MudBlazor / UI gotchas (dark theme)
+
+- **Disable a ripple per-component with `Ripple="false"`** — never a global `.mud-ripple { display:none }`. MudBlazor stamps `mud-ripple` onto *functional* elements (e.g. the `MudSwitch` thumb base), so the global rule hides them (it ate the compare-toggle thumb).
+- **The header is a sticky in-flow bar, not MudBlazor's fixed `MudAppBar`.** It uses `Fixed="false"` + `position:sticky` + `height:auto !important` on both `.fh6-appbar` and its `.mud-toolbar`, and zeroes `.mud-main-content`'s padding-top. MudBlazor's fixed `MudAppBar` is a fixed-height bar with a static body offset that clips wrapped/multi-line brand content on mobile.
 
 ## Testing conventions
 
