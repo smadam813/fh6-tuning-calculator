@@ -224,8 +224,14 @@ html, body {
 
 /* ---------- Goal tabs (legacy .goal-tabs pill row, rendered via MudTabs) ---------- */
 /* The MudTabs header is re-skinned into the legacy pill row; in compare mode the whole strip dims
-   (legacy goalTabs.style.opacity = .45) while staying selectable. */
-.goal-tabs.compare-dim { opacity: .45; }
+   (legacy goalTabs.style.opacity = .45) AND is made non-interactive — the per-goal selection is
+   meaningless while every goal is shown side-by-side, so a dimmed pill shouldn't respond to clicks. */
+.goal-tabs.compare-dim { opacity: .45; pointer-events: none; }
+
+/* Material ripple disabled app-wide: the white circle expanding from a click reads as a harsh flash
+   on this dark theme and has no analogue in the legacy UI. MudSlider (the handling-bias / stiffness
+   dials) does NOT use .mud-ripple, so its thumb effect is unaffected. */
+.mud-ripple { display: none !important; }
 .fh6-outputs .fh6-goal-tabs .mud-tabs-toolbar {
     background: transparent; min-height: 0; height: auto; box-shadow: none; border: 0;
 }
