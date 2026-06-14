@@ -358,7 +358,7 @@ public sealed class UnitTests
     }
 
     [Fact]
-    public void OversteerProneAwd_RearWingPlanted_AeroBalanceRearBiased()
+    public void OversteerProneAwd_RearRangeFloorExceedsTarget_SliderFloorsAt0()
     {
         // Balanced-magnitude model: front set to 85% of its range (level×no-boost at 46% FW).
         // Rear balanced to front lbf ≈ 191; but rear range min is 362, so slider clamps to 0%
