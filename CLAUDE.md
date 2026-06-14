@@ -34,6 +34,11 @@ The differential parity gate is what guarantees the C# port matches the JS oracl
 
 The `springs._fFront`/`_fRear` JS values are documented internal scratch (target ride frequencies used only for the damping handoff and the why string); the exporter strips them and the C# `Springs` record omits them, so they are deliberately out of the tune contract.
 
+**Aero is exempt from the parity gate (as of 2026-06-14).** The aero category was migrated to a
+balanced-magnitude model validated by C#-native tests (`Fh6Tuning.Tests/AeroModelTests.cs`); its
+numeric + why leaves are skipped in `ParityHarness` (`IsAeroExempt`). This is the first carve-out of
+the planned parity-layer deprecation — `legacy/tuning.js` aero is intentionally stale.
+
 ## MudBlazor / UI gotchas (dark theme)
 
 - **`dotnet run` does not hot-reload** — restart the dev server after editing `.razor`/`.css` (or use `dotnet watch` for HMR). The preview/verify tooling launches the `.claude/launch.json` `web` config (port 5221).

@@ -28,9 +28,28 @@ Forza part ranges are per-car, so for downforce we work against the part's `aero
 
 ## CATEGORY 1: AERO (front & rear downforce, lbf)
 
-### 1.1 Core model
+### 1.1 Core model (REVISED 2026-06-14 — balanced-magnitude)
 
-FH6 exposes an **Aero Balance** stat = `frontDF / (frontDF + rearDF)`. The community workflow is: pick a target balance by drivetrain, pick an overall downforce *level* by goal, then solve the two sliders. We invert the balance equation to get concrete lbf.
+Aero balance is set by **weight distribution**, not drivetrain. Anchored at a **47% front-weight
+ideal** (QuickTune-canonical, verified): at 47% front the target is **balanced downforce** (front ≈
+rear in lbf). Front sits at the goal LEVEL of its slider range; rear targets the same magnitude,
+trimmed **+1.867 lbf per 1%** of front-weight above 47% (front-heavy → more rear). Solve in **lbf
+magnitude**, never the in-game Aero Balance stat (its front-share vs rear-share direction is
+unverified — see findings). Clamp each end to its part range.
+
+- **No drivetrain slider rule.** The old "AWD/FWD = max front / min rear" was a slider-position
+  artifact calibrated to ONE kit (Standard Forza, where front-max ≈ rear-min); on a big-rear-wing kit
+  it produces a ~0.75 front-share. Drivetrain-specific balance ratios (e.g. "AWD 0.40-0.45") were
+  REFUTED in 3-vote adversarial verification — do NOT reintroduce them.
+- **LEVEL** (Circuit 0.85 … Drag 0.0) sets total downforce (grip vs top speed) — orthogonal to balance.
+- **Rear-engine safeguard:** never below 0.50 front-share (rear lbf ≥ front lbf).
+- **Engine location** affects the target only THROUGH weight distribution (+ the rear-engine
+  safeguard) — no independent engine-location rear-shed (the old `-5%/-10%` mid/rear trim was backwards
+  for a loose rear and is removed).
+
+Verified anchors (deep-research 2026-06-14): 47% reference + 1.867 lb/% are QuickTune conventions
+(community-canonical, not Turn 10-official). The Aero Balance stat DIRECTION could not be settled —
+present lbf + slider %, treat any front-share readout as informational.
 
 **Step A — Skip if no aero.** If `aeroInstalled === false`, both outputs are `null`/"no aero part installed". Front splitter-only cars (common on street builds) → rear output is `null`, only front is set.
 
@@ -49,83 +68,7 @@ const AERO_LEVEL = {
 };
 ```
 
-**Step C — Target Aero Balance, by drivetrain** (front share of total downforce):
-
-```js
-function aeroBalanceTarget(drivetrain, goal) {
-  let b = { FWD: 0.50, RWD: 0.525, AWD: 0.425 }[drivetrain]; // mid of researched windows
-  // RWD 0.50-0.55 -> 0.525 ; AWD 0.40-0.45 -> 0.425 ; FWD 0.45-0.55 -> 0.50
-  if (goal === 'Drift') b = clamp(b - 0.025, 0.45, 0.50); // slightly more front for predictable rear breakaway
-  if (goal === 'Drag')  b = 0.50;                          // irrelevant; keep neutral, level≈0 anyway
-  return b;
-}
-```
-
-**Step D — Solve the two sliders from level + balance.**
-
-Let each end's usable span be `[min,max]`. Compute a provisional symmetric downforce at the chosen level, then redistribute to hit the balance target while staying in range.
-
-```js
-function computeAero({ aeroInstalled, hasRearWing, drivetrain, goal, weight,
-                       frontMin, frontMax, rearMin, rearMax, frontWeightPct, power }) {
-  if (!aeroInstalled) return { frontDF: null, rearDF: null,
-    why: "No aero part installed; downforce not tunable." };
-
-  const level = AERO_LEVEL[goal];
-  const balance = aeroBalanceTarget(drivetrain, goal);
-
-  // provisional magnitude at this level (use rear span as the scale reference)
-  const frontSpan = frontMax - frontMin;
-  const rearSpan  = rearMax  - rearMin;
-
-  // base each end at level fraction of its own span
-  let frontDF = frontMin + frontSpan * level;
-  let rearDF  = rearMin  + rearSpan  * level;
-
-  // --- balance correction: nudge toward target front share ---
-  // total kept ~constant; shift between ends to reach `balance`
-  let total = frontDF + rearDF;
-  let targetFront = total * balance;
-  let targetRear  = total * (1 - balance);
-  frontDF = clamp(targetFront, frontMin, frontMax);
-  rearDF  = clamp(targetRear,  rearMin,  rearMax);
-
-  // --- weight-bias trim (heavier-loaded end wants a touch more DF) ---
-  // +1.87 lbf rear per 1% front-weight above 47% reference (research: balanced-rear formula)
-  const rearTrim = (frontWeightPct - 47) * 1.87;
-  rearDF = clamp(rearDF + rearTrim, rearMin, rearMax);
-
-  // --- high-power scaling: >=600 hp benefits from more total DF for stability ---
-  if (power >= 600 && goal !== 'Drag' && goal !== 'OffRoad') {
-    const k = 1 + Math.min((power - 600) / 600, 0.5) * 0.5; // up to +25% by ~1200 hp
-    frontDF = clamp(frontDF * k, frontMin, frontMax);
-    rearDF  = clamp(rearDF  * k, rearMin,  rearMax);
-  }
-
-  // --- drivetrain hard shapes (AWD meta: max front / min rear) ---
-  if (drivetrain === 'AWD' && goal === 'Circuit') {
-    frontDF = frontMax;                       // AWD fights understeer with max front
-    rearDF  = clamp(rearMin + rearSpan*0.15, rearMin, rearMax); // near-min rear
-  }
-
-  // --- engine-location trim: rear/mid engine = more rear grip already -> ease rear DF ---
-  if (engineLocation === 'Rear') rearDF = clamp(rearDF - rearSpan*0.10, rearMin, rearMax);
-  if (engineLocation === 'Mid')  rearDF = clamp(rearDF - rearSpan*0.05, rearMin, rearMax);
-
-  // --- Drag override: floor both ---
-  if (goal === 'Drag') { frontDF = frontMin; rearDF = rearMin; }
-
-  // --- splitter-only car ---
-  if (!hasRearWing) rearDF = null;
-
-  return {
-    frontDF: round2(frontDF, 1),
-    rearDF:  rearDF === null ? null : round2(rearDF, 1),
-    aeroBalance: rearDF === null ? 1.0
-                 : +(frontDF / (frontDF + rearDF)).toFixed(3)
-  };
-}
-```
+**Step C — Balanced-magnitude solve.** Front sits at `frontMin + frontSpan * level`. Rear targets the same lbf magnitude trimmed by weight distribution: `rearTarget = frontDF + (frontWeightPct - 47) * 1.867`. Rear-engine safeguard: clamp so `rearDF ≥ frontDF` (never below 0.50 front-share). Clamp each end to part range.
 
 ### 1.2 Fallback reference maxima (when part ranges unknown)
 
@@ -144,7 +87,7 @@ const frontMinRef = 30, rearMinRef = 50;        // part minimums
 
 | Goal | Level (×span) | Balance target (front share) | Override / notes |
 |---|---|---|---|
-| **Circuit** | 0.85 | DT default (RWD .525 / AWD .425 / FWD .50) | AWD: force front=max, rear≈min+15% span |
+| **Circuit** | 0.85 | Weight-anchored balanced-magnitude (see §1.1) | *(superseded — see revised §1.1: no drivetrain override)* |
 | **Touge** | 0.55 | DT default | Balance corner grip vs straight speed |
 | **Drift** | 0.30 | DT default −0.025 (more front) | Prefer splitter; if no wing, rear=null |
 | **OffRoad** | 0.05 | DT default | Aero negligible <150 km/h; near-zero |
@@ -155,10 +98,8 @@ const frontMinRef = 30, rearMinRef = 50;        // part minimums
 
 - **No aero installed** → outputs `null`; show "Install an aero part to tune downforce."
 - **Splitter-only (no rear wing)** → rear output `null`, balance reported as `1.0`.
-- **AWD** → front-biased (0.40–0.45), and in Circuit clamp to max-front/min-rear (the dominant meta; AWD's rear traction makes rear DF mostly drag).
-- **RWD** → neutral-to-rear (0.50–0.55); add rear if high-speed oversteer reported.
-- **FWD** → front-biased (0.45–0.55); front handles steering+power.
-- **Engine location** → Rear/Mid engine already loads rear tires, so shed 5–10% of rear span.
+- **AWD / RWD / FWD** → *(superseded — see revised §1.1)*: drivetrain-specific balance ratios and AWD "force front=max, rear≈min" are removed; balance is now set by weight distribution only.
+- **Engine location** → *(superseded — see revised §1.1)*: the `-5%/-10%` mid/rear rear-shed is removed; engine location affects aero only through its contribution to weight distribution and the rear-engine safeguard (rear lbf ≥ front lbf).
 - **EV/Hybrid** → no aero difference; EVs are usually heavy, so the weight-scaling term naturally raises DF — correct behavior.
 - **High power (≥600 hp)** → scale total DF up to +25% for high-speed stability (skip for Drag/OffRoad).
 - **Clamp** every output to `[partMin, partMax]`, snap to 1 lbf step.
