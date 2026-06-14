@@ -84,11 +84,15 @@ public sealed class CalculatorState
     /// <summary>Raw string for a numeric field id ("" if blank/unknown).</summary>
     public string GetField(string id) => _rawForm.TryGetValue(id, out var v) ? v : "";
 
-    /// <summary>Sets a numeric field's raw string and notifies (no-op if unchanged).</summary>
+    /// <summary>Sets a numeric field's raw string and notifies (no-op if unchanged). Ignores ids that
+    /// aren't <see cref="FieldIds"/> keys: <c>_rawForm</c> must stay exactly the numeric-field set so
+    /// <c>ApplySetup</c>'s <c>_rawForm.ContainsKey</c> routing never mistakes a categorical select id
+    /// (e.g. "aeroKit") for a numeric field.</summary>
     public void SetField(string id, string? value)
     {
+        if (!_rawForm.TryGetValue(id, out var cur)) return;
         var next = value ?? "";
-        if (_rawForm.TryGetValue(id, out var cur) && cur == next) return;
+        if (cur == next) return;
         _rawForm[id] = next;
         Notify();
     }

@@ -76,10 +76,7 @@
     {
         State.Changed += OnStateChanged;
         // Initial load (legacy wireSetups → renderSetupList(loadSetupsDb(), null)).
-        var res = await Storage.LoadAsync();
-        _db = res.Db;
-        _lastLoadSkipped = res.Skipped;
-        if (res.Status.Kind != SetupsStatusKind.None) SetStatus(res.Status);
+        await ReloadAsync();
         ClampSelection();
     }
 

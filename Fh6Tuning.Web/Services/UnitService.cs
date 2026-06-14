@@ -91,6 +91,17 @@ public sealed class UnitService
     /// <summary>Power label — "(hp)" in both unit systems (legacy UNIT_LABEL.power).</summary>
     public string PowerUnitLabel => PowerLabel;
 
+    // Bare (no-parens) display suffixes shared by the cards, the compare table and the copy-to-text
+    // block, so a label change lands in one place and the three surfaces can't diverge.
+    /// <summary>Spring-rate suffix: "kgf/mm" (metric) / "lb/in" (imperial).</summary>
+    public static string SpringUnit(UnitSystem units) => units == UnitSystem.Metric ? "kgf/mm" : "lb/in";
+    /// <summary>Ride-height suffix: "cm" (metric) / "in" (imperial).</summary>
+    public static string RideUnit(UnitSystem units) => units == UnitSystem.Metric ? "cm" : "in";
+    /// <summary>Downforce-force suffix: "kgf" (metric) / "lbf" (imperial).</summary>
+    public static string AeroUnit(UnitSystem units) => units == UnitSystem.Metric ? "kgf" : "lbf";
+    /// <summary>Speed suffix: "km/h" (metric) / "mph" (imperial).</summary>
+    public static string SpeedUnit(UnitSystem units) => units == UnitSystem.Metric ? "km/h" : "mph";
+
     /// <summary>
     /// legacy <c>nf(v, dp = 1)</c>: pretty number — "—" for null/NaN, else <c>toFixed(dp)</c>
     /// with trailing zeros (and a bare trailing dot) trimmed.
@@ -129,9 +140,9 @@ public sealed class UnitService
 
     /// <summary>legacy <c>aeroDisp(vImp)</c> — downforce, 0 dp + " kgf"/" lbf" suffix.</summary>
     public string AeroDisp(double vImp, UnitSystem units) =>
-        Nf(FromImp(Dim.Aero, vImp, units), 0) + (units == UnitSystem.Metric ? " kgf" : " lbf");
+        Nf(FromImp(Dim.Aero, vImp, units), 0) + " " + AeroUnit(units);
 
     /// <summary>legacy <c>speedDisp(mphImp)</c> — speed, 0 dp + " km/h"/" mph" suffix.</summary>
     public string SpeedDisp(double mphImp, UnitSystem units) =>
-        Nf(FromImp(Dim.Speed, mphImp, units), 0) + (units == UnitSystem.Metric ? " km/h" : " mph");
+        Nf(FromImp(Dim.Speed, mphImp, units), 0) + " " + SpeedUnit(units);
 }

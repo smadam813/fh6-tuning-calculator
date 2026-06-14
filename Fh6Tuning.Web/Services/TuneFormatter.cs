@@ -71,6 +71,18 @@ public sealed class TuneFormatter
             : $"{S(pct.Value)}% of range";
     }
 
+    /// <summary>
+    /// The compact aero cell for the compare table (legacy app.js:350-351): a bare number (the unit
+    /// lives in the column header) when a downforce range produced lbf, else the % of slider, else a
+    /// terse "—" — matching how every other absent cell renders in that table. Shared by the front and
+    /// rear cells so their identical pct/lbf/absent branch lives in one place.
+    /// </summary>
+    private string AeroCompareCell(Tune t, double? pct, double? lbfImp, bool asLbf, UnitSystem un) =>
+        (!t.Aero.Applicable || pct is null) ? "—"
+            : (asLbf && lbfImp is not null
+                ? Nf(_u.FromImp(UnitService.Dim.Aero, lbfImp.Value, un), 0)
+                : S(pct.Value) + "%");
+
     // ============================================================================================
     //  Single-goal card rows (legacy gearRows / diffRows / CARDS, app.js:156-217)
     // ============================================================================================
@@ -158,10 +170,10 @@ public sealed class TuneFormatter
         new("springs", "Springs & Ride Height", "🔧",
             t => new[]
             {
-                new TuneRow("Front rate", SpringDisp(t.Springs.Front, un) + " " + (un == UnitSystem.Metric ? "kgf/mm" : "lb/in")),
-                new TuneRow("Rear rate", SpringDisp(t.Springs.Rear, un) + " " + (un == UnitSystem.Metric ? "kgf/mm" : "lb/in")),
-                new TuneRow("Ride height F", RideDisp(t.Springs.RideF, un) + (un == UnitSystem.Metric ? " cm" : " in")),
-                new TuneRow("Ride height R", RideDisp(t.Springs.RideR, un) + (un == UnitSystem.Metric ? " cm" : " in")),
+                new TuneRow("Front rate", SpringDisp(t.Springs.Front, un) + " " + UnitService.SpringUnit(un)),
+                new TuneRow("Rear rate", SpringDisp(t.Springs.Rear, un) + " " + UnitService.SpringUnit(un)),
+                new TuneRow("Ride height F", RideDisp(t.Springs.RideF, un) + " " + UnitService.RideUnit(un)),
+                new TuneRow("Ride height R", RideDisp(t.Springs.RideR, un) + " " + UnitService.RideUnit(un)),
             },
             t => t.Springs.Why),
         new("damping", "Damping", "〽️",
@@ -310,7 +322,7 @@ public sealed class TuneFormatter
         }
         if (input.RedlineRpm is > 0 && input.TireDiameter is > 0)
         {
-            defs.Add(CompareRow.Cell($"Top speed ({(un == UnitSystem.Metric ? "km/h" : "mph")})",
+            defs.Add(CompareRow.Cell($"Top speed ({UnitService.SpeedUnit(un)})",
                 t => t.Gearing.TopSpeed is not null ? Nf(_u.FromImp(UnitService.Dim.Speed, t.Gearing.TopSpeed.Value, un), 0) : "—"));
         }
 
@@ -325,27 +337,21 @@ public sealed class TuneFormatter
             CompareRow.GroupHeader("Anti-Roll Bars"),
             CompareRow.Cell("ARB Front", t => Nf(t.Arb.Front, 0)),
             CompareRow.Cell("ARB Rear", t => Nf(t.Arb.Rear, 0)),
-            CompareRow.GroupHeader($"Springs ({(un == UnitSystem.Metric ? "kgf/mm" : "lb/in")})"),
+            CompareRow.GroupHeader($"Springs ({UnitService.SpringUnit(un)})"),
             CompareRow.Cell("Front rate", t => SpringDisp(t.Springs.Front, un)),
             CompareRow.Cell("Rear rate", t => SpringDisp(t.Springs.Rear, un)),
-            CompareRow.Cell($"Ride F ({(un == UnitSystem.Metric ? "cm" : "in")})", t => RideDisp(t.Springs.RideF, un)),
-            CompareRow.Cell($"Ride R ({(un == UnitSystem.Metric ? "cm" : "in")})", t => RideDisp(t.Springs.RideR, un)),
+            CompareRow.Cell($"Ride F ({UnitService.RideUnit(un)})", t => RideDisp(t.Springs.RideF, un)),
+            CompareRow.Cell($"Ride R ({UnitService.RideUnit(un)})", t => RideDisp(t.Springs.RideR, un)),
             CompareRow.GroupHeader("Damping"),
             CompareRow.Cell("Rebound F", t => Nf(t.Damping.ReboundF, 1)),
             CompareRow.Cell("Rebound R", t => Nf(t.Damping.ReboundR, 1)),
             CompareRow.Cell("Bump F", t => Nf(t.Damping.BumpF, 1)),
             CompareRow.Cell("Bump R", t => Nf(t.Damping.BumpR, 1)),
             CompareRow.GroupHeader("Aero"),
-            CompareRow.Cell(aeroFrontLbf ? $"Front DF ({(un == UnitSystem.Metric ? "kgf" : "lbf")})" : "Front DF",
-                t => (!t.Aero.Applicable || t.Aero.Front is null) ? "—"
-                    : (aeroFrontLbf && t.Aero.FrontLbf is not null
-                        ? Nf(_u.FromImp(UnitService.Dim.Aero, t.Aero.FrontLbf.Value, un), 0)
-                        : S(t.Aero.Front.Value) + "%")),
-            CompareRow.Cell(aeroRearLbf ? $"Rear DF ({(un == UnitSystem.Metric ? "kgf" : "lbf")})" : "Rear DF",
-                t => (!t.Aero.Applicable || t.Aero.Rear is null) ? "—"
-                    : (aeroRearLbf && t.Aero.RearLbf is not null
-                        ? Nf(_u.FromImp(UnitService.Dim.Aero, t.Aero.RearLbf.Value, un), 0)
-                        : S(t.Aero.Rear.Value) + "%")),
+            CompareRow.Cell(aeroFrontLbf ? $"Front DF ({UnitService.AeroUnit(un)})" : "Front DF",
+                t => AeroCompareCell(t, t.Aero.Front, t.Aero.FrontLbf, aeroFrontLbf, un)),
+            CompareRow.Cell(aeroRearLbf ? $"Rear DF ({UnitService.AeroUnit(un)})" : "Rear DF",
+                t => AeroCompareCell(t, t.Aero.Rear, t.Aero.RearLbf, aeroRearLbf, un)),
             CompareRow.GroupHeader("Braking"),
             CompareRow.Cell("Balance", t => S(t.Braking.Balance) + "%"),
             CompareRow.Cell("Pressure", t => S(t.Braking.Pressure) + "%"),
@@ -379,6 +385,12 @@ public sealed class TuneFormatter
     //  Copy-to-text (legacy tuneToText, app.js:387-412)
     // ============================================================================================
 
+    /// <summary>One dial's clause in the copy-to-text header (legacy app.js:391-393): the signed value
+    /// (a "+" prefix when positive) plus the direction word for its sign — e.g. "bias +2 (oversteer)"
+    /// or "stiffness -1 (soft)". Shared by both dials so the sign/direction wording lives in one place.</summary>
+    private string DialPart(string label, double value, string posWord, string negWord) =>
+        $"{label} {(value > 0 ? "+" : "")}{Nf(value, 1)} ({(value > 0 ? posWord : negWord)})";
+
     /// <summary>legacy <c>tuneToText(t, input)</c> (app.js:387-412) — the copy-tune plaintext block.</summary>
     public string TuneToText(Tune t, TuneInput input, GoalMeta goalMeta, UnitSystem un)
     {
@@ -390,9 +402,9 @@ public sealed class TuneFormatter
         {
             var parts = new List<string>();
             if (input.HandlingBias != 0)
-                parts.Add($"bias {(input.HandlingBias > 0 ? "+" : "")}{Nf(input.HandlingBias, 1)} ({(input.HandlingBias > 0 ? "oversteer" : "understeer")})");
+                parts.Add(DialPart("bias", input.HandlingBias, "oversteer", "understeer"));
             if (input.OverallStiffness != 0)
-                parts.Add($"stiffness {(input.OverallStiffness > 0 ? "+" : "")}{Nf(input.OverallStiffness, 1)} ({(input.OverallStiffness > 0 ? "hard" : "soft")})");
+                parts.Add(DialPart("stiffness", input.OverallStiffness, "hard", "soft"));
             L.Add($"Dials: {string.Join(", ", parts)}");
         }
 
@@ -406,11 +418,13 @@ public sealed class TuneFormatter
 
         L.Add($"— Camber: F {Nf(t.Alignment.CamberF, 1)} / R {Nf(t.Alignment.CamberR, 1)}  Toe: F {Nf(t.Alignment.ToeF, 1)} / R {Nf(t.Alignment.ToeR, 1)}  Caster: {Nf(t.Alignment.Caster, 1)}");
         L.Add($"— ARB: F {S(t.Arb.Front)} / R {S(t.Arb.Rear)}");
-        L.Add($"— Springs: F {SpringDisp(t.Springs.Front, un)} / R {SpringDisp(t.Springs.Rear, un)} {(un == UnitSystem.Metric ? "kgf/mm" : "lb/in")}  Ride: F {RideDisp(t.Springs.RideF, un)} / R {RideDisp(t.Springs.RideR, un)} {(un == UnitSystem.Metric ? "cm" : "in")}");
+        L.Add($"— Springs: F {SpringDisp(t.Springs.Front, un)} / R {SpringDisp(t.Springs.Rear, un)} {UnitService.SpringUnit(un)}  Ride: F {RideDisp(t.Springs.RideF, un)} / R {RideDisp(t.Springs.RideR, un)} {UnitService.RideUnit(un)}");
         L.Add($"— Damping: Reb F {Nf(t.Damping.ReboundF, 1)} / R {Nf(t.Damping.ReboundR, 1)}  Bump F {Nf(t.Damping.BumpF, 1)} / R {Nf(t.Damping.BumpR, 1)}");
 
-        string af = t.Aero.Front is null ? "n/a" : (t.Aero.FrontLbf is not null ? AeroDisp(t.Aero.FrontLbf.Value, un) : S(t.Aero.Front.Value) + "%");
-        string ar = t.Aero.Rear is null ? "n/a" : (t.Aero.RearLbf is not null ? AeroDisp(t.Aero.RearLbf.Value, un) : S(t.Aero.Rear.Value) + "%");
+        // Reuse AeroVal with the same absent labels the cards show, so the clipboard text and the card
+        // agree on an absent single-wing end (legacy used "n/a" here, diverging from the card).
+        string af = AeroVal(t.Aero.Front, t.Aero.FrontLbf, "— (no splitter)", un);
+        string ar = AeroVal(t.Aero.Rear, t.Aero.RearLbf, "— (no wing)", un);
         L.Add($"— Aero: {(!t.Aero.Applicable ? "none installed" : $"F {af} / R {ar}")}");
 
         L.Add($"— Brakes: balance {S(t.Braking.Balance)}% front, pressure {S(t.Braking.Pressure)}%");

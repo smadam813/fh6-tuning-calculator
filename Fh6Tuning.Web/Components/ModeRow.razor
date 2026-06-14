@@ -28,6 +28,14 @@
 
     private async Task CopyAsync()
     {
+        // Gate on the same welcome/validate checks OutputsPanel.Recompute uses, so the button never
+        // copies a tune computed from blank/zeroed placeholder inputs (incomplete ≠ invalid).
+        if (State.IsIncomplete() || !Engine.Validate(State.BuildRawInput()).Valid)
+        {
+            await FlashAsync("Enter car stats first");
+            return;
+        }
+
         var input = State.BuildTuneInput();
         string text = State.CompareMode
             ? string.Join("\n\n", Engine.Goals.Select(g =>
@@ -36,22 +44,24 @@
                 Engine.Compute(input, State.CurrentGoal), input, Engine.GoalMeta[State.CurrentGoal], State.Units);
 
         bool ok = await Clipboard.CopyAsync(text);
-        if (ok)
+        if (ok) await FlashAsync("Copied ✓");
+    }
+
+    // Briefly show a label on the button, then restore the default (legacy: flash "Copied ✓" 1400ms).
+    private async Task FlashAsync(string label)
+    {
+        _copyLabel = label;
+        StateHasChanged();
+        _resetCts?.Cancel();
+        _resetCts = new CancellationTokenSource();
+        var token = _resetCts.Token;
+        try
         {
-            // legacy: flash "Copied ✓" for 1400ms, then restore.
-            _copyLabel = "Copied ✓";
+            await Task.Delay(1400, token);
+            _copyLabel = DefaultLabel;
             StateHasChanged();
-            _resetCts?.Cancel();
-            _resetCts = new CancellationTokenSource();
-            var token = _resetCts.Token;
-            try
-            {
-                await Task.Delay(1400, token);
-                _copyLabel = DefaultLabel;
-                StateHasChanged();
-            }
-            catch (TaskCanceledException) { /* superseded by a newer copy */ }
         }
+        catch (TaskCanceledException) { /* superseded by a newer flash */ }
     }
 
     protected override void OnInitialized() => State.Changed += OnStateChanged;
