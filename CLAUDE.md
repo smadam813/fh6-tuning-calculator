@@ -6,16 +6,7 @@ A **standalone .NET 10 Blazor WebAssembly** single-page app that converts a car'
 
 ## Architecture
 
-Three shipping projects plus a Web-services test project, kept deliberately layered so the engine and storage stay pure and unit-testable while all DOM/IO/JS-interop lives in the Web project:
-
-| Project | Role | Key surface |
-|---|---|---|
-| `Fh6Tuning.Core` | **The engine + storage.** Pure, no IO, no Blazor. `net10.0` class library. | `ITuningEngine` / `TuningEngine` (`Compute(TuneInput, Goal) → Tune`, `Validate`, `OverallTireDiameter`, `Goals`, `GoalMeta`); `SetupsStore` (pure validate/merge/serialize/parse for saved setups); the `Tune`/`TuneInput`/`SavedSetup` record graph; `JsMath`/`JsNumber` (JS-parity numerics). |
-| `Fh6Tuning.Web` | **The UI.** Blazor WASM (`Microsoft.NET.Sdk.BlazorWebAssembly`) + MudBlazor. The only project that touches the DOM, `localStorage`, the clipboard, or JS interop. | `Program.cs` (DI wiring), Razor components under `Components/`, page shells under `Pages/`/`Layout/`, and the `Services/` layer (`CalculatorState`, `UnitService`, `TuneFormatter`, `SetupsStorage`, `ClipboardInterop`, `FileDownloadInterop`). |
-| `Fh6Tuning.Tests` | **xUnit engine + storage tests.** References `Fh6Tuning.Core`. | The differential **parity** gate (`ParityTests` + `ParityHarness`), the invariant `SweepTests`, plus `UnitTests`/`EdgeTests`/`FailureTests`/`IntegrationTests`/`SetupsTests` with shared `Fixtures`/`Helpers`. |
-| `Fh6Tuning.Web.Tests` | **xUnit Web-services tests.** References Core **and** Web; exercises the pure services that carry no Blazor-runtime dependency. | `UnitServiceTests`, `TuneFormatterTests`. |
-
-All four are in `Fh6Tuning.sln`.
+Deliberately layered so the engine and storage stay pure and unit-testable while all DOM/IO/JS-interop lives in the Web project.
 
 **Purity contract.** `Fh6Tuning.Core` has zero IO and zero Blazor dependencies. `TuningEngine` is pure and deterministic and is registered as a DI **singleton**; `SetupsStore` is a static class of pure transforms with **no `localStorage` access of its own** — the actual `localStorage` get/set lives in `Fh6Tuning.Web/Services/SetupsStorage.cs`, exactly mirroring the legacy split between `setups.js` (logic) and `app.js` (IO).
 
@@ -43,35 +34,9 @@ The differential parity gate is what guarantees the C# port matches the JS oracl
 
 The `springs._fFront`/`_fRear` JS values are documented internal scratch (target ride frequencies used only for the damping handoff and the why string); the exporter strips them and the C# `Springs` record omits them, so they are deliberately out of the tune contract.
 
-## Build / test / run / publish
-
-All commands run from the repo root.
-
-```bash
-dotnet build Fh6Tuning.sln              # build all projects (Core, Web, both test projects)
-dotnet test  Fh6Tuning.sln              # run xUnit: parity gate, sweep, unit, web-service tests
-dotnet test  Fh6Tuning.Tests            # engine + storage + parity only
-dotnet run   --project Fh6Tuning.Web    # dev server (http://localhost:5221 / https://localhost:7083)
-```
-
-Running the tests (or building `Fh6Tuning.Tests`) regenerates `parity/cases.json` from `legacy/`, so **Node.js must be installed** for the parity gate. `dotnet run` does **not** hot-reload — **restart the server after editing `.razor`/`.css`** (or use `dotnet watch` for HMR). The `.claude/launch.json` `web` config (port 5221) is what the preview/verify tooling launches.
-
-**Publish for GitHub Pages** — publish the Web project and deploy the WASM app's `wwwroot`:
-
-```bash
-dotnet publish Fh6Tuning.Web -c Release -o publish
-# deploy the static bundle at:  publish/wwwroot
-```
-
-`publish/wwwroot` is the complete static site (`index.html`, `_framework/` runtime + DLLs, MudBlazor assets). Notes for Pages:
-- If hosting under a project sub-path (`/fh6-tuning-calculator/`), set the `<base href>` accordingly (publish with `--base-href /fh6-tuning-calculator/` or edit `wwwroot/index.html`, which currently uses `<base href="/" />`).
-- Provide a SPA 404 fallback (copy `index.html` to `404.html`) so deep links resolve.
-- A `.nojekyll` file is only needed for a *branch*-based deploy (to stop Jekyll stripping `_framework`). The GitHub Actions artifact path used here never runs Jekyll, so none is created.
-
-All of the above are automated by **`.github/workflows/deploy-pages.yml`** (push to `main`: test → publish → rewrite `<base href>` → `404.html` → deploy via GitHub Actions). **The Pages source must be set to "GitHub Actions"** in Settings → Pages: the workflow's `configure-pages` *enables* Pages but does **not** flip an existing "Deploy from a branch" source — leaving it on a branch makes GitHub's auto `pages-build-deployment` race the workflow on every push.
-
 ## MudBlazor / UI gotchas (dark theme)
 
+- **`dotnet run` does not hot-reload** — restart the dev server after editing `.razor`/`.css` (or use `dotnet watch` for HMR). The preview/verify tooling launches the `.claude/launch.json` `web` config (port 5221).
 - **Disable a ripple per-component with `Ripple="false"`** — never a global `.mud-ripple { display:none }`. MudBlazor stamps `mud-ripple` onto *functional* elements (e.g. the `MudSwitch` thumb base), so the global rule hides them (it ate the compare-toggle thumb).
 - **The header is a sticky in-flow bar, not MudBlazor's fixed `MudAppBar`.** It uses `Fixed="false"` + `position:sticky` + `height:auto !important` on both `.fh6-appbar` and its `.mud-toolbar`, and zeroes `.mud-main-content`'s padding-top. MudBlazor's fixed `MudAppBar` is a fixed-height bar with a static body offset that clips wrapped/multi-line brand content on mobile.
 - **`MudSelect` puts your `Class` on its inner `.mud-input-control`, not its outer `.mud-select` wrapper (the actual flex item).** To size/shrink a select in a flex row, wrap it in a project-owned div (e.g. `.fh6-setup-list-wrap`) and target that — don't couple CSS to `.mud-select`. Field `margin-top` is already zeroed app-wide by `.fh6-inputs .mud-input-control { margin-top: 0 }`.
