@@ -9,7 +9,7 @@
 @inject ITuningEngine Engine
 
 <div class="goal-tabs @(State.CompareMode ? "compare-dim" : "")">
-    <MudTabs Rounded="true"
+    <MudTabs Rounded="true" Ripple="false"
              ApplyEffectsToContainer="false"
              ActivePanelIndex="ActiveIndex"
              ActivePanelIndexChanged="OnActiveIndexChanged"
