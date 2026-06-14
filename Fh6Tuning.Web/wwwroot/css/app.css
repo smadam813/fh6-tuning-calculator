@@ -38,10 +38,29 @@ html, body {
 }
 
 /* ---------- Top bar (legacy .topbar / .brand / .logo / .titles / .unit-toggle) ---------- */
+/* Sticky (not MudBlazor's fixed): the bar stays pinned to the top on scroll, but being in normal
+   flow it reserves exactly its own height — so it grows with wrapped content and never overlaps the
+   body (MudBlazor's Fixed mode offsets the body by a STATIC 48px, which the wrapped mobile header
+   overflowed). Pairs with Fixed="false" on the MudAppBar. */
 .fh6-appbar {
     border-bottom: 1px solid var(--line);
     background: linear-gradient(180deg, rgba(20,28,40,.85), rgba(13,17,23,.4)) !important;
     backdrop-filter: blur(8px);
+    position: sticky !important;
+    top: 0;
+    z-index: 1100;
+    height: auto !important;   /* MudAppBar hardcodes a fixed height; let it size to content */
+}
+/* The app bar AND its toolbar must GROW to fit the brand + unit toggle when they wrap on narrow
+   widths. Both are a fixed ~56px tall by default; the toolbar's align-items:center then centered the
+   116px of wrapped content in that 56px box, pushing the brand's top line off-screen above. height
+   auto (with a min-height floor) lets the bar grow; being sticky+in-flow it just pushes the body
+   down instead of overlapping or clipping. */
+.fh6-appbar .mud-toolbar {
+    height: auto !important;
+    min-height: 56px;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 /* The appbar inner toolbar must never exceed the viewport: allow the brand + unit toggle to wrap
@@ -96,7 +115,7 @@ html, body {
     box-shadow: var(--shadow);
     padding: clamp(14px, 1.8vw, 22px);
 }
-.fh6-inputs { position: sticky; top: 86px; }
+.fh6-inputs { position: sticky; top: 96px; }
 .fh6-panel-title {
     margin: 0 0 14px; font-size: 16px; letter-spacing: .3px;
     text-transform: uppercase; color: var(--accent); font-weight: 600;
