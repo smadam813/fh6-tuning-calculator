@@ -22,3 +22,6 @@ desktop.ini
 .idea/
 *.swp
 *~
+
+# GSD planning artifacts (local-only workflow scratch space)
+.planning/
