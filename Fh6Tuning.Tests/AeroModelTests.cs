@@ -105,15 +105,20 @@ public sealed class AeroModelTests
         }
     }
 
-    [Fact] // The dial's aero shift is the SAME in balance terms regardless of kit ranges.
+    [Fact] // The dial shifts aero balance by a fixed amount in SHARE space, independent of kit ranges.
     public void HandlingBiasAero_IsKitIndependent()
     {
-        var std = Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, StdF, StdR);
-        var big = Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, BigF, BigR);
-        double dStd = Share(Engine.Compute(std with { HandlingBias = 5 }, Goal.Circuit)) - Share(Engine.Compute(std, Goal.Circuit));
-        double dBig = Share(Engine.Compute(big with { HandlingBias = 5 }, Goal.Circuit)) - Share(Engine.Compute(big, Goal.Circuit));
-        Assert.True(Math.Abs(dStd - dBig) < 0.02, $"dial aero shift kit-dependent: STD Δ{dStd:0.000} vs BIG Δ{dBig:0.000}");
-        Assert.True(dStd > 0.03, $"+5 bias barely moved balance: Δ{dStd:0.000}");
+        // -5 lowers front-share, moving both ends away from their range maxima so neither clamps.
+        // The balance shift should be ≈ -0.08 (0.08 × BiasScale(5,1.05)=1) on BOTH the small STD kit
+        // and the big BIG kit, proving the dial is kit-independent. The old ±8%-of-each-slider code
+        // produced kit-dependent shifts (≈ -0.04 to -0.05) and would fail this assertion.
+        foreach (var (fr, rr, label) in new[] { (StdF, StdR, "STD"), (BigF, BigR, "BIG") })
+        {
+            var car = Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, fr, rr);
+            double shift = Share(Engine.Compute(car with { HandlingBias = -5 }, Goal.Circuit))
+                         - Share(Engine.Compute(car, Goal.Circuit));
+            Assert.True(Math.Abs(shift - (-0.08)) < 0.01, $"{label}: balance shift {shift:0.000} not ≈ -0.08 (kit-dependent?)");
+        }
     }
 
     [Fact] // +bias raises front-share (toward oversteer); -bias lowers it.
