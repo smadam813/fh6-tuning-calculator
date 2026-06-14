@@ -1,6 +1,8 @@
 ﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
+        @* No FocusOnNavigate: this is a single-route app with no in-app navigation, so moving focus
+           to the <h1> on load gives no a11y benefit and only paints a :focus-visible ring around the
+           title on every (re)load (it's what stamps tabindex="-1" on the heading). *@
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>

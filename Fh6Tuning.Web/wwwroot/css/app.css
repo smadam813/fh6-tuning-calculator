@@ -145,6 +145,11 @@ html, body {
     border-radius: 10px;
     margin: 0 0 14px;
     padding: 12px 14px 16px;
+    /* A <fieldset> defaults to min-width:min-content, so it refuses to shrink below its widest
+       content and grows the whole panel — a long saved-setup name then spills the Saved Setups
+       rows (and their Load/Delete/Save buttons) out of the fixed-width inputs panel and over the
+       outputs column. Clamp it so the fieldset stays within the panel and its fields truncate. */
+    min-width: 0;
 }
 .fh6-inputs legend {
     color: var(--muted);
@@ -181,9 +186,14 @@ html, body {
 
 /* ---------- Saved setups (legacy styles.css 107-130, scoped to .fh6-inputs) ---------- */
 .fh6-inputs .setups .setup-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-/* the name field and the saved-setups dropdown stretch; the buttons stay their content width */
+/* The name field and the saved-setups dropdown stretch; the buttons stay their content width.
+   MudTextField stamps our class on its root .mud-input-control (a direct child of .setup-row), but
+   MudSelect wraps its control in an extra .mud-select div — so .fh6-setup-list lands on a grandchild
+   and a "> .fh6-setup-list" rule never reaches the actual flex item. Target that .mud-select wrapper
+   directly; with min-width:0 it shrinks to its share and the selected name truncates (ellipsis)
+   instead of growing the row past the panel. */
 .fh6-inputs .setups .setup-row > .fh6-setup-name,
-.fh6-inputs .setups .setup-row > .fh6-setup-list { flex: 1; min-width: 0; }
+.fh6-inputs .setups .setup-row > .mud-select { flex: 1; min-width: 0; }
 .fh6-inputs .setups .setup-row .fh6-setup-name,
 .fh6-inputs .setups .setup-row .fh6-setup-list { margin-top: 0; }
 /* Import: a styled <label> wrapping a hidden <InputFile> — clicking the label opens the picker
