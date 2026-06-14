@@ -1,0 +1,102 @@
+using Fh6Tuning.Core;
+
+namespace Fh6Tuning.Tests;
+
+/// <summary>
+/// C#-native validation of the balanced-magnitude aero model (replaces JS parity for aero).
+/// Encodes the model's INTENT: front and rear target equal downforce at 47% front weight; rear rises
+/// +1.867 lbf per 1% front-weight above 47%; rear-engine never below balanced; front stays high on
+/// Circuit; aero balance never pathological for representative kits; the handling-bias aero lever
+/// shifts BALANCE kit-independently.
+/// </summary>
+public sealed class AeroModelTests
+{
+    private static readonly ITuningEngine Engine = new TuningEngine();
+
+    // Representative kits: rear range ≥ front range (the realistic case). STD ≈ standard Forza kit
+    // (front_max ≈ rear_min), BIG ≈ a WTAC-style big rear wing.
+    private static readonly AeroRange StdF = new(30, 165), StdR = new(50, 300);
+    private static readonly AeroRange BigF = new(235, 704), BigR = new(240, 1038);
+
+    private static TuneInput Car(Drivetrain dt, EngineLocation el, double fwp, double power,
+        AeroRange fr, AeroRange rr) => Fixtures.BaseInput(b =>
+    {
+        b.Drivetrain = dt; b.EngineLocation = el; b.FrontWeightPct = fwp; b.Power = power;
+        b.PiClass = PiClass.S2; b.Weight = 3000; b.TireCompound = TireCompound.Race;
+        b.SuspensionType = SuspensionType.Race;
+        b.HasFrontAero = true; b.HasRearAero = true; b.AeroInstalled = true;
+        b.AeroFront = fr; b.AeroRear = rr;
+    });
+
+    private static double Share(Tune t) =>
+        t.Aero.FrontLbf!.Value / (t.Aero.FrontLbf!.Value + t.Aero.RearLbf!.Value);
+
+    [Fact] // Regression: the exact failing case. Was 100/10 (share 0.69).
+    public void UserCar_Circuit_IsBalanced_FrontStaysHigh()
+    {
+        var car = Car(Drivetrain.AWD, EngineLocation.Mid, 47, 630, BigF, BigR);
+        Tune t = Engine.Compute(car, Goal.Circuit);
+        Assert.InRange(Share(t), 0.45, 0.55);              // balanced, not 0.69
+        Assert.True(t.Aero.Front!.Value >= 85, $"front collapsed to {t.Aero.Front}");
+    }
+
+    [Fact] // At 47% front, front and rear target equal downforce.
+    public void BalancedAt47_FrontApproxRearLbf()
+    {
+        foreach (var dt in new[] { Drivetrain.FWD, Drivetrain.RWD, Drivetrain.AWD })
+        {
+            Tune t = Engine.Compute(Car(dt, EngineLocation.Front, 47, 450, BigF, BigR), Goal.Circuit);
+            Assert.True(Math.Abs(t.Aero.FrontLbf!.Value - t.Aero.RearLbf!.Value) <= 2,
+                $"{dt}: front {t.Aero.FrontLbf} vs rear {t.Aero.RearLbf} not balanced at 47%");
+        }
+    }
+
+    [Fact] // Front-heavy → more rear downforce (the verified 1.867 lb/% direction).
+    public void RearDownforce_RisesWithFrontWeight()
+    {
+        Tune light = Engine.Compute(Car(Drivetrain.AWD, EngineLocation.Front, 47, 450, BigF, BigR), Goal.Circuit);
+        Tune heavy = Engine.Compute(Car(Drivetrain.AWD, EngineLocation.Front, 57, 450, BigF, BigR), Goal.Circuit);
+        Assert.True(heavy.Aero.RearLbf!.Value > light.Aero.RearLbf!.Value,
+            $"57%-front rear {heavy.Aero.RearLbf} not > 47%-front rear {light.Aero.RearLbf}");
+    }
+
+    [Fact] // Rear-engine safeguard: never below balanced (rear ≥ front).
+    public void RearEngine_NeverBelowBalanced()
+    {
+        Tune t = Engine.Compute(Car(Drivetrain.RWD, EngineLocation.Rear, 38, 450, BigF, BigR), Goal.Circuit);
+        Assert.True(t.Aero.RearLbf!.Value >= t.Aero.FrontLbf!.Value - 1,
+            $"rear-engine front-biased: front {t.Aero.FrontLbf} > rear {t.Aero.RearLbf}");
+        Assert.InRange(Share(t), 0.40, 0.51);
+    }
+
+    [Fact] // No pathological aero split anywhere on representative kits.
+    public void AllFullKitCases_ShareInBand()
+    {
+        var dts = new[] { Drivetrain.FWD, Drivetrain.RWD, Drivetrain.AWD };
+        var els = new[] { EngineLocation.Front, EngineLocation.Mid, EngineLocation.Rear };
+        var fwps = new double[] { 42, 50, 57 };
+        var kits = new[] { (StdF, StdR), (BigF, BigR) };
+        var goals = new[] { Goal.Circuit, Goal.Touge, Goal.Rally, Goal.OffRoad, Goal.Drift };
+        foreach (var dt in dts)
+            foreach (var el in els)
+                foreach (var fwp in fwps)
+                    foreach (var (fr, rr) in kits)
+                        foreach (var g in goals)
+                        {
+                            Tune t = Engine.Compute(Car(dt, el, fwp, 450, fr, rr), g);
+                            double sh = Share(t);
+                            Assert.True(sh >= 0.33 && sh <= 0.67,
+                                $"{dt}/{el} {fwp}% {g}: aero share {sh:0.00} outside 0.33..0.67");
+                        }
+    }
+
+    [Fact] // Circuit keeps front downforce high (does not collapse).
+    public void Circuit_FrontStaysHigh()
+    {
+        foreach (var dt in new[] { Drivetrain.FWD, Drivetrain.RWD, Drivetrain.AWD })
+        {
+            Tune t = Engine.Compute(Car(dt, EngineLocation.Front, 50, 450, BigF, BigR), Goal.Circuit);
+            Assert.True(t.Aero.Front!.Value >= 80, $"{dt}: Circuit front {t.Aero.Front} too low");
+        }
+    }
+}

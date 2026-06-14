@@ -699,46 +699,66 @@ public sealed class TuningEngine : ITuningEngine
             return new Aero(true, null, null, rp, ToLbf(r, rR), new Why(rText, rFormula));
         }
 
-        // full kit (both ends) — solve for a target front/rear balance share
-        double bal = i.Drivetrain switch { Drivetrain.FWD => 0.50, Drivetrain.RWD => 0.525, Drivetrain.AWD => 0.425, _ => 0.5 };
-        if (goal == Goal.Drift) bal = Clamp(bal - 0.025, 0.45, 0.5);
-
-        double shift = (bal - 0.5) * 0.6;
-        double front = Clamp(level + shift, 0, 1);
-        double rear = Clamp(level - shift, 0, 1);
-        // rearSpan = (rR has both & rR.max > rR.min) ? (max-min) : 250
-        double rearSpan = (rR.Min is not null && rR.Max is not null && rR.Max.Value > rR.Min.Value) ? (rR.Max.Value - rR.Min.Value) : 250;
-        rear = Clamp(rear + (i.FrontWeightPct - 47) * 1.87 / rearSpan, 0, 1);
-        if (i.Power >= 600 && goal != Goal.Drag && goal != Goal.OffRoad)
+        // full kit (both ends) — BALANCED-MAGNITUDE model anchored at a 47% front-weight ideal.
+        // Aero balance comes from WEIGHT DISTRIBUTION (QuickTune-canonical), not a drivetrain slider
+        // rule: front sits at the goal LEVEL of its range; rear targets the SAME downforce MAGNITUDE
+        // (balanced at 47%), trimmed +1.867 lbf per 1% of front-weight above 47%. No AWD slider
+        // override, no engine-location rear-shed; aero no longer reads the over/understeer flags.
+        // Rear-engine cars are safeguarded: never below 0.50 front-share (rear lbf ≥ front lbf).
+        double front, rear; // slider fractions 0..1
+        if (goal == Goal.Drag)
         {
-            double k = 1 + Math.Min((i.Power - 600) / 600, 0.5) * 0.5;
-            front = Clamp(front * k, 0, 1); rear = Clamp(rear * k, 0, 1);
+            front = 0; rear = 0;
         }
-        if (i.Drivetrain == Drivetrain.AWD && (goal == Goal.Circuit || goal == Goal.Touge))
+        else if (fR.HasRange && rR.HasRange)
         {
-            if (oversteerProne) { front = 0.70; rear = 0.95; }
-            else { front = 1.0; rear = 0.15; }
+            double fSpan = fR.Max!.Value - fR.Min!.Value;
+            double rSpan = rR.Max!.Value - rR.Min!.Value;
+            double frontDF = fR.Min.Value + fSpan * level;
+            if (i.Power >= 600 && goal != Goal.OffRoad)
+                frontDF *= 1 + Math.Min((i.Power - 600) / 600, 0.5) * 0.5;
+            frontDF = Clamp(frontDF, fR.Min.Value, fR.Max.Value);          // clamp front first
+            double rearDF = frontDF + (i.FrontWeightPct - 47) * 1.867;     // balance to (clamped) front
+            if (i.EngineLocation == EngineLocation.Rear) rearDF = Math.Max(rearDF, frontDF); // safeguard
+            rearDF = Clamp(rearDF, rR.Min.Value, rR.Max.Value);
+            front = fSpan > 0 ? (frontDF - fR.Min.Value) / fSpan : 0;
+            rear = rSpan > 0 ? (rearDF - rR.Min.Value) / rSpan : 0;
         }
-        if (!oversteerProne)
+        else
         {
-            if (i.EngineLocation == EngineLocation.Rear) rear = Clamp(rear - 0.10, 0, 1);
-            if (i.EngineLocation == EngineLocation.Mid) rear = Clamp(rear - 0.05, 0, 1);
+            // ranges unknown: fraction-space balance (front ≈ rear fraction), weight-trim via 250-lbf span.
+            double frontF = level, rearF = level;
+            if (i.Power >= 600 && goal != Goal.OffRoad)
+            {
+                double k = 1 + Math.Min((i.Power - 600) / 600, 0.5) * 0.5;
+                frontF *= k; rearF *= k;
+            }
+            rearF += (i.FrontWeightPct - 47) * 1.867 / 250;
+            if (i.EngineLocation == EngineLocation.Rear) rearF = Math.Max(rearF, frontF);
+            front = Clamp(frontF, 0, 1);
+            rear = Clamp(rearF, 0, 1);
         }
-        if (goal == Goal.Drag) { front = 0; rear = 0; }
 
         double fp2 = R5(front * 100), rp2 = R5(rear * 100);
         double? frontLbf = ToLbf(front, fR);
         double? rearLbf = ToLbf(rear, rR);
-        // share: from actual lbf when known, else from %, else 50
+        // share: front's portion of total ACTUAL downforce when lbf known, else from %.
         double share = (frontLbf != null && rearLbf != null && frontLbf + rearLbf > 0)
             ? JsMath.Round(frontLbf.Value / (frontLbf.Value + rearLbf.Value) * 100)
             : (fp2 + rp2 > 0 ? JsMath.Round(fp2 / (fp2 + rp2) * 100) : 50);
 
         string text =
             $"Downforce trades top speed for grip. {GoalName(goal)} runs {S(fp2)}% front / {S(rp2)}% of each wing's range (aero balance ≈ {S(share)}% front)" +
-            (goal == Goal.Circuit ? ", near-max for the most grip" + (i.Drivetrain == Drivetrain.AWD ? (oversteerProne ? "; this tail-happy AWD runs a big rear wing plus a moderate front to plant the rear at speed instead of letting it float away." : "; AWD forces max front / min rear since the rear already has drive traction and a rear wing would only add drag.") : ".") : goal == Goal.Drag ? ", floored to zero — every pound of downforce is drag that kills top speed." : goal == Goal.Drift ? ", low so the car stays loose and easy to swing." : ", a moderate amount for the surface and speed.") + ((HasRange(fR) || HasRange(rR)) ? lbfNote : "");
+            (goal == Goal.Circuit ? ", near-max grip with rear sized to match front downforce so the car stays balanced at speed"
+             : goal == Goal.Drag ? ", floored to zero — every pound of downforce is drag that kills top speed."
+             : goal == Goal.Drift ? ", low so the car stays loose and easy to swing."
+             : ", a moderate amount for the surface and speed.")
+            + (goal != Goal.Drag && i.FrontWeightPct > 47 ? " Nose-heavy, so rear downforce is raised to keep balance." : "")
+            + (goal != Goal.Drag && i.FrontWeightPct < 47 ? " Rear-weight bias, so rear downforce eases off the balanced point." : "")
+            + (goal != Goal.Drag && i.EngineLocation == EngineLocation.Rear ? " Rear-engine: rear downforce held at least even with the front." : "")
+            + ((HasRange(fR) || HasRange(rR)) ? lbfNote : "");
         string formula =
-            $"front = level({S(level)}) + balanceShift\nrear  = level − balanceShift + weightTrim   (% of wing range)" + ((HasRange(fR) || HasRange(rR)) ? lbfFormula : "");
+            $"front = level({S(level)}) × frontRange\nrear  = frontLbf + (frontWeight − 47) × 1.867   (balanced at 47%)" + ((HasRange(fR) || HasRange(rR)) ? lbfFormula : "");
 
         return new Aero(true, fp2, frontLbf, rp2, rearLbf, new Why(text, formula));
     }
