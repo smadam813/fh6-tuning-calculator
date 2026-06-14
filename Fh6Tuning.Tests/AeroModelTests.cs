@@ -131,4 +131,22 @@ public sealed class AeroModelTests
         // BigF/BigR keep the shifted values clear of the range clamps, so strict monotonicity holds.
         Assert.True(bp > bn && bn > bm, $"not monotone: -5 {bm:0.00}, 0 {bn:0.00}, +5 {bp:0.00}");
     }
+
+    [Fact] // No-ranges (fraction-space) full-kit path: balanced at 47%, weight-trim direction, rear-engine safeguard, lbf null.
+    public void NoRanges_FractionSpace_BalancedAndSafeguarded()
+    {
+        // At 47% front the fraction-space front and rear are equal (balanced); lbf are null (no ranges).
+        Tune at47 = Engine.Compute(Car(Drivetrain.AWD, EngineLocation.Front, 47, 450, AeroRange.None, AeroRange.None), Goal.Circuit);
+        Assert.Null(at47.Aero.FrontLbf);
+        Assert.Null(at47.Aero.RearLbf);
+        Assert.Equal(at47.Aero.Front!.Value, at47.Aero.Rear!.Value);
+
+        // Front-heavy → more rear (the 1.867/250 fraction-space trim).
+        Tune heavy = Engine.Compute(Car(Drivetrain.AWD, EngineLocation.Front, 57, 450, AeroRange.None, AeroRange.None), Goal.Circuit);
+        Assert.True(heavy.Aero.Rear!.Value > heavy.Aero.Front!.Value, $"front-heavy fraction-space rear {heavy.Aero.Rear} not > front {heavy.Aero.Front}");
+
+        // Rear-engine safeguard holds in fraction space: rear ≥ front even for a rear-heavy car.
+        Tune rearEng = Engine.Compute(Car(Drivetrain.RWD, EngineLocation.Rear, 40, 450, AeroRange.None, AeroRange.None), Goal.Circuit);
+        Assert.True(rearEng.Aero.Rear!.Value >= rearEng.Aero.Front!.Value, $"rear-engine fraction-space rear {rearEng.Aero.Rear} < front {rearEng.Aero.Front}");
+    }
 }
