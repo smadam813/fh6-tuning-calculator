@@ -1029,13 +1029,10 @@ public sealed class TuningEngine : ITuningEngine
         {
             double s = BiasScale(bias, 1.05); // + → more front DF / less rear DF (toward oversteer)
             AeroRange fR = input.AeroFront, rR = input.AeroRear;
-            double? BiasLbf(double pct, AeroRange rng) => rng.HasRange
-                ? JsMath.Round(rng.Min!.Value + (rng.Max!.Value - rng.Min!.Value) * Clamp(pct / 100, 0, 1))
-                : (double?)null;
 
             if (aero.Front != null && aero.Rear != null)
             {
-                // Full kit: shift the aero BALANCE (front-share), preserving total downforce. Work in
+                // Full kit: shift the aero BALANCE (front-share), targeting the same total downforce (preserved where ranges allow). Work in
                 // lbf when ranges are known (kit-independent), else in %-share. This mirrors the
                 // baseline's magnitude model so the dial feels the same on every car's kit.
                 bool useLbf = aero.FrontLbf is double && aero.RearLbf is double && fR.HasRange && rR.HasRange;
@@ -1050,11 +1047,12 @@ public sealed class TuningEngine : ITuningEngine
                     {
                         nf = Clamp(nf, fR.Min!.Value, fR.Max!.Value);
                         nr = Clamp(nr, rR.Min!.Value, rR.Max!.Value);
+                        double fSpan = fR.Max!.Value - fR.Min!.Value, rSpan = rR.Max!.Value - rR.Min!.Value;
                         aero = aero with
                         {
-                            Front = R5((nf - fR.Min.Value) / (fR.Max.Value - fR.Min.Value) * 100),
+                            Front = R5(fSpan > 0 ? (nf - fR.Min.Value) / fSpan * 100 : 0),
                             FrontLbf = JsMath.Round(nf),
-                            Rear = R5((nr - rR.Min.Value) / (rR.Max.Value - rR.Min.Value) * 100),
+                            Rear = R5(rSpan > 0 ? (nr - rR.Min.Value) / rSpan * 100 : 0),
                             RearLbf = JsMath.Round(nr),
                         };
                     }
@@ -1074,14 +1072,14 @@ public sealed class TuningEngine : ITuningEngine
             {
                 // Single front splitter — can't rebalance; nudge the present end ±8% of its range.
                 double nf = R5(Clamp(aero.Front.Value + 8 * s, 0, 100));
-                aero = aero with { Front = nf, FrontLbf = BiasLbf(nf, fR),
+                aero = aero with { Front = nf, FrontLbf = fR.ToLbf(nf / 100),
                     Why = BiasNote(aero.Why, bias > 0 ? "front downforce raised → toward oversteer" : "front downforce lowered → toward understeer") };
             }
             else if (aero.Rear != null)
             {
                 // Single rear wing — nudge the present end ∓8% of its range.
                 double nr = R5(Clamp(aero.Rear.Value - 8 * s, 0, 100));
-                aero = aero with { Rear = nr, RearLbf = BiasLbf(nr, rR),
+                aero = aero with { Rear = nr, RearLbf = rR.ToLbf(nr / 100),
                     Why = BiasNote(aero.Why, bias > 0 ? "rear downforce lowered → toward oversteer" : "rear downforce raised → toward understeer") };
             }
         }

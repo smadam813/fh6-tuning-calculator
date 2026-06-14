@@ -128,6 +128,7 @@ public sealed class AeroModelTests
         double bn = Share(Engine.Compute(car, Goal.Circuit));
         double bp = Share(Engine.Compute(car with { HandlingBias = 5 }, Goal.Circuit));
         double bm = Share(Engine.Compute(car with { HandlingBias = -5 }, Goal.Circuit));
+        // BigF/BigR keep the shifted values clear of the range clamps, so strict monotonicity holds.
         Assert.True(bp > bn && bn > bm, $"not monotone: -5 {bm:0.00}, 0 {bn:0.00}, +5 {bp:0.00}");
     }
 }
