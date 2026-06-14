@@ -165,6 +165,7 @@ public static class ParityHarness
             {
                 if (TryGetNumber(expVal, out double expNum))
                 {
+                    if (IsAeroExempt(path)) break; // aero numerics are C#-validated, not JS-gated
                     // numeric leaf — the hard parity gate
                     double expN = Norm(expNum);
                     if (actual is JsonValue actVal && TryGetNumber(actVal, out double actNum))
@@ -192,7 +193,7 @@ public static class ParityHarness
                     // string leaf: why.* (soft) AND summary chip k/v (hard) are gated; enum tokens
                     // (drivetrain echoes, classTier, goal) are deterministic but compared via the
                     // numeric/bool/structure around them, so they stay out of the string gates.
-                    if (IsWhyString(path) || IsSummaryString(path))
+                    if ((IsWhyString(path) || IsSummaryString(path)) && !IsAeroExempt(path))
                     {
                         string actStr = (actual as JsonValue)?.TryGetValue(out string? s) == true ? s ?? "" : "";
                         if (!string.Equals(expStr, actStr, StringComparison.Ordinal))
@@ -254,6 +255,14 @@ public static class ParityHarness
     private static bool IsWhyString(string path) =>
         path.EndsWith(".why.text", StringComparison.Ordinal) ||
         path.EndsWith(".why.formula", StringComparison.Ordinal);
+
+    // Aero is validated by C#-native AeroModelTests (the balanced-magnitude model intentionally
+    // diverges from the legacy JS oracle). Its numeric magnitudes (front/frontLbf/rear/rearLbf) and
+    // why.* prose are EXEMPT from the JS parity gate — the first carve-out of the planned parity-layer
+    // deprecation. aero.applicable (a bool shape leaf) stays gated; the new model preserves it.
+    private static bool IsAeroExempt(string path) =>
+        path.StartsWith("aero.", StringComparison.Ordinal) &&
+        !path.EndsWith(".applicable", StringComparison.Ordinal);
 
     // summary is an array of { k, v } chips; both are deterministic formatted engine outputs.
     private static bool IsSummaryString(string path) =>
