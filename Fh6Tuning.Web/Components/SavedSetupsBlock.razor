@@ -31,7 +31,7 @@
            restructure could otherwise silently revert the long-name overflow fix with no build signal. *@
         <div class="fh6-setup-list-wrap">
             <MudSelect T="string" Value="_selected" ValueChanged="OnListChanged" aria-label="Saved setups"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="fh6-setup-list"
+                       Variant="Variant.Outlined" Margin="Margin.Dense"
                        Placeholder="@(HasSetups ? null : "— no saved setups —")">
                 @foreach (var s in SortedSetups)
                 {

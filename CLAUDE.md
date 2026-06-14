@@ -64,16 +64,19 @@ dotnet publish Fh6Tuning.Web -c Release -o publish
 ```
 
 `publish/wwwroot` is the complete static site (`index.html`, `_framework/` runtime + DLLs, MudBlazor assets). Notes for Pages:
-- Add a `.nojekyll` file so the `_framework` folder is served.
 - If hosting under a project sub-path (`/fh6-tuning-calculator/`), set the `<base href>` accordingly (publish with `--base-href /fh6-tuning-calculator/` or edit `wwwroot/index.html`, which currently uses `<base href="/" />`).
 - Provide a SPA 404 fallback (copy `index.html` to `404.html`) so deep links resolve.
+- A `.nojekyll` file is only needed for a *branch*-based deploy (to stop Jekyll stripping `_framework`). The GitHub Actions artifact path used here never runs Jekyll, so none is created.
 
-All three steps above are automated by **`.github/workflows/deploy-pages.yml`** (push to `main`: test → publish → rewrite `<base href>` → `.nojekyll` + `404.html` → deploy via GitHub Actions; flips the Pages source to GitHub Actions on first run).
+All of the above are automated by **`.github/workflows/deploy-pages.yml`** (push to `main`: test → publish → rewrite `<base href>` → `404.html` → deploy via GitHub Actions). **The Pages source must be set to "GitHub Actions"** in Settings → Pages: the workflow's `configure-pages` *enables* Pages but does **not** flip an existing "Deploy from a branch" source — leaving it on a branch makes GitHub's auto `pages-build-deployment` race the workflow on every push.
 
 ## MudBlazor / UI gotchas (dark theme)
 
 - **Disable a ripple per-component with `Ripple="false"`** — never a global `.mud-ripple { display:none }`. MudBlazor stamps `mud-ripple` onto *functional* elements (e.g. the `MudSwitch` thumb base), so the global rule hides them (it ate the compare-toggle thumb).
 - **The header is a sticky in-flow bar, not MudBlazor's fixed `MudAppBar`.** It uses `Fixed="false"` + `position:sticky` + `height:auto !important` on both `.fh6-appbar` and its `.mud-toolbar`, and zeroes `.mud-main-content`'s padding-top. MudBlazor's fixed `MudAppBar` is a fixed-height bar with a static body offset that clips wrapped/multi-line brand content on mobile.
+- **`MudSelect` puts your `Class` on its inner `.mud-input-control`, not its outer `.mud-select` wrapper (the actual flex item).** To size/shrink a select in a flex row, wrap it in a project-owned div (e.g. `.fh6-setup-list-wrap`) and target that — don't couple CSS to `.mud-select`. Field `margin-top` is already zeroed app-wide by `.fh6-inputs .mud-input-control { margin-top: 0 }`.
+- **A `<fieldset>` defaults to `min-width: min-content`**, so long content (e.g. a long saved-setup name) grows it past a fixed-width panel and overflows the next column; set `min-width: 0` on `.fh6-inputs fieldset`.
+- **The router has no `FocusOnNavigate`** (removed): focusing the `<h1>` on every (re)load only painted a `:focus-visible` ring on the title — no a11y value with no client-side navigation. Don't re-add it.
 
 ## Testing conventions
 
