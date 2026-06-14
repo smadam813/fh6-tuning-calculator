@@ -241,6 +241,7 @@ public static class ParityHarness
                 // caught by the forward walk; we don't want to double-count it here).
                 bool jsIsNull = expected is null || expected.GetValueKind() == System.Text.Json.JsonValueKind.Null;
                 if (!jsIsNull) break;
+                if (IsAeroExempt(path)) break; // aero is C#-validated; don't flag its leaves as extras either
 
                 if (TryGetNumber(actVal, out double n))
                     r.Extra.Add(new ExtraLeaf(id, path, $"number({Fmt(Norm(n))})"));
