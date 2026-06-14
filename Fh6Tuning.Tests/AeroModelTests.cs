@@ -104,4 +104,25 @@ public sealed class AeroModelTests
             Assert.True(t.Aero.Front!.Value >= 80, $"{dt}: Circuit front {t.Aero.Front} too low");
         }
     }
+
+    [Fact] // The dial's aero shift is the SAME in balance terms regardless of kit ranges.
+    public void HandlingBiasAero_IsKitIndependent()
+    {
+        var std = Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, StdF, StdR);
+        var big = Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, BigF, BigR);
+        double dStd = Share(Engine.Compute(std with { HandlingBias = 5 }, Goal.Circuit)) - Share(Engine.Compute(std, Goal.Circuit));
+        double dBig = Share(Engine.Compute(big with { HandlingBias = 5 }, Goal.Circuit)) - Share(Engine.Compute(big, Goal.Circuit));
+        Assert.True(Math.Abs(dStd - dBig) < 0.02, $"dial aero shift kit-dependent: STD Δ{dStd:0.000} vs BIG Δ{dBig:0.000}");
+        Assert.True(dStd > 0.03, $"+5 bias barely moved balance: Δ{dStd:0.000}");
+    }
+
+    [Fact] // +bias raises front-share (toward oversteer); -bias lowers it.
+    public void HandlingBiasAero_ShiftsBalanceDirectionally()
+    {
+        var car = Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, BigF, BigR);
+        double bn = Share(Engine.Compute(car, Goal.Circuit));
+        double bp = Share(Engine.Compute(car with { HandlingBias = 5 }, Goal.Circuit));
+        double bm = Share(Engine.Compute(car with { HandlingBias = -5 }, Goal.Circuit));
+        Assert.True(bp > bn && bn > bm, $"not monotone: -5 {bm:0.00}, 0 {bn:0.00}, +5 {bp:0.00}");
+    }
 }

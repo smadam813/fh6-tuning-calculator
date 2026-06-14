@@ -1024,33 +1024,66 @@ public sealed class TuningEngine : ITuningEngine
             braking = braking with { Balance = balance, Why = bWhy };
         }
 
-        /* ---- Aero front/rear ratio (±8 pts each end, exp 1.05) ---- */
+        /* ---- Aero front/rear BALANCE (±0.08 front-share at ±5, exp 1.05) ---- */
         if (aero.Applicable && t.Goal != Goal.Drag)
         {
-            double s = BiasScale(bias, 1.05); // + → more front DF / less rear DF
+            double s = BiasScale(bias, 1.05); // + → more front DF / less rear DF (toward oversteer)
             AeroRange fR = input.AeroFront, rR = input.AeroRear;
-            double? ToLbf(double pct, AeroRange rng) => rng.HasRange
+            double? BiasLbf(double pct, AeroRange rng) => rng.HasRange
                 ? JsMath.Round(rng.Min!.Value + (rng.Max!.Value - rng.Min!.Value) * Clamp(pct / 100, 0, 1))
                 : (double?)null;
-            bool moved = false;
-            double? front = aero.Front, frontLbf = aero.FrontLbf, rear = aero.Rear, rearLbf = aero.RearLbf;
-            if (aero.Front != null)
+
+            if (aero.Front != null && aero.Rear != null)
             {
-                front = R5(Clamp(aero.Front.Value + 8 * s, 0, 100));
-                frontLbf = ToLbf(front.Value, fR);
-                moved = true;
+                // Full kit: shift the aero BALANCE (front-share), preserving total downforce. Work in
+                // lbf when ranges are known (kit-independent), else in %-share. This mirrors the
+                // baseline's magnitude model so the dial feels the same on every car's kit.
+                bool useLbf = aero.FrontLbf is double && aero.RearLbf is double && fR.HasRange && rR.HasRange;
+                double fVal = useLbf ? aero.FrontLbf!.Value : aero.Front.Value;
+                double rVal = useLbf ? aero.RearLbf!.Value : aero.Rear.Value;
+                double total = fVal + rVal;
+                if (total > 0)
+                {
+                    double newShare = Clamp(fVal / total + 0.08 * s, 0, 1);
+                    double nf = total * newShare, nr = total * (1 - newShare);
+                    if (useLbf)
+                    {
+                        nf = Clamp(nf, fR.Min!.Value, fR.Max!.Value);
+                        nr = Clamp(nr, rR.Min!.Value, rR.Max!.Value);
+                        aero = aero with
+                        {
+                            Front = R5((nf - fR.Min.Value) / (fR.Max.Value - fR.Min.Value) * 100),
+                            FrontLbf = JsMath.Round(nf),
+                            Rear = R5((nr - rR.Min.Value) / (rR.Max.Value - rR.Min.Value) * 100),
+                            RearLbf = JsMath.Round(nr),
+                        };
+                    }
+                    else
+                    {
+                        aero = aero with { Front = R5(Clamp(nf, 0, 100)), Rear = R5(Clamp(nr, 0, 100)) };
+                    }
+                    aero = aero with
+                    {
+                        Why = BiasNote(aero.Why, bias > 0
+                            ? "aero balance shifted forward → more front high-speed grip, looser rear → toward oversteer"
+                            : "aero balance shifted rearward → rear planted at speed, lighter nose → toward understeer"),
+                    };
+                }
             }
-            if (aero.Rear != null)
+            else if (aero.Front != null)
             {
-                rear = R5(Clamp(aero.Rear.Value - 8 * s, 0, 100));
-                rearLbf = ToLbf(rear.Value, rR);
-                moved = true;
+                // Single front splitter — can't rebalance; nudge the present end ±8% of its range.
+                double nf = R5(Clamp(aero.Front.Value + 8 * s, 0, 100));
+                aero = aero with { Front = nf, FrontLbf = BiasLbf(nf, fR),
+                    Why = BiasNote(aero.Why, bias > 0 ? "front downforce raised → toward oversteer" : "front downforce lowered → toward understeer") };
             }
-            Why aWhy = aero.Why;
-            if (moved) aWhy = BiasNote(aero.Why, bias > 0
-                ? "front downforce raised / rear lowered → more front high-speed grip, looser rear → high-speed balance toward oversteer"
-                : "front downforce lowered / rear raised → rear planted at speed, lighter nose → high-speed balance toward understeer");
-            aero = aero with { Front = front, FrontLbf = frontLbf, Rear = rear, RearLbf = rearLbf, Why = aWhy };
+            else if (aero.Rear != null)
+            {
+                // Single rear wing — nudge the present end ∓8% of its range.
+                double nr = R5(Clamp(aero.Rear.Value - 8 * s, 0, 100));
+                aero = aero with { Rear = nr, RearLbf = BiasLbf(nr, rR),
+                    Why = BiasNote(aero.Why, bias > 0 ? "rear downforce lowered → toward oversteer" : "rear downforce raised → toward understeer") };
+            }
         }
 
         return t with { Arb = arb, Springs = springs, Differential = diff, Braking = braking, Aero = aero };
