@@ -1,6 +1,10 @@
 ﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
+        @* No FocusOnNavigate. It only fires for matched routes (inside <Found>), and its Selector="h1"
+           matches only Home ("/") — the NotFound page (@page "/not-found") has no <h1>, and the
+           unmatched NotFoundPage path never renders <Found> at all. So all it ever did was, on Home's
+           initial load/reload, stamp tabindex="-1" on the <h1> and paint a :focus-visible ring around
+           the title — no a11y benefit, as there's no client-side navigation here to announce. *@
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>

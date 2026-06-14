@@ -145,6 +145,11 @@ html, body {
     border-radius: 10px;
     margin: 0 0 14px;
     padding: 12px 14px 16px;
+    /* A <fieldset> defaults to min-width:min-content, so it refuses to shrink below its widest
+       content and grows the whole panel — a long saved-setup name then spills the Saved Setups
+       rows (and their Load/Delete/Save buttons) out of the fixed-width inputs panel and over the
+       outputs column. Clamp it so the fieldset stays within the panel and its fields truncate. */
+    min-width: 0;
 }
 .fh6-inputs legend {
     color: var(--muted);
@@ -181,11 +186,18 @@ html, body {
 
 /* ---------- Saved setups (legacy styles.css 107-130, scoped to .fh6-inputs) ---------- */
 .fh6-inputs .setups .setup-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-/* the name field and the saved-setups dropdown stretch; the buttons stay their content width */
+/* The name field and the saved-setups dropdown stretch; the buttons stay their content width.
+   MudTextField stamps .fh6-setup-name on its root .mud-input-control (a direct child of .setup-row),
+   so it's the flex item directly. MudSelect renders an extra wrapper around its control, so there's
+   no project class on the actual flex child — the select is wrapped in a project-owned
+   .fh6-setup-list-wrap div (SavedSetupsBlock.razor) we target without depending on MudBlazor
+   internals; with min-width:0 it shrinks to its share and the selected name truncates (ellipsis)
+   instead of growing the row past the panel. */
 .fh6-inputs .setups .setup-row > .fh6-setup-name,
-.fh6-inputs .setups .setup-row > .fh6-setup-list { flex: 1; min-width: 0; }
-.fh6-inputs .setups .setup-row .fh6-setup-name,
-.fh6-inputs .setups .setup-row .fh6-setup-list { margin-top: 0; }
+.fh6-inputs .setups .setup-row > .fh6-setup-list-wrap { flex: 1; min-width: 0; }
+/* The select's margin-top is already zeroed by the general .fh6-inputs .mud-input-control rule above
+   (its inner control is a .mud-input-control), so only the name field needs an explicit reset here. */
+.fh6-inputs .setups .setup-row .fh6-setup-name { margin-top: 0; }
 /* Import: a styled <label> wrapping a hidden <InputFile> — clicking the label opens the picker
    (legacy hidden file input + "Import JSON" button). Hide the native input, keep the label inline. */
 .fh6-inputs .setups .fh6-import-btn { display: inline-flex; align-items: center; margin: 0; }

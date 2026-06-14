@@ -1,0 +1,39 @@
+name: CI
+
+# Builds and tests the whole solution on every pull request so PRs get a status
+# check (deploy-pages.yml only runs on push to main, so open PRs had none).
+# No secrets or API keys — this is just `dotnet test`.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Read-only: the check status is reported by the Actions run itself; the workflow
+# needs no write access to the repo.
+permissions:
+  contents: read
+
+# A new push to the same PR branch supersedes the previous run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # The parity test regenerates parity/cases.json from the legacy JS engine
+      # via the GenerateParityCases MSBuild target, which shells out to node.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test (engine parity + UI)
+        run: dotnet test Fh6Tuning.sln -c Release
