@@ -1,0 +1,124 @@
+@* ============================================================================================
+   Outputs panel — port of legacy index.html outputs section (lines 197-252) + refresh() (app.js:466-
+   502). Always-on chrome: the goal tabs, the compare/copy mode row, and the two tuning dials. Below
+   that, the 3-way state legacy refresh() switches on:
+     • incomplete (required fields blank) → friendly welcome (legacy showWelcome).
+     • complete but invalid → validation errors (legacy showErrors).
+     • valid + compare → the all-goals compare table (summary / cards / changes hidden).
+     • valid + single goal → summary strip, the nine cards, and the "what changed" panel.
+   The both-dials-centered baseline (computed only when a dial is off-center) feeds the inline change
+   highlight and the changes panel (legacy refresh()'s base).
+
+   The engine is pure/deterministic, so the per-render compute pipeline (validate, the single-goal
+   tune + its centered baseline) is MEMOIZED here: it runs once per state change (in OnStateChanged →
+   Recompute), not on every Blazor render. The cached fields are what the markup reads.
+   ============================================================================================ *@
+@implements IDisposable
+@inject CalculatorState State
+@inject ITuningEngine Engine
+
+<div class="outputs-head">
+    <h2 class="fh6-panel-title">Recommended Tune</h2>
+    <GoalTabs />
+</div>
+
+<ModeRow />
+
+<div class="dials">
+    <TuningDial Kind="TuningDial.DialKind.Bias" />
+    <TuningDial Kind="TuningDial.DialKind.Stiff" />
+</div>
+
+@if (_incomplete)
+{
+    @* legacy showWelcome (app.js:454-464) — friendly first-visit, not red errors. *@
+    <div class="output-cards">
+        <div class="welcome">
+            <div class="welcome-ico">🏎️</div>
+            <h3>Enter your car's stats to build a tune</h3>
+            <p>
+                Start with at least <b>power</b>, <b>weight</b> and <b>front weight %</b> on the left —
+                your full, math-derived tune appears here instantly, across all six goals.
+            </p>
+        </div>
+    </div>
+}
+else if (_validation is { Valid: false } v)
+{
+    @* legacy showErrors (app.js:436-445) — surface problems instead of a broken tune. *@
+    <div class="output-cards">
+        <div class="card error-card">
+            <h3><span class="ico">⚠️</span>Check your inputs</h3>
+            <div class="rows">
+                @foreach (var err in v.Errors)
+                {
+                    <div class="row"><span class="k">•</span><span class="v">@err</span></div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else if (State.CompareMode)
+{
+    @* legacy compare branch (app.js:484-488) — all goals side-by-side; summary/cards/changes hidden. *@
+    <CompareTable />
+}
+else if (_live is not null)
+{
+    @* legacy single-goal branch (app.js:489-501) — summary, the nine cards, and the changes panel. *@
+    <SliderChangesPanel Tune="_live" Baseline="_baseline" />
+    <SummaryStrip Tune="_live" />
+    <OutputCards Tune="_live" Baseline="_baseline" />
+}
+
+@code {
+    // Cached, recomputed once per state change (NOT per render). Mirrors legacy refresh()'s gate.
+    private bool _incomplete = true;
+    private ValidationResult? _validation;
+    private Tune? _live;
+    private Tune? _baseline;
+
+    protected override void OnInitialized()
+    {
+        State.Changed += OnStateChanged;
+        Recompute();
+    }
+
+    private void OnStateChanged()
+    {
+        Recompute();
+        InvokeAsync(StateHasChanged);
+    }
+
+    // legacy refresh(): the welcome gate (IsIncomplete) takes precedence so a first visit never sees
+    // red errors; validate only once required fields are filled; compute the single-goal tune (and,
+    // when a dial is off-center, the both-dials-centered baseline the "what changed" view diffs).
+    private void Recompute()
+    {
+        _incomplete = State.IsIncomplete();
+        if (_incomplete)
+        {
+            _validation = null;
+            _live = _baseline = null;
+            return;
+        }
+
+        _validation = Engine.Validate(State.BuildRawInput());
+        if (!_validation.Valid || State.CompareMode)
+        {
+            // Compare mode renders the whole grid in CompareTable; no single-goal tune needed here.
+            _live = _baseline = null;
+            return;
+        }
+
+        var input = State.BuildTuneInput();
+        _live = Engine.Compute(input, State.CurrentGoal);
+        // Baseline = same car with BOTH dials centered — the reference the "what changed" view diffs.
+        bool dialed = State.HandlingBias != 0 || State.OverallStiffness != 0;
+        _baseline = dialed
+            ? Engine.Compute(input with { HandlingBias = 0, OverallStiffness = 0 }, State.CurrentGoal)
+            : null;
+    }
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+}

@@ -1,0 +1,46 @@
+@* ============================================================================================
+   Goal tabs — port of legacy buildGoalTabs (app.js:417-423) + the compare dim in refresh()
+   (app.js:472-474). Six goal pills (icon + label) two-way bound to CalculatorState.CurrentGoal via
+   MudTabs; in compare mode the whole strip dims to 0.45 (legacy goalTabs.style.opacity) while
+   staying selectable. Labels/icons come from the engine's GoalMeta (legacy GOAL_META).
+   ============================================================================================ *@
+@implements IDisposable
+@inject CalculatorState State
+@inject ITuningEngine Engine
+
+<div class="goal-tabs @(State.CompareMode ? "compare-dim" : "")">
+    <MudTabs Rounded="true" Ripple="false"
+             ApplyEffectsToContainer="false"
+             ActivePanelIndex="ActiveIndex"
+             ActivePanelIndexChanged="OnActiveIndexChanged"
+             Class="fh6-goal-tabs">
+        @foreach (var g in Engine.Goals)
+        {
+            var meta = Engine.GoalMeta[g];
+            <MudTabPanel @key="g" Text="@($"{meta.Icon} {meta.Label}")" />
+        }
+    </MudTabs>
+</div>
+
+@code {
+    // The goals list order is canonical (legacy GOALS); the active index maps to CurrentGoal.
+    private int ActiveIndex => Math.Max(0, IndexOf(State.CurrentGoal));
+
+    private int IndexOf(Goal g)
+    {
+        var goals = Engine.Goals;
+        for (int i = 0; i < goals.Count; i++)
+            if (goals[i] == g) return i;
+        return 0;
+    }
+
+    private void OnActiveIndexChanged(int index)
+    {
+        if (index >= 0 && index < Engine.Goals.Count)
+            State.SetCurrentGoal(Engine.Goals[index]);
+    }
+
+    protected override void OnInitialized() => State.Changed += OnStateChanged;
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+    public void Dispose() => State.Changed -= OnStateChanged;
+}

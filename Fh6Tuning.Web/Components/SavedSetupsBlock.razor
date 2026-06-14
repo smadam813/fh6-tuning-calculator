@@ -1,0 +1,264 @@
+@* ============================================================================================
+   Saved Setups block — port of legacy/index.html lines 30-47 (the #setupsBlock fieldset) + the
+   wiring in legacy/app.js (setupStatus / loadSetupsDb / saveSetupsDb / snapshotSetup / applySetup /
+   renderSetupList / wireSetups, lines 537-706). MudBlazor components, two-way bound to the shared
+   CalculatorState + the SetupsStorage (localStorage) service over the pure Core SetupsStore. No
+   string-built HTML; overwrite/delete confirmation is a MudDialog (replacing window.confirm); the
+   status line auto-clears after 4s.
+   ============================================================================================ *@
+@implements IDisposable
+@inject CalculatorState State
+@inject SetupsStorage Storage
+@inject FileDownloadInterop Download
+@inject IDialogService Dialogs
+
+<fieldset class="setups" id="setupsBlock">
+    <legend>Saved Setups</legend>
+
+    <div class="setup-row">
+        <MudTextField @bind-Value="_name" Placeholder="e.g. Hummer EV S1" aria-label="Setup name"
+                      Immediate="true" Clearable="false" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Class="fh6-setup-name" />
+        <button type="button" class="ghost-btn" @onclick="SaveAsync">Save</button>
+    </div>
+
+    <div class="setup-row">
+        @* The select itself stays enabled even when empty (legacy disables only Load/Delete/Export);
+           an empty list shows the "— no saved setups —" placeholder, matching the legacy disabled
+           placeholder option. Sorted newest-first by savedAt. *@
+        <MudSelect T="string" Value="_selected" ValueChanged="OnListChanged" aria-label="Saved setups"
+                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="fh6-setup-list"
+                   Placeholder="@(HasSetups ? null : "— no saved setups —")">
+            @foreach (var s in SortedSetups)
+            {
+                <MudSelectItem T="string" Value="@s.Name">@s.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <button type="button" class="ghost-btn" @onclick="LoadAsync" disabled="@(!HasSetups)">Load</button>
+        <button type="button" class="ghost-btn" @onclick="DeleteAsync" disabled="@(!HasSetups)">Delete</button>
+    </div>
+
+    <div class="setup-row">
+        <button type="button" class="ghost-btn" @onclick="ExportAsync" disabled="@(!HasSetups)">Export JSON</button>
+        @* Hidden InputFile triggered by a styled label — mirrors the legacy hidden <input type=file>
+           + "Import JSON" button (index.html:43-44, app.js:689). The label IS the activator, so no
+           JS click-forwarding is needed. *@
+        <label class="ghost-btn fh6-import-btn">
+            Import JSON
+            <InputFile OnChange="ImportAsync" accept=".json,application/json" class="fh6-import-input" />
+        </label>
+    </div>
+
+    <p class="hint setup-status @(_status.Kind == SetupsStatusKind.Error ? "error" : "")"
+       role="status" aria-live="polite">@_status.Message</p>
+</fieldset>
+
+@code {
+    // The in-memory db (mirrors the legacy localStorage-backed db; every handler reloads it fresh
+    // from storage so concurrent tabs / hand-edits are picked up — exactly like legacy loadSetupsDb).
+    private SetupsDb _db = SetupsStore.EmptyDb();
+
+    private string _name = "";          // setupName text field
+    private string? _selected;          // setupList selected value (null = none)
+    private SetupsStatus _status = SetupsStatus.None;
+    private int _lastLoadSkipped;       // legacy lastLoadSkipped — entries dropped by the most recent load
+
+    // Auto-clear the status line after 4s (legacy setupStatus setTimeout, app.js:537-545).
+    private CancellationTokenSource? _statusClear;
+
+    private bool HasSetups => _db.Setups.Count > 0;
+
+    // Sorted by savedAt desc (legacy renderSetupList, app.js:621) — newest first.
+    private IEnumerable<SavedSetup> SortedSetups =>
+        _db.Setups.OrderByDescending(s => s.SavedAt ?? "", StringComparer.Ordinal);
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnStateChanged;
+        // Initial load (legacy wireSetups → renderSetupList(loadSetupsDb(), null)).
+        await ReloadAsync();
+        ClampSelection();
+    }
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    // ---- status line (legacy setupStatus, app.js:538-545) ----
+    private void SetStatus(SetupsStatus status)
+    {
+        _status = status;
+        _statusClear?.Cancel();
+        _statusClear?.Dispose();
+        _statusClear = null;
+        if (!string.IsNullOrEmpty(status.Message))
+        {
+            var cts = new CancellationTokenSource();
+            _statusClear = cts;
+            _ = ClearAfterDelayAsync(cts.Token);
+        }
+    }
+
+    private void SetStatus(SetupsStatusKind kind, string message) => SetStatus(new SetupsStatus(kind, message));
+
+    private async Task ClearAfterDelayAsync(CancellationToken token)
+    {
+        try { await Task.Delay(4000, token); }
+        catch (TaskCanceledException) { return; }
+        _status = SetupsStatus.None;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // The "(N dropped)" suffix shown on a successful action (legacy: ${lastLoadSkipped ? ` (… dropped)` : ""}).
+    private string DroppedSuffix => _lastLoadSkipped > 0 ? $" ({_lastLoadSkipped} dropped)" : "";
+
+    // Reload the db from storage (legacy loadSetupsDb): refresh _db + _lastLoadSkipped and, if the
+    // load itself produced a note (storage unavailable / unreadable / dropped entries), surface it.
+    private async Task<SetupsDb> ReloadAsync()
+    {
+        var res = await Storage.LoadAsync();
+        _db = res.Db;
+        _lastLoadSkipped = res.Skipped;
+        if (res.Status.Kind != SetupsStatusKind.None) SetStatus(res.Status);
+        return res.Db;
+    }
+
+    // Keep the dropdown selection valid after the list changes.
+    private void ClampSelection()
+    {
+        if (_selected is not null && _db.Setups.All(s => s.Name != _selected)) _selected = null;
+        if (_selected is null && HasSetups) _selected = SortedSetups.First().Name;
+    }
+
+    // ---- Save (legacy setupSave handler, app.js:644-651) ----
+    private async Task SaveAsync()
+    {
+        string name = _name.Trim();
+        if (name.Length == 0) { SetStatus(SetupsStatusKind.Error, "Give the setup a name first."); return; }
+
+        var db = await ReloadAsync();
+        if (db.Setups.Any(s => s.Name == name))
+        {
+            bool ok = await ConfirmAsync($"Overwrite the saved setup “{name}”?", "Overwrite", "Overwrite");
+            if (!ok) return;
+        }
+
+        SavedSetup entry = State.SnapshotSetup(name);
+        SetupsDb next = SetupsStore.UpsertSetup(db, entry);
+        var save = await Storage.SaveAsync(next);
+        if (!save.Ok) { SetStatus(save.Status); return; }
+
+        _db = next;
+        _selected = name;
+        SetStatus(SetupsStatusKind.Info, $"Saved “{name}” ✓{DroppedSuffix}");
+    }
+
+    // ---- List change (legacy setupList change handler, app.js:653-655): copy selection into name ----
+    private void OnListChanged(string? value)
+    {
+        _selected = value;
+        if (!string.IsNullOrEmpty(value)) _name = value;
+    }
+
+    // ---- Load (legacy setupLoad handler, app.js:657-664) ----
+    private async Task LoadAsync()
+    {
+        string? name = _selected;
+        var db = await ReloadAsync();
+        SavedSetup? s = db.Setups.FirstOrDefault(x => x.Name == name);
+        if (s is null) { SetStatus(SetupsStatusKind.Error, "Pick a setup to load."); return; }
+
+        State.ApplySetup(s);          // units-first then fields then dials then goal; raises Changed
+        _name = s.Name;
+        SetStatus(SetupsStatusKind.Info, $"Loaded “{s.Name}” ✓{DroppedSuffix}");
+    }
+
+    // ---- Delete (legacy setupDelete handler, app.js:666-672) ----
+    private async Task DeleteAsync()
+    {
+        string? name = _selected;
+        if (string.IsNullOrEmpty(name)) { SetStatus(SetupsStatusKind.Error, "Pick a setup to delete."); return; }
+
+        bool ok = await ConfirmAsync($"Delete the saved setup “{name}”?", "Delete", "Delete");
+        if (!ok) return;
+
+        var db = await ReloadAsync();
+        SetupsDb next = SetupsStore.DeleteSetup(db, name);
+        var save = await Storage.SaveAsync(next);
+        if (!save.Ok) { SetStatus(save.Status); return; }
+
+        _db = next;
+        _selected = null;
+        ClampSelection();
+        _name = "";
+        SetStatus(SetupsStatusKind.Info, $"Deleted “{name}” ✓{DroppedSuffix}");
+    }
+
+    // ---- Export (legacy setupExport handler, app.js:674-687) ----
+    private async Task ExportAsync()
+    {
+        var db = await ReloadAsync();
+        string json = SetupsStore.SerializeDb(db);
+        DateTime d = DateTime.Now;
+        string filename = $"fh6-setups-{d.Year:D4}-{d.Month:D2}-{d.Day:D2}.json";
+        await Download.DownloadAsync(filename, json);
+
+        int n = db.Setups.Count;
+        string s = n == 1 ? "" : "s";
+        SetStatus(SetupsStatusKind.Info, $"Exported {n} setup{s} ✓{DroppedSuffix}");
+    }
+
+    // ---- Import (legacy setupImport/setupFile handlers, app.js:689-705) ----
+    private async Task ImportAsync(InputFileChangeEventArgs e)
+    {
+        IBrowserFile? file = e.FileCount > 0 ? e.File : null;
+        if (file is null) return;
+
+        string text;
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            text = await reader.ReadToEndAsync();
+        }
+        catch (Exception)
+        {
+            SetStatus(SetupsStatusKind.Error, "Couldn't read that file.");
+            return;
+        }
+
+        ParseDbResult res = SetupsStore.ParseDb(text);
+        if (!res.Ok) { SetStatus(SetupsStatusKind.Error, $"Import failed: {res.Error}."); return; }
+
+        var existing = await ReloadAsync();
+        MergeDbResult merged = SetupsStore.MergeDb(existing, res.Db!);
+        var save = await Storage.SaveAsync(merged.Db);
+        if (!save.Ok) { SetStatus(save.Status); return; }
+
+        _db = merged.Db;
+        ClampSelection();
+        if (!string.IsNullOrEmpty(_selected)) _name = _selected;
+
+        var parts = new List<string> { $"{merged.Added} added", $"{merged.Updated} updated" };
+        if (res.Skipped > 0) parts.Add($"{res.Skipped} skipped");
+        SetStatus(SetupsStatusKind.Info, $"Imported: {string.Join(", ", parts)} ✓{DroppedSuffix}");
+    }
+
+    // ---- confirmation dialog (replaces window.confirm; MudDialog message box) ----
+    private async Task<bool> ConfirmAsync(string message, string title, string confirmText)
+    {
+        bool? ok = await Dialogs.ShowMessageBoxAsync(new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = confirmText,
+            CancelText = "Cancel",
+        });
+        return ok == true;
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= OnStateChanged;
+        _statusClear?.Cancel();
+        _statusClear?.Dispose();
+    }
+}

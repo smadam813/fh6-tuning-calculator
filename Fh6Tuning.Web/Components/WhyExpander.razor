@@ -1,0 +1,27 @@
+@* ============================================================================================
+   "Why & formula" expander — port of legacy renderCards' whyHtml block (app.js:235-240). A native
+   <details> disclosure (the legacy element + CSS) with the why text (rendered as markup, mirroring
+   legacy's raw ${why.text} injection — the engine controls these strings) and, when a real formula
+   exists (present and not "—"), the monospace formula block. The formula was escaped in legacy; here
+   Razor's default escaping handles it, so it's bound as plain text.
+   ============================================================================================ *@
+
+@if (Why is not null)
+{
+    <details class="why">
+        <summary>Why &amp; formula</summary>
+        <div class="body">
+            @((MarkupString)Why.Text)@if (HasFormula)
+            {
+                <span class="formula">@Why.Formula</span>
+            }
+        </div>
+    </details>
+}
+
+@code {
+    [Parameter] public Why? Why { get; set; }
+
+    // legacy: why.formula && why.formula !== "—"
+    private bool HasFormula => !string.IsNullOrEmpty(Why?.Formula) && Why!.Formula != "—";
+}

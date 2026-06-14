@@ -1,0 +1,41 @@
+@* ============================================================================================
+   Output cards grid — port of legacy renderCards' #output block (app.js:227-243). The nine
+   single-goal cards (Tires, Gearing, Alignment, Anti-Roll Bars, Springs & Ride Height, Damping,
+   Aero, Braking, Differential) in legacy order, each a TuneCard. Card defs (rows + why) come from
+   TuneFormatter (legacy CARDS) bound to the active unit system; Baseline drives the inline change
+   highlight when a dial is off-center.
+
+   The CardDef[] (and its nine row closures) only depends on the active UnitSystem, so it is cached
+   per unit system rather than rebuilt every render. Each <TuneCard> is @key'd by card id so the
+   list of stateful child components diffs by identity.
+   ============================================================================================ *@
+@inject TuneFormatter Formatter
+@inject CalculatorState State
+
+<div class="output-cards">
+    @foreach (var card in _cards)
+    {
+        <TuneCard @key="card.Id" Card="card" Tune="Tune" Baseline="Baseline" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Tune Tune { get; set; } = default!;
+
+    /// <summary>The both-dials-centered baseline (null when no dial active); forwarded to each card
+    /// for the inline change highlight.</summary>
+    [Parameter] public Tune? Baseline { get; set; }
+
+    // Cached card defs — rebuilt only when the unit system changes (the only thing they depend on).
+    private IReadOnlyList<CardDef> _cards = Array.Empty<CardDef>();
+    private UnitSystem? _cardsUnits;
+
+    protected override void OnParametersSet()
+    {
+        if (_cardsUnits != State.Units)
+        {
+            _cards = Formatter.Cards(State.Units);
+            _cardsUnits = State.Units;
+        }
+    }
+}

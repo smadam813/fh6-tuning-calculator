@@ -1,0 +1,84 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fh6Tuning.Core\Fh6Tuning.Core.csproj" />
+  </ItemGroup>
+
+  <!-- ============================================================================================
+       Parity snapshot regeneration.
+
+       The 2340-case parity gate replays parity/cases.json, which is GENERATED from the legacy JS
+       engine by `node legacy/parity-export.js`. Two failure modes this target guards against:
+         (1) a fresh checkout / CI with no cases.json → the parity class would throw
+             FileNotFoundException (gate silently absent);
+         (2) someone edits legacy/tuning.js but forgets to re-export → parity would validate the C#
+             port against a STALE JS baseline and pass while the real contract has moved.
+
+       So before every build we (re)generate the snapshot when it is missing OR older than either
+       the engine (legacy/tuning.js) or the exporter (legacy/parity-export.js). The generated file
+       is git-ignored (see .gitignore) — it is reproducible from source on demand.
+
+       If node is unavailable we DO NOT silently skip: if the snapshot is missing or stale the build
+       fails with an actionable message; if a fresh snapshot already exists we let it pass so an
+       offline incremental build of an up-to-date tree still works.
+       ============================================================================================ -->
+  <PropertyGroup>
+    <!-- Forward slashes so the paths are valid on both Windows and the Linux CI
+         runner (a literal backslash is a valid filename char on Linux, which
+         would break node + Exists() there). NormalizeDirectory trails a slash. -->
+    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)/..'))</RepoRoot>
+    <ParityCasesFile>$(RepoRoot)parity/cases.json</ParityCasesFile>
+    <ParityExporter>$(RepoRoot)legacy/parity-export.js</ParityExporter>
+    <ParityEngine>$(RepoRoot)legacy/tuning.js</ParityEngine>
+  </PropertyGroup>
+
+  <Target Name="GenerateParityCases"
+          BeforeTargets="BeforeBuild"
+          Inputs="$(ParityExporter);$(ParityEngine)"
+          Outputs="$(ParityCasesFile)">
+    <!-- Is node on PATH? (exit code 0 = yes). Don't fail the build just probing. -->
+    <Exec Command="node --version"
+          ContinueOnError="true"
+          StandardOutputImportance="low"
+          StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="_NodeProbeExit" />
+    </Exec>
+
+    <PropertyGroup>
+      <_HasNode Condition="'$(_NodeProbeExit)' == '0'">true</_HasNode>
+      <_CasesFresh Condition="Exists('$(ParityCasesFile)')">true</_CasesFresh>
+    </PropertyGroup>
+
+    <!-- node present → (re)generate the snapshot from the legacy engine. -->
+    <Exec Condition="'$(_HasNode)' == 'true'"
+          Command="node &quot;$(ParityExporter)&quot;"
+          WorkingDirectory="$(RepoRoot)" />
+
+    <!-- node absent AND the (Inputs/Outputs-up-to-date check let us run, i.e.) snapshot is stale or
+         missing → fail loudly rather than test against an outdated/absent baseline. -->
+    <Error Condition="'$(_HasNode)' != 'true' and '$(_CasesFresh)' != 'true'"
+           Text="parity/cases.json is missing and Node.js was not found on PATH. The parity gate needs the snapshot: install Node and run 'node legacy/parity-export.js', or install Node so the build can regenerate it." />
+    <Warning Condition="'$(_HasNode)' != 'true' and '$(_CasesFresh)' == 'true'"
+             Text="Node.js not found; legacy/tuning.js or the exporter changed but parity/cases.json could NOT be regenerated. The parity gate may be validating against a STALE baseline. Install Node and rebuild." />
+  </Target>
+
+</Project>

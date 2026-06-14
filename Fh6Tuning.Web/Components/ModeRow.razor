@@ -1,0 +1,76 @@
+@* ============================================================================================
+   Mode row — port of legacy index.html .mode-row (lines 203-209) + the copy handler (app.js:722-735).
+   The "Compare all goals side-by-side" switch (two-way bound to CalculatorState.CompareMode) and the
+   Copy-tune button. Copy builds the same text legacy did: in compare mode, every goal's tuneToText
+   joined by blank lines; otherwise the current goal's. On success the button flashes "Copied ✓".
+   ============================================================================================ *@
+@implements IDisposable
+@inject CalculatorState State
+@inject ITuningEngine Engine
+@inject TuneFormatter Formatter
+@inject ClipboardInterop Clipboard
+
+<div class="mode-row">
+    <MudSwitch T="bool"
+               Value="State.CompareMode"
+               ValueChanged="State.SetCompareMode"
+               Color="Color.Primary"
+               Class="fh6-compare-switch"
+               Label="Compare all goals side-by-side" />
+
+    <button type="button" class="ghost-btn" title="Copy tune to clipboard" @onclick="CopyAsync">@_copyLabel</button>
+</div>
+
+@code {
+    private const string DefaultLabel = "Copy tune";
+    private string _copyLabel = DefaultLabel;
+    private CancellationTokenSource? _resetCts;
+
+    private async Task CopyAsync()
+    {
+        // Gate on the same welcome/validate checks OutputsPanel.Recompute uses, so the button never
+        // copies a tune computed from blank/zeroed placeholder inputs (incomplete ≠ invalid).
+        if (State.IsIncomplete() || !Engine.Validate(State.BuildRawInput()).Valid)
+        {
+            await FlashAsync("Enter car stats first");
+            return;
+        }
+
+        var input = State.BuildTuneInput();
+        string text = State.CompareMode
+            ? string.Join("\n\n", Engine.Goals.Select(g =>
+                Formatter.TuneToText(Engine.Compute(input, g), input, Engine.GoalMeta[g], State.Units)))
+            : Formatter.TuneToText(
+                Engine.Compute(input, State.CurrentGoal), input, Engine.GoalMeta[State.CurrentGoal], State.Units);
+
+        bool ok = await Clipboard.CopyAsync(text);
+        if (ok) await FlashAsync("Copied ✓");
+    }
+
+    // Briefly show a label on the button, then restore the default (legacy: flash "Copied ✓" 1400ms).
+    private async Task FlashAsync(string label)
+    {
+        _copyLabel = label;
+        StateHasChanged();
+        _resetCts?.Cancel();
+        _resetCts = new CancellationTokenSource();
+        var token = _resetCts.Token;
+        try
+        {
+            await Task.Delay(1400, token);
+            _copyLabel = DefaultLabel;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { /* superseded by a newer flash */ }
+    }
+
+    protected override void OnInitialized() => State.Changed += OnStateChanged;
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        State.Changed -= OnStateChanged;
+        _resetCts?.Cancel();
+        _resetCts?.Dispose();
+    }
+}

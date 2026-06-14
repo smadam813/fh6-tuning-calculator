@@ -1,21 +1,68 @@
 # FH6 Tuning Calculator
 
-A single-page web app that turns a car's known stats into a complete, math-derived
+A single-page app that turns a car's known stats into a complete, math-derived
 Forza Horizon 6 tune across **every** tuning category — with the formula and reasoning
 shown beneath each output, and live side-by-side comparison of all six tuning goals.
 
-Open it with **no server and no build step**: just open `index.html` in any modern
-browser (works from `file://`, so you can keep it on a phone or second monitor while
-in-game).
+Built as a **standalone .NET 10 Blazor WebAssembly** app with a MudBlazor UI. The tuning
+math is a pure, unit-tested C# library; the published output is a fully static bundle that
+runs on any web host (e.g. GitHub Pages) with no server-side code.
+
+> The original zero-dependency JavaScript app is preserved under [`legacy/`](legacy/). It is
+> not dead code — it is the **parity oracle**: the C# engine is tested to reproduce the legacy
+> engine's output byte-for-byte (see [Verification](#verification)).
+
+## Projects
 
 ```
-index.html      structure + inputs/outputs
-styles.css      dark, mobile-first responsive theme
-tuning.js       the engine — pure compute(input, goal) -> tune
-setups.js       saved setups — pure storage logic (validate/merge/serialize)
-app.js          UI: live binding, units, compare table, copy, saved setups
-research/        the sourced formulas this engine is built on (provenance)
+Fh6Tuning.Core        the engine + storage — pure compute(input, goal) -> tune, no IO, no Blazor
+Fh6Tuning.Web         Blazor WASM + MudBlazor UI — the only project that touches DOM/localStorage/JS
+Fh6Tuning.Tests       xUnit: differential parity gate, invariant sweep, unit/edge/storage tests
+Fh6Tuning.Web.Tests   xUnit: the pure Web services (unit conversion, output formatting)
+legacy/               the original JS app — preserved as the parity oracle
+parity/               generated parity snapshot (cases.json, git-ignored, reproduced from legacy/)
+research/             the sourced formulas this engine is built on (provenance)
 ```
+
+`Fh6Tuning.Core` is a pure class library: the `TuningEngine` (`Compute` / `Validate` /
+`OverallTireDiameter`) and `SetupsStore` (saved-setup validate/merge/serialize) have no IO and
+no Blazor dependency, so they are unit-testable in isolation. `Fh6Tuning.Web` adds the UI,
+unit conversion, `localStorage`, clipboard, and file-download interop on top.
+
+## Build, test, run, publish
+
+Requires the **.NET 10 SDK**. Running the tests also requires **Node.js** on PATH (the parity
+gate regenerates its snapshot from the legacy JS engine). All commands run from the repo root.
+
+```bash
+dotnet build Fh6Tuning.sln              # build everything
+dotnet test  Fh6Tuning.sln              # run all xUnit tests (parity, sweep, unit, web services)
+dotnet run   --project Fh6Tuning.Web    # dev server at http://localhost:5221
+```
+
+**Deploy to GitHub Pages (automated).** [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)
+runs on every push to `main` (and on manual dispatch): it runs the full test suite, publishes the
+Web project, and then prepares the static bundle for a *project* Pages site at
+`/fh6-tuning-calculator/` before deploying it — specifically it
+
+- rewrites the app's `<base href>` from `/` to `/fh6-tuning-calculator/`,
+- adds a `.nojekyll` file so Pages serves the `_framework` runtime folder (Jekyll strips
+  underscore-prefixed paths otherwise), and
+- copies `index.html` to `404.html` for SPA deep-link fallback.
+
+The first run switches the repo's Pages source to **GitHub Actions** (`actions/configure-pages`
+with `enablement: true`); if your Pages site was previously "deploy from a branch", you may need
+to set the source to GitHub Actions once under **Settings → Pages**.
+
+**Publish manually** — the static site lands in `publish/wwwroot`:
+
+```bash
+dotnet publish Fh6Tuning.Web -c Release -o publish
+```
+
+If publishing by hand, apply the same three steps as the workflow (`.nojekyll`, `404.html`, and the
+`<base href>` rewrite to your repo sub-path — there is no `dotnet publish` flag for it; edit the
+published `wwwroot/index.html`).
 
 ## What it does
 
@@ -66,7 +113,9 @@ saved setups from the dropdown at the top of the panel. **Export JSON** download
 the whole collection as a backup file; **Import JSON** restores one, merging by
 name (the file wins on conflicts — everything else you've saved stays put).
 Setups store the raw field text plus the units they were entered in, so blanks
-stay blank and metric setups reload exactly as typed.
+stay blank and metric setups reload exactly as typed. The storage *logic* lives in
+`Fh6Tuning.Core` (`SetupsStore`, pure); only the actual `localStorage` access lives in
+the Web layer.
 
 ## The formulas (and why)
 
@@ -106,7 +155,17 @@ and these values are **starting points**: fine-tune from there with in-game tele
 
 ## Verification
 
-`tuning.js` was validated across 2,400+ input combinations (every drivetrain × powertrain ×
-goal × representative class/compound/suspension/power/weight): zero crashes, every output
-within its legal slider range, gear ratios strictly descending, all six goals producing
-distinct tunes.
+The C# engine is held to **byte-for-byte parity** with the legacy JS engine. `legacy/parity-export.js`
+runs the legacy `compute()` over a deterministic grid — the 27-config `DT × PT × EL` matrix plus the
+3 canonical fixture cars, across all six goals, swept over both dials — and writes the expected
+results to `parity/cases.json` (2340 cases, regenerated on demand, never committed). `Fh6Tuning.Tests`
+replays every case through the C# `TuningEngine` and asserts an exact match on every numeric leaf
+(bit-for-bit after `-0` normalization), every boolean leaf, and every summary chip; only the `why`
+prose strings are a separate soft category so wording drift can't mask a math regression. To stay
+bit-identical to JavaScript's `Number` semantics, all Core math is `double` and all rounding goes
+through `JsMath` (JS `Math.round` = half toward +Infinity), never `Math.Round`.
+
+On top of parity, `SweepTests` (the xUnit equivalent of `legacy/sweep.js`) fuzzes the full input space
+and asserts the invariants regardless of exact values: zero crashes, every output within its legal
+slider range, gear ratios strictly descending, all six goals distinct per car, and dial-0 baseline
+neutrality.

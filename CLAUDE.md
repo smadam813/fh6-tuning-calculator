@@ -1,32 +1,88 @@
 ## What this is
 
-A **zero-build, zero-dependency** single-page web app that converts a car's known stats into a complete Forza Horizon 6 tune across every tuning category, for six driving goals (Circuit · Drag · Drift · Off-Road · Rally · Touge). There is no `package.json`, no bundler, and no framework — plain ES5-style IIFE scripts loaded via `<script>` tags in `index.html`, runnable straight from `file://`.
+A **standalone .NET 10 Blazor WebAssembly** single-page app that converts a car's known stats into a complete Forza Horizon 6 tune across every tuning category, for six driving goals (Circuit · Drag · Drift · Off-Road · Rally · Touge). It is a 1:1 port of the original zero-dependency JS app (now preserved under `legacy/`), with the pure tuning math moved into a testable C# class library and a MudBlazor UI. The app publishes to a fully static bundle that runs from any web host (GitHub Pages) with no server-side code.
+
+> **The original JS app lives in `legacy/`.** It is not dead code: it is the **parity oracle** for the C# port. Every formula change starts there, and the legacy engine generates the expected snapshot the C# engine is tested against (see the parity harness below).
 
 ## Architecture
 
-Three layers, kept deliberately separate so the engine and storage are pure and unit-testable while all DOM/IO lives in `app.js`:
+Three shipping projects plus a Web-services test project, kept deliberately layered so the engine and storage stay pure and unit-testable while all DOM/IO/JS-interop lives in the Web project:
 
-| File | Role | Exports |
+| Project | Role | Key surface |
 |---|---|---|
-| `tuning.js` | **The engine.** Pure `compute(input, goal) → tune`. Deterministic, no IO. | `window.TUNING` / `module.exports` = `{ GOALS, GOAL_META, compute, validate, overallTireDiameter }` |
-| `setups.js` | **Storage logic.** Pure validate/merge/serialize for saved setups. No `localStorage` access of its own. | `window.SETUPS` / `module.exports` = `{ STORAGE_KEY, SCHEMA, emptyDb, validateSetup, parseDb, serializeDb, upsertSetup, deleteSetup, mergeDb }` |
-| `app.js` | **UI controller.** Live input binding, unit conversion, compare table, copy, `localStorage` glue, "what the sliders changed" panel. The only file that touches the DOM. | none (IIFE) |
+| `Fh6Tuning.Core` | **The engine + storage.** Pure, no IO, no Blazor. `net10.0` class library. | `ITuningEngine` / `TuningEngine` (`Compute(TuneInput, Goal) → Tune`, `Validate`, `OverallTireDiameter`, `Goals`, `GoalMeta`); `SetupsStore` (pure validate/merge/serialize/parse for saved setups); the `Tune`/`TuneInput`/`SavedSetup` record graph; `JsMath`/`JsNumber` (JS-parity numerics). |
+| `Fh6Tuning.Web` | **The UI.** Blazor WASM (`Microsoft.NET.Sdk.BlazorWebAssembly`) + MudBlazor. The only project that touches the DOM, `localStorage`, the clipboard, or JS interop. | `Program.cs` (DI wiring), Razor components under `Components/`, page shells under `Pages/`/`Layout/`, and the `Services/` layer (`CalculatorState`, `UnitService`, `TuneFormatter`, `SetupsStorage`, `ClipboardInterop`, `FileDownloadInterop`). |
+| `Fh6Tuning.Tests` | **xUnit engine + storage tests.** References `Fh6Tuning.Core`. | The differential **parity** gate (`ParityTests` + `ParityHarness`), the invariant `SweepTests`, plus `UnitTests`/`EdgeTests`/`FailureTests`/`IntegrationTests`/`SetupsTests` with shared `Fixtures`/`Helpers`. |
+| `Fh6Tuning.Web.Tests` | **xUnit Web-services tests.** References Core **and** Web; exercises the pure services that carry no Blazor-runtime dependency. | `UnitServiceTests`, `TuneFormatterTests`. |
 
-**Dual-context export pattern:** `tuning.js` and `setups.js` each end with `if (typeof window !== "undefined") window.X = API; if (typeof module !== "undefined" && module.exports) module.exports = API;`. This is what lets the browser load them via `<script>` *and* the Node tests `require()` them. Preserve this pattern when adding modules.
+All four are in `Fh6Tuning.sln`.
 
-**Imperial is the engine's only unit system.** `tuning.js` does all math in lb / in / lb/in / hp / lb-ft. `app.js` converts metric input → imperial before calling `compute`, and imperial → metric for display (see `M2I` factors and `FIELD_DIM` in `app.js`). Tire width/aspect/rim are unit-independent in Forza and are deliberately kept *out* of `FIELD_DIM` so the metric toggle never rewrites them. Keep all unit logic in `app.js`; never introduce metric into `tuning.js`.
+**Purity contract.** `Fh6Tuning.Core` has zero IO and zero Blazor dependencies. `TuningEngine` is pure and deterministic and is registered as a DI **singleton**; `SetupsStore` is a static class of pure transforms with **no `localStorage` access of its own** — the actual `localStorage` get/set lives in `Fh6Tuning.Web/Services/SetupsStorage.cs`, exactly mirroring the legacy split between `setups.js` (logic) and `app.js` (IO).
 
-**`compute` flow** (`tuning.js`): `derive(input)` computes shared quantities (corner loads, class tier, etc.) once, then per-category pure functions (`tires`, `gearing`, `alignment`, `arb`, `springs`, `damping`, `aero`, `braking`, `differential`) build the tune. Each category returns its numbers plus a `why: { text, formula }` shown in the UI. Every numeric output is **clamped to its legal Forza slider range**.
+**JS byte-for-byte parity is the hard contract for the engine.** `TuningEngine` is a line-referenced port of `legacy/tuning.js`. To keep it bit-identical to the JS `Number` semantics:
+- **All math is `double`** (IEEE-754, == JS `Number`) — never `decimal`, never `float`.
+- **Rounding goes through `JsMath`, never `Math.Round`.** `JsMath.Round = Math.Floor(x + 0.5)` reproduces JS `Math.round` (half toward +Infinity); `Math.Round` (banker's rounding) is forbidden in Core. `JsMath` also holds `R1`/`R2`/`RHalf`/`R5`/`RInt`/`REven`/`Clamp`.
+- **Signed rounded outputs pass through `JsMath.NormZero`** because `JSON.stringify(-0) === "0"` in JS but `System.Text.Json` writes `"-0"`.
+- Operation order, parenthesization, and per-call-site fallbacks match the JS exactly.
 
-**The two dials are post-processors with a hard neutrality contract.** After the baseline tune is built, `applyOverallStiffness` (firmness/magnitude) runs, then `applyHandlingBias` (front/rear balance). **At 0, each dial is skipped entirely, so `compute` returns the per-goal baseline byte-for-byte** — this is an invariant the sweep verifies (`bias0 != baseline`, `stiff0 != baseline`). If you touch the dials, that byte-for-byte identity at 0 must hold. The dials are orthogonal (one changes balance, the other firmness); stiffness runs first so order only matters at the clamps.
+**Imperial is the engine's only unit system.** `Fh6Tuning.Core` does all math in lb / in / lb/in / hp / lb-ft. `Fh6Tuning.Web/Services/UnitService.cs` converts metric input → imperial before calling `Compute`, and imperial → metric for display (port of the legacy `M2I`/`FIELD_DIM`/display formatters in `app.js`). Tire width/aspect/rim are unit-independent in Forza and are deliberately kept out of the metric conversion so the unit toggle never rewrites them. Keep all unit logic in the Web layer; never introduce metric into Core.
+
+**`Compute` flow** (`TuningEngine`): `Derive(input)` computes shared quantities (corner loads, class tier, etc.) once, then per-category methods (`tires`, `gearing`, `alignment`, `arb`, `springs`, `damping`, `aero`, `braking`, `differential`) build the `Tune`. Each category returns its numbers plus a `Why { Text, Formula }` shown in the UI. Every numeric output is **clamped to its legal Forza slider range**.
+
+**The two dials are post-processors with a hard neutrality contract.** After the baseline tune is built, overall-stiffness (firmness/magnitude) runs, then handling-bias (front/rear balance). **At `HandlingBias == 0` AND `OverallStiffness == 0`, both post-processors are skipped, so `Compute` returns the per-goal baseline byte-for-byte** — an invariant `SweepTests` verifies. If you touch the dials, that byte-for-byte identity at 0 must hold. The dials are orthogonal (one changes balance, the other firmness); stiffness runs first so order only matters at the clamps.
+
+## The parity harness (legacy → snapshot → C#)
+
+The differential parity gate is what guarantees the C# port matches the JS oracle, and it is fully reproducible from source:
+
+1. **`legacy/parity-export.js`** builds a deterministic grid — the same 27-config `DT × PT × EL` grid as `legacy/sweep.js`, plus the 3 canonical fixture cars, across all six goals, swept over the two dials (each dial over `{-5, -2.5, 0, 2.5, 5}` with the other at 0, plus the four extreme combos). For each `(input, goal, dials)` case it runs the legacy `compute()` and records the result as `expected`.
+2. It writes **`parity/cases.json`** (2340 cases). This file is **git-ignored** — it is regenerated, not committed.
+3. **`ParityTests`** (with `ParityHarness`) loads `parity/cases.json`, replays each input through the Core `TuningEngine`, serializes the result to a JSON tree with the same camelCase/enum-token shape the JS emits, and asserts the snapshot is reproduced **exactly**. The gate is bidirectional and covers every numeric leaf (bit-for-bit after `-0` normalization), every boolean leaf (`singleSpeed`/`applicable`/`isEV`/over- & understeer-prone/`canTuneSusp` — these define tune *shape*), and every `summary[].k`/`summary[].v` chip string. Only `why.text`/`why.formula` wording is a **separate soft category** so prose drift can never mask a math/shape regression.
+
+**Regeneration is automatic.** `Fh6Tuning.Tests.csproj` has a `GenerateParityCases` MSBuild target that runs `node legacy/parity-export.js` before build when `parity/cases.json` is missing or older than `legacy/tuning.js` or `legacy/parity-export.js`. If Node is unavailable and the snapshot is missing/stale, the build **fails loudly** rather than testing against an absent or stale baseline. **Node.js must be on PATH** to (re)generate the snapshot (incl. on CI). Keep the target's paths forward-slashed — a `\` is a literal filename char on the Linux runner.
+
+The `springs._fFront`/`_fRear` JS values are documented internal scratch (target ride frequencies used only for the damping handoff and the why string); the exporter strips them and the C# `Springs` record omits them, so they are deliberately out of the tune contract.
+
+## Build / test / run / publish
+
+All commands run from the repo root.
+
+```bash
+dotnet build Fh6Tuning.sln              # build all projects (Core, Web, both test projects)
+dotnet test  Fh6Tuning.sln              # run xUnit: parity gate, sweep, unit, web-service tests
+dotnet test  Fh6Tuning.Tests            # engine + storage + parity only
+dotnet run   --project Fh6Tuning.Web    # dev server (http://localhost:5221 / https://localhost:7083)
+```
+
+Running the tests (or building `Fh6Tuning.Tests`) regenerates `parity/cases.json` from `legacy/`, so **Node.js must be installed** for the parity gate. `dotnet run` does **not** hot-reload — **restart the server after editing `.razor`/`.css`** (or use `dotnet watch` for HMR). The `.claude/launch.json` `web` config (port 5221) is what the preview/verify tooling launches.
+
+**Publish for GitHub Pages** — publish the Web project and deploy the WASM app's `wwwroot`:
+
+```bash
+dotnet publish Fh6Tuning.Web -c Release -o publish
+# deploy the static bundle at:  publish/wwwroot
+```
+
+`publish/wwwroot` is the complete static site (`index.html`, `_framework/` runtime + DLLs, MudBlazor assets). Notes for Pages:
+- Add a `.nojekyll` file so the `_framework` folder is served.
+- If hosting under a project sub-path (`/fh6-tuning-calculator/`), set the `<base href>` accordingly (publish with `--base-href /fh6-tuning-calculator/` or edit `wwwroot/index.html`, which currently uses `<base href="/" />`).
+- Provide a SPA 404 fallback (copy `index.html` to `404.html`) so deep links resolve.
+
+All three steps above are automated by **`.github/workflows/deploy-pages.yml`** (push to `main`: test → publish → rewrite `<base href>` → `.nojekyll` + `404.html` → deploy via GitHub Actions; flips the Pages source to GitHub Actions on first run).
+
+## MudBlazor / UI gotchas (dark theme)
+
+- **Disable a ripple per-component with `Ripple="false"`** — never a global `.mud-ripple { display:none }`. MudBlazor stamps `mud-ripple` onto *functional* elements (e.g. the `MudSwitch` thumb base), so the global rule hides them (it ate the compare-toggle thumb).
+- **The header is a sticky in-flow bar, not MudBlazor's fixed `MudAppBar`.** It uses `Fixed="false"` + `position:sticky` + `height:auto !important` on both `.fh6-appbar` and its `.mud-toolbar`, and zeroes `.mud-main-content`'s padding-top. MudBlazor's fixed `MudAppBar` is a fixed-height bar with a static body offset that clips wrapped/multi-line brand content on mobile.
 
 ## Testing conventions
 
-- `test/fixtures.js` holds the canonical `RANGES` (legal slider bounds) and base input fixtures; `test/helpers.js` provides `assertAllInRange`, `assertSpringInPart`, `assertWhyShape`. New engine assertions should reuse these so range-checking stays centralized.
-- `sweep.js` is the invariant safety net (no NaN, every output in range, gears strictly descending, all six goals distinct per car, drivetrains distinct, dial-0 neutrality). Run it after any formula change.
+- `Fh6Tuning.Tests/Fixtures.cs` holds the canonical legal slider ranges and base input fixtures; `Helpers.cs` provides the shared range/shape assertions. New engine assertions should reuse these so range-checking stays centralized.
+- `SweepTests` is the invariant safety net (xUnit equivalent of `legacy/sweep.js`): no NaN/non-finite output, every output in its legal range, gears strictly descending, ride height within the part range, all six goals distinct per car, drivetrains distinct, and dial-0 byte-for-byte neutrality. Run it after any formula change.
+- `ParityTests` is the exact-value gate against the JS oracle (above). After any formula change, change `legacy/tuning.js` first, let the snapshot regenerate, then update the C# port until parity is green.
 
 ## Domain knowledge
 
-The formulas are **community-canonical Forza tuning math** (consistent across FH4/FH5/FH6), not official. Full sourced derivations, per-goal modifier tables, and edge cases live in `research/` (see `research/INDEX.md` and the `spec-*.md` files). When changing a formula, update the corresponding `research/spec-*.md` and the `why.formula` string the card displays. `README.md` has a high-level formula table; `AUDIT.md` records a prior review pass.
+The formulas are **community-canonical Forza tuning math** (consistent across FH4/FH5/FH6), not official. Full sourced derivations, per-goal modifier tables, and edge cases live in `research/` (see `research/INDEX.md` and the `spec-*.md` files). When changing a formula, update the corresponding `research/spec-*.md`, the legacy `legacy/tuning.js` (the parity oracle) **and** the C# port, plus the `Why.Formula` string the card displays. `README.md` has a high-level formula table; `legacy/AUDIT.md` records a prior review pass.
 
 Key edge cases the engine handles (don't regress these): FWD/RWD/AWD diff routing and ARB/camber/brake-bias inversion; EV single-speed gearing (the lone "1st" ratio + final drive are only correct as a *pair*, and target-top-speed solves the limiter ~7% past target because FH6 EV motors lose power near redline); front/mid/rear engine weight bias; single-wing aero kits sized to the car's balance tendency; stock suspension locking alignment/ARB.

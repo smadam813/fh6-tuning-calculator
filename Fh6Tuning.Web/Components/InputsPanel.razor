@@ -1,0 +1,330 @@
+@* ============================================================================================
+   Car Setup (inputs) panel — port of legacy/index.html lines 49-193 + the live wiring in
+   legacy/app.js (readInputs / setUnits labels / updateTireDiaOut / syncAeroFields / refresh's
+   welcome+error gate). MudBlazor components, two-way bound to the shared CalculatorState; no
+   string-built HTML. The engine stays imperial-only — values are entered in the active unit and
+   converted at compute time elsewhere; here we only echo the unit-aware labels.
+   ============================================================================================ *@
+@implements IDisposable
+@inject CalculatorState State
+@inject UnitService Units
+@inject ITuningEngine Engine
+
+<fieldset>
+    <legend>Identity</legend>
+    <div class="grid2">
+        <label>Drivetrain
+            <MudSelect T="Drivetrain" Value="State.Drivetrain" ValueChanged="State.SetDrivetrain"
+                       aria-label="Drivetrain"
+                       Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="Drivetrain" Value="Drivetrain.FWD">FWD</MudSelectItem>
+                <MudSelectItem T="Drivetrain" Value="Drivetrain.RWD">RWD</MudSelectItem>
+                <MudSelectItem T="Drivetrain" Value="Drivetrain.AWD">AWD</MudSelectItem>
+            </MudSelect>
+        </label>
+        <label>Engine Location
+            <MudSelect T="EngineLocation" Value="State.EngineLocation" ValueChanged="State.SetEngineLocation"
+                       aria-label="Engine Location"
+                       Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="EngineLocation" Value="EngineLocation.Front">Front</MudSelectItem>
+                <MudSelectItem T="EngineLocation" Value="EngineLocation.Mid">Mid</MudSelectItem>
+                <MudSelectItem T="EngineLocation" Value="EngineLocation.Rear">Rear</MudSelectItem>
+            </MudSelect>
+        </label>
+        <label>Powertrain
+            <MudSelect T="Powertrain" Value="State.Powertrain" ValueChanged="State.SetPowertrain"
+                       aria-label="Powertrain"
+                       Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="Powertrain" Value="Powertrain.ICE">ICE</MudSelectItem>
+                <MudSelectItem T="Powertrain" Value="Powertrain.EV">EV</MudSelectItem>
+                <MudSelectItem T="Powertrain" Value="Powertrain.Hybrid">Hybrid</MudSelectItem>
+            </MudSelect>
+        </label>
+        <label>PI Class
+            <MudSelect T="PiClass" Value="State.PiClass" ValueChanged="State.SetPiClass"
+                       aria-label="PI Class"
+                       Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var pc in PiClasses)
+                {
+                    <MudSelectItem T="PiClass" Value="pc">@pc</MudSelectItem>
+                }
+            </MudSelect>
+        </label>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Performance</legend>
+    <div class="grid2">
+        <label>
+            <span class="lbl">Power <em>@Units.PowerUnitLabel</em></span>
+            @NumField("power", min: 0, step: 1, placeholder: "e.g. 400")
+        </label>
+        <label>
+            <span class="lbl">Torque <em>@Units.Label(UnitService.Dim.Torque, State.Units)</em></span>
+            @NumField("torque", min: 0, step: 1, placeholder: "e.g. 370")
+        </label>
+        <label>
+            <span class="lbl">Weight <em>@Units.Label(UnitService.Dim.Weight, State.Units)</em></span>
+            @NumField("weight", min: 0, step: 1, placeholder: "e.g. 3300")
+        </label>
+        <label>
+            <span class="lbl">Front Weight %</span>
+            @NumField("frontWeight", min: 20, max: 80, step: 0.5, placeholder: "e.g. 52")
+        </label>
+        <label>
+            <span class="lbl">Number of Gears</span>
+            @NumField("gears", min: 1, max: 10, step: 1, placeholder: "e.g. 6")
+        </label>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Installed Parts</legend>
+    <div class="grid2">
+        <label>Tire Compound
+            <MudSelect T="TireCompound" Value="State.TireCompound" ValueChanged="State.SetTireCompound"
+                       aria-label="Tire Compound"
+                       Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var tc in TireCompounds)
+                {
+                    <MudSelectItem T="TireCompound" Value="tc">@tc</MudSelectItem>
+                }
+            </MudSelect>
+        </label>
+        <label>Suspension
+            <MudSelect T="SuspensionType" Value="State.SuspensionType" ValueChanged="State.SetSuspensionType"
+                       aria-label="Suspension"
+                       Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var st in SuspensionTypes)
+                {
+                    <MudSelectItem T="SuspensionType" Value="st">@st</MudSelectItem>
+                }
+            </MudSelect>
+        </label>
+    </div>
+    <div class="grid2 ranges">
+        <label>
+            <span class="lbl">Spring Rate front min <em>@SpringUnit</em></span>
+            @NumField("springRateMinF", step: 1, placeholder: "150")
+        </label>
+        <label>
+            <span class="lbl">Spring Rate front max <em>@SpringUnit</em></span>
+            @NumField("springRateMaxF", step: 1, placeholder: "900")
+        </label>
+        <label>
+            <span class="lbl">Spring Rate rear min <em>@SpringUnit</em></span>
+            @NumField("springRateMinR", step: 1, placeholder: "150")
+        </label>
+        <label>
+            <span class="lbl">Spring Rate rear max <em>@SpringUnit</em></span>
+            @NumField("springRateMaxR", step: 1, placeholder: "900")
+        </label>
+        <label>
+            <span class="lbl">Ride Height front min <em>@RideUnit</em></span>
+            @NumField("rideHeightMinF", step: 0.1, placeholder: "4.5")
+        </label>
+        <label>
+            <span class="lbl">Ride Height front max <em>@RideUnit</em></span>
+            @NumField("rideHeightMaxF", step: 0.1, placeholder: "7.0")
+        </label>
+        <label>
+            <span class="lbl">Ride Height rear min <em>@RideUnit</em></span>
+            @NumField("rideHeightMinR", step: 0.1, placeholder: "4.5")
+        </label>
+        <label>
+            <span class="lbl">Ride Height rear max <em>@RideUnit</em></span>
+            @NumField("rideHeightMaxR", step: 0.1, placeholder: "7.0")
+        </label>
+    </div>
+    <p class="hint">
+        Ranges come from the parts you installed — read them off the in-game slider's min/max.
+        Front and rear sliders can have different ranges, so enter each separately. Left blank,
+        the calculator assumes the placeholder values shown.
+    </p>
+
+    <label class="aero-kit-label">Aero (adjustable)
+        <MudSelect T="AeroKit" Value="State.AeroKit" ValueChanged="State.SetAeroKit"
+                   aria-label="Aero kit"
+                   Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelectItem T="AeroKit" Value="AeroKit.Full">Full kit (front + rear)</MudSelectItem>
+            <MudSelectItem T="AeroKit" Value="AeroKit.Front">Front splitter only</MudSelectItem>
+            <MudSelectItem T="AeroKit" Value="AeroKit.Rear">Rear wing only</MudSelectItem>
+            <MudSelectItem T="AeroKit" Value="AeroKit.None">None</MudSelectItem>
+        </MudSelect>
+    </label>
+
+    @if (State.AeroKit != AeroKit.None)
+    {
+        <div class="grid2 ranges">
+            @if (ShowFrontAero)
+            {
+                <label>
+                    <span class="lbl">Aero front min <em>@AeroUnit</em></span>
+                    @NumField("aeroFrontMin", step: 1, placeholder: "optional")
+                </label>
+                <label>
+                    <span class="lbl">Aero front max <em>@AeroUnit</em></span>
+                    @NumField("aeroFrontMax", step: 1, placeholder: "optional")
+                </label>
+            }
+            @if (ShowRearAero)
+            {
+                <label>
+                    <span class="lbl">Aero rear min <em>@AeroUnit</em></span>
+                    @NumField("aeroRearMin", step: 1, placeholder: "optional")
+                </label>
+                <label>
+                    <span class="lbl">Aero rear max <em>@AeroUnit</em></span>
+                    @NumField("aeroRearMax", step: 1, placeholder: "optional")
+                </label>
+            }
+        </div>
+        <p class="hint">
+            Optional — enter your wing's downforce range to get exact numbers; leave blank to show
+            % of the slider.
+        </p>
+    }
+</fieldset>
+
+<fieldset>
+    <legend>Gearing refinement (optional)</legend>
+    <div class="grid2">
+        <label>
+            <span class="lbl">Redline RPM</span>
+            @NumField("redlineRpm", step: 100, placeholder: "optional")
+        </label>
+        <label>
+            <span class="lbl">Target top speed <em>@Units.Label(UnitService.Dim.Speed, State.Units)</em></span>
+            @NumField("targetTopSpeed", step: 1, placeholder: "optional")
+        </label>
+        <label class="tire-size">
+            <span class="lbl">Drive tire size <em>rear for RWD/AWD · front for FWD</em></span>
+            <span class="tire-size-row">
+                @NumField("tireWidth", min: 0, step: 5, placeholder: "225", ariaLabel: "tire width in mm", inline: true)
+                <span class="sep">/</span>
+                @NumField("tireAspect", min: 0, step: 5, placeholder: "45", ariaLabel: "tire aspect ratio percent", inline: true)
+                <span class="sep">R</span>
+                @NumField("tireRim", min: 0, step: 1, placeholder: "17", ariaLabel: "rim diameter in inches", inline: true)
+                <output class="tire-dia-out">@TireDiaText</output>
+            </span>
+        </label>
+    </div>
+    <p class="hint">
+        Optional — redline + tire size shows real top speed &amp; per-gear speeds; add a target top
+        speed to back-solve an exact final drive. Blank = HP-based estimate. Read the
+        <strong>drive tire's</strong> spec straight off FH6's Tires screen — e.g.
+        <strong>315/30R17</strong> = width&nbsp;/&nbsp;aspect&nbsp;R&nbsp;rim — and we compute the
+        rolling diameter for you.
+    </p>
+</fieldset>
+
+@code {
+    // Stable enum option lists (declaration order == legacy <option> order).
+    private static readonly PiClass[] PiClasses =
+        { PiClass.D, PiClass.C, PiClass.B, PiClass.A, PiClass.S1, PiClass.S2, PiClass.R, PiClass.X };
+    private static readonly TireCompound[] TireCompounds =
+        { TireCompound.Stock, TireCompound.Street, TireCompound.Sport, TireCompound.Race,
+          TireCompound.Rally, TireCompound.Drag, TireCompound.Offroad };
+    private static readonly SuspensionType[] SuspensionTypes =
+        { SuspensionType.Stock, SuspensionType.Street, SuspensionType.Sport, SuspensionType.Race,
+          SuspensionType.Drift, SuspensionType.Offroad };
+
+    // ---- unit-aware label suffixes (rebound live as the unit toggle flips) ----
+    private string SpringUnit => Units.Label(UnitService.Dim.Spring, State.Units);
+    private string RideUnit => Units.Label(UnitService.Dim.Ride, State.Units);
+    private string AeroUnit => Units.Label(UnitService.Dim.Aero, State.Units);
+
+    // ---- aero-kit field visibility (legacy syncAeroFields, app.js:426-434) ----
+    private bool ShowFrontAero => State.AeroKit is AeroKit.Front or AeroKit.Full;
+    private bool ShowRearAero => State.AeroKit is AeroKit.Rear or AeroKit.Full;
+
+    // ---- live drive-tire rolling-Ø readout (legacy updateTireDiaOut, app.js:128-131) ----
+    // Tire width/aspect/rim are unit-independent (mm / % / in), so no conversion here.
+    private string TireDiaText
+    {
+        get
+        {
+            double? dia = Engine.OverallTireDiameter(
+                ParseField("tireWidth"), ParseField("tireAspect"), ParseField("tireRim"));
+            return dia is not null ? $"= {Units.Nf(dia, 1)} in" : "= — in";
+        }
+    }
+
+    // ---- the reusable numeric field: a MudNumericField<double?> bound through the raw-string store ----
+    // Keeping the raw string authoritative preserves the legacy model that setUnits rewrites and
+    // that the welcome/validate gate reads (blank vs. zero is distinguishable; null = blank).
+    //
+    // legacy <input type=number min max step>: min/max are ADVISORY in the browser (they don't
+    // clamp a typed .value — the engine validate() is the authority). MudNumericField's Min/Max
+    // parameters would hard-clamp the committed value, swallowing the very inputs the engine is
+    // meant to flag (e.g. front weight ≥ 100, negative power), so they are NOT used.
+    //
+    // MudNumericField also STRIPS bare `min`/`max` user-attributes (it owns those via Min/Max), so a
+    // plain `min`/`max` would silently vanish from the rendered <input> — including the role=spinbutton
+    // value bounds AT relies on. To restore those bounds without clamping, the advisory range is
+    // emitted as `aria-valuemin`/`aria-valuemax` (which MudNumericField passes straight through, like
+    // the aria-label here). Only Step — which never clamps the range — is wired to the spinner so the
+    // step matches legacy.
+    private RenderFragment NumField(string id, double? min = null, double? max = null,
+        double step = 1, string? placeholder = null, string? ariaLabel = null, bool inline = false) =>
+        @<MudNumericField T="double?"
+                          Value="ParseField(id)"
+                          ValueChanged="@(v => WriteField(id, v))"
+                          Immediate="true"
+                          Clearable="false"
+                          Step="(double?)step"
+                          Format="0.######"
+                          Culture="System.Globalization.CultureInfo.InvariantCulture"
+                          Placeholder="@placeholder"
+                          UserAttributes="@AdvisoryAttrs(min, max, ariaLabel)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="@(inline ? "fh6-tire-num" : null)" />;
+
+    // Advisory attributes splatted onto the underlying role=spinbutton <input>: the legacy min/max
+    // bounds as aria-valuemin/aria-valuemax (non-clamping, and not stripped the way bare min/max are)
+    // + aria-label. Invariant-culture stringified so the '.' decimal stays fixed.
+    //
+    // Every call site passes compile-time-constant (min, max, ariaLabel), but InputsPanel re-renders on
+    // every keystroke and NumField runs for ~20 fields each time. So the built dictionaries are memoized
+    // by their (min, max, ariaLabel) key and the cached instance is returned — zero allocation after the
+    // first render (MudBlazor only reads UserAttributes, never mutates them, so sharing is safe).
+    private static readonly Dictionary<string, Dictionary<string, object>> _advisoryCache = new();
+
+    private static Dictionary<string, object> AdvisoryAttrs(double? min, double? max, string? ariaLabel)
+    {
+        string minS = min?.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        string maxS = max?.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        string key = $"{minS}|{maxS}|{ariaLabel}";
+        if (_advisoryCache.TryGetValue(key, out var cached)) return cached;
+
+        var d = new Dictionary<string, object>();
+        if (min is not null) d["aria-valuemin"] = minS;
+        if (max is not null) d["aria-valuemax"] = maxS;
+        if (!string.IsNullOrEmpty(ariaLabel)) d["aria-label"] = ariaLabel;
+        _advisoryCache[key] = d;
+        return d;
+    }
+
+    // legacy optField(id) (no dim): raw string → leading-number parse, or null when blank/non-finite
+    // (so the placeholder shows). Backs both the bound numeric value and the tire-size readout.
+    private double? ParseField(string id)
+    {
+        string s = State.GetField(id).Trim();
+        if (s.Length == 0) return null;
+        double v = JsNumber.ParseFloat(s);
+        return JsNumber.IsFiniteNumber(v) ? v : (double?)null;
+    }
+
+    // double? → raw string store (blank when cleared). Invariant, trailing-zero-free — matches the
+    // legacy +n string form so a round-trip and setUnits stay clean.
+    private void WriteField(string id, double? v) =>
+        State.SetField(id, v is null
+            ? ""
+            : v.Value.ToString("0.######", System.Globalization.CultureInfo.InvariantCulture));
+
+    protected override void OnInitialized() => State.Changed += OnStateChanged;
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+    public void Dispose() => State.Changed -= OnStateChanged;
+}

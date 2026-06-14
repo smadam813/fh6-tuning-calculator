@@ -1,0 +1,89 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject CalculatorState State
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="fh6-appbar" Dense="true" Fixed="false">
+        <div class="fh6-topbar-inner d-flex flex-grow-1 align-center justify-space-between gap-4 flex-wrap">
+            <div class="fh6-brand">
+                <span class="fh6-logo">FH6</span>
+                <div class="fh6-titles">
+                    <h1>Tuning Calculator</h1>
+                    <p class="fh6-tagline">Enter a car's stats &rarr; get a complete, math-derived tune.</p>
+                </div>
+            </div>
+            <div class="fh6-unit-toggle" role="group" aria-label="Units">
+                <button type="button"
+                        class="@UnitClass(UnitSystem.Imperial)"
+                        @onclick="() => State.SetUnits(UnitSystem.Imperial)">Imperial</button>
+                <button type="button"
+                        class="@UnitClass(UnitSystem.Metric)"
+                        @onclick="() => State.SetUnits(UnitSystem.Metric)">Metric</button>
+            </div>
+        </div>
+    </MudAppBar>
+
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private string UnitClass(UnitSystem u) => State.Units == u ? "active" : "";
+
+    protected override void OnInitialized() => State.Changed += OnStateChanged;
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+
+    // Dark theme mirroring legacy/styles.css :root palette + Segoe UI typography.
+    private readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Black = "#0d1117",
+            Background = "#0d1117",
+            BackgroundGray = "#131a24",
+            Surface = "#161d28",            // --panel
+            DrawerBackground = "#131a24",
+            DrawerText = "#e6edf3",
+            AppbarBackground = "#141c28",   // legacy .topbar gradient base (overridden by .fh6-appbar)
+            AppbarText = "#e6edf3",
+            TextPrimary = "#e6edf3",        // --text
+            TextSecondary = "#8b97a7",      // --muted
+            TextDisabled = "rgba(139,151,167,0.5)",
+            ActionDefault = "#8b97a7",
+            ActionDisabled = "rgba(139,151,167,0.45)",
+            Primary = "#3ddc84",            // --accent (Forza green)
+            Secondary = "#46a7ff",          // --accent-2 (electric blue)
+            Tertiary = "#46a7ff",
+            Warning = "#ffb454",            // --warn
+            Error = "#ff6b6b",              // --danger
+            Info = "#46a7ff",
+            Success = "#3ddc84",
+            LinesDefault = "#263246",       // --line
+            LinesInputs = "#263246",
+            TableLines = "#1e2836",         // --line-soft
+            Divider = "#1e2836",
+            DividerLight = "#263246",
+            OverlayDark = "rgba(13,17,23,0.5)",
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "12px",   // --radius
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = new[] { "Segoe UI", "system-ui", "-apple-system", "Roboto", "Arial", "sans-serif" },
+            },
+        },
+    };
+}

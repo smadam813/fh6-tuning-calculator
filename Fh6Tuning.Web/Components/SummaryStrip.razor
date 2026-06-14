@@ -1,0 +1,16 @@
+@* ============================================================================================
+   Summary strip — port of legacy renderCards' summaryStrip block (app.js:224-225). The five derived
+   chips (Power-to-weight / Front corner / Rear corner / Balance / Class tier), each "k: <b>v</b>".
+   Values come straight from the engine's Tune.Summary (legacy GOAL summary, fixed order).
+   ============================================================================================ *@
+
+<div class="summary-strip">
+    @foreach (var chip in Tune.Summary)
+    {
+        <span class="chip">@chip.K: <b>@chip.V</b></span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Tune Tune { get; set; } = default!;
+}

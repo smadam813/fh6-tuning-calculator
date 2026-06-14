@@ -1,0 +1,110 @@
+@* ============================================================================================
+   Tuning dial — port of legacy index.html .dial-row (lines 211-244) + updateBiasLabel /
+   updateStiffLabel (app.js:134-153). One reusable dial driven by Kind:
+     • Bias  → "Handling bias", Neutral/Understeer/Oversteer, ← Understeer … Oversteer →, blue↔orange.
+     • Stiff → "Overall stiffness", Balanced/Soft/Hard, ← Soft … Hard →, teal↔red.
+   A MudSlider<double> (min -5, max +5, step 0.5) two-way bound to the matching CalculatorState dial,
+   the live directional value label, the end captions with a centered Reset button, and the hint.
+   At 0 the dial is the pure per-goal baseline (the engine's neutrality contract).
+   ============================================================================================ *@
+@implements IDisposable
+@inject CalculatorState State
+@inject UnitService Units
+
+<div class="dial-row @RowClass">
+    <div class="dial-head">
+        <span class="dial-title">@Title</span>
+        <span class="dial-value @ValueClass">@ValueText</span>
+    </div>
+
+    <MudSlider T="double"
+               Min="-5" Max="5" Step="0.5"
+               Value="Value" ValueChanged="OnValueChanged"
+               Class="@SliderClass"
+               aria-label="@AriaLabel" />
+
+    <div class="dial-ends">
+        <span>@LowEndLabel</span>
+        <button type="button" class="dial-reset" title="@ResetTitle" @onclick="Reset">Reset</button>
+        <span>@HighEndLabel</span>
+    </div>
+
+    @if (Kind == DialKind.Bias)
+    {
+        <p class="hint dial-hint">
+            <b>Balance.</b> Tilts the tune toward front grip (understeer) or rear rotation (oversteer)
+            by moving each end the <i>opposite</i> way — ARB, springs, differential, brake balance
+            &amp; aero. At <b>0</b> it's the pure per-goal baseline.
+        </p>
+    }
+    else
+    {
+        <p class="hint dial-hint">
+            <b>Firmness.</b> Scales springs, anti-roll bars &amp; damping the <i>same</i> way at both
+            ends (and drops/raises ride height) — so the car gets harder or softer without changing its
+            balance. At <b>0</b> it's the pure per-goal baseline.
+        </p>
+    }
+</div>
+
+@code {
+    public enum DialKind { Bias, Stiff }
+
+    [Parameter, EditorRequired] public DialKind Kind { get; set; }
+
+    private double Value => Kind == DialKind.Bias ? State.HandlingBias : State.OverallStiffness;
+
+    private void OnValueChanged(double v)
+    {
+        if (Kind == DialKind.Bias) State.SetHandlingBias(v);
+        else State.SetOverallStiffness(v);
+    }
+
+    private void Reset()
+    {
+        if (Kind == DialKind.Bias) State.ResetHandlingBias();
+        else State.ResetOverallStiffness();
+    }
+
+    // ---- static per-kind chrome ----
+    private string Title => Kind == DialKind.Bias ? "Handling bias" : "Overall stiffness";
+    private string RowClass => Kind == DialKind.Bias ? "bias-row" : "stiff-row";
+    private string SliderClass => Kind == DialKind.Bias ? "fh6-dial fh6-dial-bias" : "fh6-dial fh6-dial-stiff";
+    private string AriaLabel => Kind == DialKind.Bias
+        ? "Handling bias from understeer to oversteer"
+        : "Overall stiffness from soft to hard";
+    private string LowEndLabel => Kind == DialKind.Bias ? "← Understeer" : "← Soft";
+    private string HighEndLabel => Kind == DialKind.Bias ? "Oversteer →" : "Hard →";
+    private string ResetTitle => Kind == DialKind.Bias ? "Reset to neutral" : "Reset to balanced";
+
+    // ---- live value label (legacy updateBiasLabel / updateStiffLabel) ----
+    private string ValueText
+    {
+        get
+        {
+            double v = Value;
+            if (v == 0) return Kind == DialKind.Bias ? "Neutral (0)" : "Balanced (0)";
+            string dir = Kind == DialKind.Bias
+                ? (v > 0 ? "Oversteer" : "Understeer")
+                : (v > 0 ? "Hard" : "Soft");
+            string sign = v > 0 ? "+" : "";
+            return $"{dir} ({sign}{Units.Nf(v, 1)})";
+        }
+    }
+
+    private string ValueClass
+    {
+        get
+        {
+            double v = Value;
+            if (v == 0) return "";
+            return Kind == DialKind.Bias
+                ? (v > 0 ? "over" : "under")
+                : (v > 0 ? "hard" : "soft");
+        }
+    }
+
+    protected override void OnInitialized() => State.Changed += OnStateChanged;
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+    public void Dispose() => State.Changed -= OnStateChanged;
+}
