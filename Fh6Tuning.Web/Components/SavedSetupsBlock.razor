@@ -25,15 +25,20 @@
     <div class="setup-row">
         @* The select itself stays enabled even when empty (legacy disables only Load/Delete/Export);
            an empty list shows the "— no saved setups —" placeholder, matching the legacy disabled
-           placeholder option. Sorted newest-first by savedAt. *@
-        <MudSelect T="string" Value="_selected" ValueChanged="OnListChanged" aria-label="Saved setups"
-                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="fh6-setup-list"
-                   Placeholder="@(HasSetups ? null : "— no saved setups —")">
-            @foreach (var s in SortedSetups)
-            {
-                <MudSelectItem T="string" Value="@s.Name">@s.Name</MudSelectItem>
-            }
-        </MudSelect>
+           placeholder option. Sorted newest-first by savedAt.
+           Wrapped in a project-owned div so the flex-shrink/truncation hook (.fh6-setup-list-wrap)
+           doesn't depend on MudSelect's internal .mud-select wrapper class — a MudBlazor DOM
+           restructure could otherwise silently revert the long-name overflow fix with no build signal. *@
+        <div class="fh6-setup-list-wrap">
+            <MudSelect T="string" Value="_selected" ValueChanged="OnListChanged" aria-label="Saved setups"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="fh6-setup-list"
+                       Placeholder="@(HasSetups ? null : "— no saved setups —")">
+                @foreach (var s in SortedSetups)
+                {
+                    <MudSelectItem T="string" Value="@s.Name">@s.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
         <button type="button" class="ghost-btn" @onclick="LoadAsync" disabled="@(!HasSetups)">Load</button>
         <button type="button" class="ghost-btn" @onclick="DeleteAsync" disabled="@(!HasSetups)">Delete</button>
     </div>

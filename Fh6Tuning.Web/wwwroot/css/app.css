@@ -188,12 +188,13 @@ html, body {
 .fh6-inputs .setups .setup-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
 /* The name field and the saved-setups dropdown stretch; the buttons stay their content width.
    MudTextField stamps our class on its root .mud-input-control (a direct child of .setup-row), but
-   MudSelect wraps its control in an extra .mud-select div — so .fh6-setup-list lands on a grandchild
-   and a "> .fh6-setup-list" rule never reaches the actual flex item. Target that .mud-select wrapper
-   directly; with min-width:0 it shrinks to its share and the selected name truncates (ellipsis)
-   instead of growing the row past the panel. */
+   MudSelect renders an extra wrapper, so .fh6-setup-list lands on a grandchild and a
+   "> .fh6-setup-list" rule never reaches the actual flex item. The select is therefore wrapped in a
+   project-owned .fh6-setup-list-wrap div (SavedSetupsBlock.razor) we can target without depending on
+   MudBlazor internals; with min-width:0 it shrinks to its share and the selected name truncates
+   (ellipsis) instead of growing the row past the panel. */
 .fh6-inputs .setups .setup-row > .fh6-setup-name,
-.fh6-inputs .setups .setup-row > .mud-select { flex: 1; min-width: 0; }
+.fh6-inputs .setups .setup-row > .fh6-setup-list-wrap { flex: 1; min-width: 0; }
 .fh6-inputs .setups .setup-row .fh6-setup-name,
 .fh6-inputs .setups .setup-row .fh6-setup-list { margin-top: 0; }
 /* Import: a styled <label> wrapping a hidden <InputFile> — clicking the label opens the picker
