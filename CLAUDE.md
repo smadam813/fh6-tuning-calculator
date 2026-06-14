@@ -38,6 +38,10 @@ The `springs._fFront`/`_fRear` JS values are documented internal scratch (target
 balanced-magnitude model validated by C#-native tests (`Fh6Tuning.Tests/AeroModelTests.cs`); its
 numeric + why leaves are skipped in `ParityHarness` (`IsAeroExempt`). This is the first carve-out of
 the planned parity-layer deprecation — `legacy/tuning.js` aero is intentionally stale.
+The full-kit aero block has **two parallel paths** — lbf-space (both ranges known) and fraction-space
+(ranges unknown) — that must stay structurally in sync: clamp front first, then anchor rear to the
+*clamped* front. Desyncing them silently mis-sizes range-unknown high-power cars (`AeroPowerBoost` is
+shared for exactly this reason).
 
 ## MudBlazor / UI gotchas (dark theme)
 

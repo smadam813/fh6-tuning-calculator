@@ -149,4 +149,37 @@ public sealed class AeroModelTests
         Tune rearEng = Engine.Compute(Car(Drivetrain.RWD, EngineLocation.Rear, 40, 450, AeroRange.None, AeroRange.None), Goal.Circuit);
         Assert.True(rearEng.Aero.Rear!.Value >= rearEng.Aero.Front!.Value, $"rear-engine fraction-space rear {rearEng.Aero.Rear} < front {rearEng.Aero.Front}");
     }
+
+    [Fact] // High-power, no-ranges: front clamps but rear keeps its weight trim (anchored to clamped front).
+    public void NoRanges_HighPower_RearBiased_RearEasesBelowFront()
+    {
+        // 1320 hp → +25% front boost pushes level(0.85)×1.25 = 1.0625 past the 100% clamp.
+        // The old code boosted rear independently, so rear also pinned at 100% and the −7% weight
+        // trim vanished. Anchoring rear to the CLAMPED front keeps the trim: rear sits below front.
+        Tune t = Engine.Compute(Car(Drivetrain.RWD, EngineLocation.Front, 40, 1320, AeroRange.None, AeroRange.None), Goal.Circuit);
+        Assert.Equal(100, t.Aero.Front!.Value);                       // front clamps at full
+        Assert.True(t.Aero.Rear!.Value < t.Aero.Front!.Value,
+            $"rear-light car at high power: rear {t.Aero.Rear} not eased below front {t.Aero.Front}");
+    }
+
+    [Fact] // Drift runs a low, balanced split — not the old AWD rear-bias, not pathological.
+    public void Drift_LowAndBalanced_NotRearBiased()
+    {
+        var car = Car(Drivetrain.AWD, EngineLocation.Front, 47, 450, BigF, BigR);
+        Tune drift = Engine.Compute(car, Goal.Drift);
+        Assert.InRange(Share(drift), 0.42, 0.58);                    // balanced at 47%, not rear-biased
+        // Drift level (0.30) is below Circuit (0.85), so Drift front downforce sits lower.
+        Tune circuit = Engine.Compute(car, Goal.Circuit);
+        Assert.True(drift.Aero.FrontLbf!.Value < circuit.Aero.FrontLbf!.Value,
+            $"Drift front DF {drift.Aero.FrontLbf} not below Circuit {circuit.Aero.FrontLbf}");
+    }
+
+    [Fact] // The full-kit why strings describe the weight-anchored model, not the retired drivetrain rule.
+    public void FullKit_WhyStrings_DescribeWeightModel_NotDrivetrain()
+    {
+        Tune t = Engine.Compute(Car(Drivetrain.AWD, EngineLocation.Front, 50, 450, BigF, BigR), Goal.Circuit);
+        Assert.DoesNotContain("drivetrain", t.Aero.Why.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("AWD", t.Aero.Why.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("47", t.Aero.Why.Formula);                   // the balance anchor is stated
+    }
 }

@@ -662,10 +662,6 @@ public sealed class TuningEngine : ITuningEngine
 
         AeroRange fR = i.AeroFront; // [min,max] or [null,null]
         AeroRange rR = i.AeroRear;
-        // toLbf(frac, rng): hasRange ? round(min + (max-min)*clamp(frac,0,1)) : null
-        double? ToLbf(double frac, AeroRange rng) => rng.HasRange
-            ? JsMath.Round(rng.Min!.Value + (rng.Max!.Value - rng.Min!.Value) * Clamp(frac, 0, 1))
-            : (double?)null;
         bool HasRange(AeroRange rng) => rng.HasRange;
         const string lbfNote = " The % is mapped into the downforce range you entered to give the lbf shown.";
         const string lbfFormula = "\nlbf = min + (max − min) × fraction";
@@ -682,7 +678,7 @@ public sealed class TuningEngine : ITuningEngine
                 (goal == Goal.Drag ? ", floored — any front downforce is drag here." : oversteerProne ? $", kept moderate: on a tail-happy {DrivetrainToken(i.Drivetrain)} car a big splitter lightens the rear at speed and invites high-speed oversteer you can't dial out with a rear wing." : understeerProne ? ", used fully — front downforce directly fights this car's understeer." : ".") + (HasRange(fR) ? lbfNote : "");
             string fFormula =
                 $"front = level({S(level)}) × balanceFactor({S(fac)})\nrear = n/a (no wing installed)" + (HasRange(fR) ? lbfFormula : "");
-            return new Aero(true, fp, ToLbf(f, fR), null, null, new Why(fText, fFormula));
+            return new Aero(true, fp, fR.ToLbf(f), null, null, new Why(fText, fFormula));
         }
         if (!hasF && hasR) // rear wing only
         {
@@ -696,7 +692,7 @@ public sealed class TuningEngine : ITuningEngine
                 (goal == Goal.Drag ? ", floored — the wing is pure drag on a straight." : understeerProne ? ", kept low: this car already pushes and you can't add front downforce to offset it, so a big wing would only deepen high-speed understeer." : oversteerProne ? $", used fully — rear downforce calms a loose {DrivetrainToken(i.Drivetrain)} rear at speed." : ".") + (HasRange(rR) ? lbfNote : "");
             string rFormula =
                 $"rear = level({S(level)}) × balanceFactor({S(fac)})\nfront = n/a (no splitter installed)" + (HasRange(rR) ? lbfFormula : "");
-            return new Aero(true, null, null, rp, ToLbf(r, rR), new Why(rText, rFormula));
+            return new Aero(true, null, null, rp, rR.ToLbf(r), new Why(rText, rFormula));
         }
 
         // full kit (both ends) — BALANCED-MAGNITUDE model anchored at a 47% front-weight ideal.
@@ -705,6 +701,8 @@ public sealed class TuningEngine : ITuningEngine
         // (balanced at 47%), trimmed +1.867 lbf per 1% of front-weight above 47%. No AWD slider
         // override, no engine-location rear-shed; aero no longer reads the over/understeer flags.
         // Rear-engine cars are safeguarded: never below 0.50 front-share (rear lbf ≥ front lbf).
+        // hp boost: ≥600 hp scales front downforce up (ramped to +25%, capped); shared by both paths.
+        static double AeroPowerBoost(double hp) => 1 + Math.Min((hp - 600) / 600.0, 0.5) * 0.5;
         double front, rear; // slider fractions 0..1
         if (goal == Goal.Drag)
         {
@@ -715,33 +713,34 @@ public sealed class TuningEngine : ITuningEngine
             double fSpan = fR.Max!.Value - fR.Min!.Value;
             double rSpan = rR.Max!.Value - rR.Min!.Value;
             double frontDF = fR.Min.Value + fSpan * level;
-            if (i.Power >= 600 && goal != Goal.OffRoad)
-                frontDF *= 1 + Math.Min((i.Power - 600) / 600, 0.5) * 0.5;
+            if (i.Power >= 600 && goal != Goal.OffRoad) frontDF *= AeroPowerBoost(i.Power);
             frontDF = Clamp(frontDF, fR.Min.Value, fR.Max.Value);          // clamp front first
             double rearDF = frontDF + (i.FrontWeightPct - 47) * 1.867;     // balance to (clamped) front
             if (i.EngineLocation == EngineLocation.Rear) rearDF = Math.Max(rearDF, frontDF); // safeguard
             rearDF = Clamp(rearDF, rR.Min.Value, rR.Max.Value);
+            // Zero-span range (min == max): the slider has one legal spot, so its position fraction is
+            // meaningless — fall back to 0%. ToLbf still reports the correct single lbf value (= min).
             front = fSpan > 0 ? (frontDF - fR.Min.Value) / fSpan : 0;
             rear = rSpan > 0 ? (rearDF - rR.Min.Value) / rSpan : 0;
         }
         else
         {
-            // ranges unknown: fraction-space balance (front ≈ rear fraction), weight-trim via 250-lbf span.
-            double frontF = level, rearF = level;
-            if (i.Power >= 600 && goal != Goal.OffRoad)
-            {
-                double k = 1 + Math.Min((i.Power - 600) / 600, 0.5) * 0.5;
-                frontF *= k; rearF *= k;
-            }
-            rearF += (i.FrontWeightPct - 47) * 1.867 / 250;
+            // ranges unknown: fraction-space analogue of the lbf path. Clamp front FIRST, then anchor
+            // rear to the (clamped) front, weight-trimmed via the 250-lbf nominal span. Mirroring the
+            // lbf branch is what keeps a high-power range-unknown car from running both ends to 100%:
+            // boosting rear independently (the old code) erased the weight trim once front clamped.
+            double frontF = level;
+            if (i.Power >= 600 && goal != Goal.OffRoad) frontF *= AeroPowerBoost(i.Power);
+            frontF = Clamp(frontF, 0, 1);                                  // clamp front first
+            double rearF = frontF + (i.FrontWeightPct - 47) * 1.867 / 250; // balance to (clamped) front
             if (i.EngineLocation == EngineLocation.Rear) rearF = Math.Max(rearF, frontF);
-            front = Clamp(frontF, 0, 1);
+            front = frontF;
             rear = Clamp(rearF, 0, 1);
         }
 
         double fp2 = R5(front * 100), rp2 = R5(rear * 100);
-        double? frontLbf = ToLbf(front, fR);
-        double? rearLbf = ToLbf(rear, rR);
+        double? frontLbf = fR.ToLbf(front);
+        double? rearLbf = rR.ToLbf(rear);
         // share: front's portion of total ACTUAL downforce when lbf known, else from %.
         double share = (frontLbf != null && rearLbf != null && frontLbf + rearLbf > 0)
             ? JsMath.Round(frontLbf.Value / (frontLbf.Value + rearLbf.Value) * 100)
