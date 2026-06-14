@@ -34,6 +34,15 @@ The differential parity gate is what guarantees the C# port matches the JS oracl
 
 The `springs._fFront`/`_fRear` JS values are documented internal scratch (target ride frequencies used only for the damping handoff and the why string); the exporter strips them and the C# `Springs` record omits them, so they are deliberately out of the tune contract.
 
+**Aero is exempt from the parity gate (as of 2026-06-14).** The aero category was migrated to a
+balanced-magnitude model validated by C#-native tests (`Fh6Tuning.Tests/AeroModelTests.cs`); its
+numeric + why leaves are skipped in `ParityHarness` (`IsAeroExempt`). This is the first carve-out of
+the planned parity-layer deprecation — `legacy/tuning.js` aero is intentionally stale.
+The full-kit aero block has **two parallel paths** — lbf-space (both ranges known) and fraction-space
+(ranges unknown) — that must stay structurally in sync: clamp front first, then anchor rear to the
+*clamped* front. Desyncing them silently mis-sizes range-unknown high-power cars (`AeroPowerBoost` is
+shared for exactly this reason).
+
 ## MudBlazor / UI gotchas (dark theme)
 
 - **`dotnet run` does not hot-reload** — restart the dev server after editing `.razor`/`.css` (or use `dotnet watch` for HMR). The preview/verify tooling launches the `.claude/launch.json` `web` config (port 5221).
@@ -49,10 +58,10 @@ Run the suite with `dotnet test Fh6Tuning.sln` — Node.js must be on PATH (the 
 
 - `Fh6Tuning.Tests/Fixtures.cs` holds the canonical legal slider ranges and base input fixtures; `Helpers.cs` provides the shared range/shape assertions. New engine assertions should reuse these so range-checking stays centralized.
 - `SweepTests` is the invariant safety net (xUnit equivalent of `legacy/sweep.js`): no NaN/non-finite output, every output in its legal range, gears strictly descending, ride height within the part range, all six goals distinct per car, drivetrains distinct, and dial-0 byte-for-byte neutrality. Run it after any formula change.
-- `ParityTests` is the exact-value gate against the JS oracle (above). After any formula change, change `legacy/tuning.js` first, let the snapshot regenerate, then update the C# port until parity is green.
+- `ParityTests` is the exact-value gate against the JS oracle (above). After any formula change, change `legacy/tuning.js` first, let the snapshot regenerate, then update the C# port until parity is green. **Exception — aero:** it is parity-exempt and C#-canonical (see the aero carve-out above), so change `TuningEngine` aero + `AeroModelTests` directly and do **not** touch `legacy/tuning.js` aero (intentionally stale).
 
 ## Domain knowledge
 
-The formulas are **community-canonical Forza tuning math** (consistent across FH4/FH5/FH6), not official. Full sourced derivations, per-goal modifier tables, and edge cases live in `research/` (see `research/INDEX.md` and the `spec-*.md` files). When changing a formula, update the corresponding `research/spec-*.md`, the legacy `legacy/tuning.js` (the parity oracle) **and** the C# port, plus the `Why.Formula` string the card displays. `README.md` has a high-level formula table; `legacy/AUDIT.md` records a prior review pass.
+The formulas are **community-canonical Forza tuning math** (consistent across FH4/FH5/FH6), not official. Full sourced derivations, per-goal modifier tables, and edge cases live in `research/` (see `research/INDEX.md` and the `spec-*.md` files). When changing a formula, update the corresponding `research/spec-*.md`, the legacy `legacy/tuning.js` (the parity oracle) **and** the C# port, plus the `Why.Formula` string the card displays. (Aero is the exception — C#-only now; skip `legacy/tuning.js` for aero.) `README.md` has a high-level formula table; `legacy/AUDIT.md` records a prior review pass.
 
 Key edge cases the engine handles (don't regress these): FWD/RWD/AWD diff routing and ARB/camber/brake-bias inversion; EV single-speed gearing (the lone "1st" ratio + final drive are only correct as a *pair*, and target-top-speed solves the limiter ~7% past target because FH6 EV motors lose power near redline); front/mid/rear engine weight bias; single-wing aero kits sized to the car's balance tendency; stock suspension locking alignment/ARB.

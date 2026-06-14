@@ -248,12 +248,12 @@ public sealed class UnitTests
         Assert.Null(L.Aero.Rear);
 
         Assert.True(E.Aero.Applicable);
-        Assert.Equal(100, E.Aero.Front);
-        Assert.Equal(15, E.Aero.Rear);
+        Assert.Equal(95, E.Aero.Front);  // balanced-magnitude: level(0.85)×power-boost at 54% front weight
+        Assert.Equal(100, E.Aero.Rear);  // rear = front + (54−47)×1.867/250 clipped to 1
 
         Assert.True(M.Aero.Applicable);
         Assert.Equal(95, M.Aero.Front);
-        Assert.Equal(90, M.Aero.Rear); // oversteer-prone mid-engine rear wing not trimmed
+        Assert.Equal(90, M.Aero.Rear); // rear lower than front: 43% front-weight trims rear down from balanced
         foreach (var t in new[] { E, M })
         {
             Helpers.InRange(t.Aero.Front!.Value, Fixtures.Ranges.AeroPct, "aero.front");
@@ -340,7 +340,7 @@ public sealed class UnitTests
             Fixtures.BaseInput(b => { b.Drivetrain = Drivetrain.AWD; b.EngineLocation = EngineLocation.Front; b.FrontWeightPct = 50; }),
             Goal.Circuit);
         Assert.False(bal.Derived.OversteerProne);
-        Assert.Equal(15, bal.Aero.Rear); // balanced AWD keeps the min-rear-wing default
+        Assert.Equal(85, bal.Aero.Rear); // balanced AWD at 50%: rear = front + (50−47)×1.867/250 ≈ 85%
     }
 
     [Fact]
@@ -358,9 +358,13 @@ public sealed class UnitTests
     }
 
     [Fact]
-    public void OversteerProneAwd_RearWingPlanted_AeroBalanceRearBiased()
+    public void OversteerProneAwd_RearRangeFloorExceedsTarget_SliderFloorsAt0()
     {
-        Assert.True(OSt.Aero.Rear!.Value >= 80, $"rear wing {OSt.Aero.Rear}% should be raised, not floored");
+        // Balanced-magnitude model: front set to 85% of its range (level×no-boost at 46% FW).
+        // Rear balanced to front lbf ≈ 191; but rear range min is 362, so slider clamps to 0%
+        // while rear lbf = 362 (the range floor). Rear lbf still exceeds front — that's the invariant.
+        Assert.Equal(85, OSt.Aero.Front!.Value); // front at level for Circuit
+        Assert.Equal(0, OSt.Aero.Rear!.Value);   // rear clamped to slider min (range floor already exceeds balanced target)
         Assert.True(OSt.Aero.RearLbf!.Value > OSt.Aero.FrontLbf!.Value, $"rear DF {OSt.Aero.RearLbf} must exceed front {OSt.Aero.FrontLbf}");
     }
 

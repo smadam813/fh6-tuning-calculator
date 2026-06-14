@@ -17,8 +17,8 @@
 >   (spec-aero-diff §2)
 > - **Brake balance:** forward bias loads the front first on entry; rearward bias
 >   eases the rear. (spec-tires-braking §2.A)
-> - **Aero:** more front downforce / less rear → looser rear at speed (oversteer);
->   the reverse plants the rear (understeer). (spec-aero-diff §1)
+> - **Aero:** shift the front/rear downforce balance — raise front-share for a looser rear at speed
+>   (oversteer), lower it to plant the rear (understeer). (spec-aero-diff §1.1)
 >
 > This file documents how the calculator **bundles those five known levers into
 > one −5…+5 dial** so a user can shift the whole car's balance with a single
@@ -75,7 +75,7 @@ biasScale(b, exp) = sign(b) · (min(|b|, 5) / 5) ^ exp     →   −1 … +1
 | **Differential** decel | ±8 pts | **1.2** | Off-throttle entry balance; slightly tamer than accel because lift-off effects are easier to provoke. |
 | **AWD center** (rear torque %) | ±6 pts | **1.1** | Center split is a smooth, almost linear handling lever — a near-linear curve (exp 1.1) makes ±5 on center feel proportional and predictable, unlike the snappier accel lock (exp 1.4). Routing torque rearward gradually sharpens an AWD car without the on/off feel a steep curve would give. |
 | **Brake balance** | ±4 pts | **1.0 (linear)** | Brake bias is already a small, intuitive, single-number lever; a plain linear response is the least surprising. |
-| **Aero** front/rear | ±8 pts each end | **1.05** | High-speed balance only; nearly linear so adding the dial does not interact unpredictably with the diff/spring changes already happening. |
+| **Aero** front/rear | ±0.08 front-share | **1.05** | Shifts the aero BALANCE (front's share of total downforce), preserving total, solved in lbf so the effect is identical across kits. +bias raises front-share (toward oversteer); −bias lowers it. Single-wing cars nudge the lone end ±8% of its range. |
 
 All outputs are re-clamped to their legal Forza ranges after the bias delta:
 ARB 1–65, springs within part min/max, diff accel/decel 0–100 (FWD accel ≤95,

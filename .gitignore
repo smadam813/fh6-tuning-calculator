@@ -31,3 +31,6 @@ desktop.ini
 # .NET build output
 bin/
 obj/
+
+# Superpowers planning artifacts (local agent scratch; not part of the project)
+docs/superpowers/
