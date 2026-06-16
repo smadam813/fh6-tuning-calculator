@@ -274,6 +274,11 @@ public sealed class TuningEngine : ITuningEngine
             double bFloor = Math.Log(0.52 / A) / Math.Log(N);             // ensures A×N^B ≥ 0.52 before generation
             B = Clamp(bBand, Math.Max(B_LO, bFloor), B_HI);
         }
+        // goal/drivetrain/powertrain launch character (the SAME nudges the fallback applies to B);
+        // the launch drop gear below pins 1st's overall ratio to this proven-launchable goal-B reference.
+        double goalBeff = goalG.B;
+        if (i.Powertrain == Powertrain.Hybrid) goalBeff -= 0.02;
+        if (i.Drivetrain == Drivetrain.AWD && (goal == Goal.Rally || goal == Goal.OffRoad)) goalBeff -= 0.02;
         List<double> ratios = [];
         for (int n = 1; n <= N; n++) ratios.Add(Clamp(A * Math.Pow(n, B), GEAR_MIN, GEAR_MAX));
         // enforce strictly descending
@@ -296,7 +301,28 @@ public sealed class TuningEngine : ITuningEngine
             : 0.95 * RL2;
         double fdRpm = i.PeakPowerRpm is > 0 ? Math.Min(i.PeakPowerRpm.Value, estRpm) : estRpm;
         string fdSource2 = "heuristic";
-        if (canSpeed2 && TT2 > 0 && topRatio > 0 && fdRpm > 0)
+        // Launch (drop) gear (port of legacy gearing()): when the power band tightened the spacing past
+        // the goal baseline (NARROW band: goalBeff < B), a single A·nᴮ exponent stretches 1st too tall and
+        // the car bogs on launch. Decouple 1st — pin its overall ratio (gear×FD) to the goal-B reference —
+        // while gears 2..N stay the tight power-band cluster; the big 1→2 gap is the drop gear. Wide bands
+        // and the no-band fallback keep the shipped A·nᴮ box byte-for-byte.
+        bool dropPath = haveBand && canSpeed2 && TT2 > 0 && fdRpm > 0 && goalBeff < B;
+        if (dropPath)
+        {
+            double totalTop = fdRpm * Math.PI * TD2 * 60 / (63360 * TT2);          // fixed by top speed
+            List<double> overall = [totalTop * Math.Pow(N, -goalBeff)];            // 1st = launch drop gear
+            for (int n = 2; n <= N; n++) overall.Add(totalTop * Math.Pow((double)n / N, B)); // 2..N = tight cluster
+            fd = Clamp(R2(totalTop / (A * Math.Pow(N, B))), FD_MIN, FD_MAX);
+            fdSource2 = "target";
+            ratios = overall.Select(o => Clamp(o / fd, GEAR_MIN, GEAR_MAX)).ToList();
+            for (int k = 1; k < ratios.Count; k++)
+                if (ratios[k] >= ratios[k - 1] - 0.01) ratios[k] = ratios[k - 1] - 0.05;
+            double lo2 = ratios.Min();
+            if (lo2 < GEAR_MIN) { double add = GEAR_MIN - lo2; ratios = ratios.Select(x => x + add).ToList(); }
+            ratios = ratios.Select(x => R2(Clamp(x, GEAR_MIN, GEAR_MAX))).ToList();
+            topRatio = ratios[ratios.Count - 1];
+        }
+        else if (canSpeed2 && TT2 > 0 && topRatio > 0 && fdRpm > 0)
         {
             fd = Clamp(R2((fdRpm * Math.PI * TD2 * 60) / (63360 * TT2 * topRatio)), FD_MIN, FD_MAX);
             fdSource2 = "target";
@@ -305,12 +331,16 @@ public sealed class TuningEngine : ITuningEngine
             ? ratios.Select(gr => RL2 / (gr * fd) * Math.PI * TD2 * 60 / 63360).ToList()
             : null;
         double? topSpeed = speeds2 != null ? speeds2[speeds2.Count - 1] : null;
+        double o1 = R2(ratios[0] * fd);                                       // overall 1st (gear×FD), for the why string
+        double v1 = canSpeed2 ? RInt(RL2 * Math.PI * TD2 * 60 / 63360 / (ratios[0] * fd)) : 0; // 1st-gear top @ redline
 
         string text =
             (fdSource2 == "target"
                 ? $"Final drive is back-solved so top gear ({S(R2(topRatio))}) reaches your {S(TT2)} mph target at ~{S(RInt(fdRpm))} rpm — where usable power peaks — not the {S(RL2)} rpm redline; top speed is power-limited and FH6 engines fade near the limiter, so gearing to redline tops out short. Per-gear speeds below read at the {S(RL2)} rpm redline, so top gear shows a bit past your target. "
                 : $"Final drive uses the community formula anchored at 400 hp → 4.25, shifted for this car's {S(i.Power)} hp and {S(RInt(i.Weight))} lb, then {(goalG.fd >= 0 ? "+" : "")}{S(goalG.fd)} for {GoalName(goal)}. ") +
-            (haveBand
+            (dropPath
+                ? $"1st is a launch (drop) gear — its overall ratio (gear × final = {S(o1)}) is set for grip-limited launch, so it tops out ~{S(v1)} mph at redline; gears 2–{N} are a close-ratio cluster spaced to your power band (redline {S(RL2)} / max-torque {S(i.MaxTorqueRpm!.Value)} rpm) to stay in the torque band on every upshift. The wide 1→2 gap is the drop gear."
+                : haveBand
                 ? $"Gears follow Rₙ = A·nᴮ with 1st = {S(R2(A))} (from {S(R2(d.Pw))} hp/lb); spacing B = {S(R2(B))} is sized from your power band (redline {S(RL2)} / max-torque {S(i.MaxTorqueRpm!.Value)} rpm) so each upshift drops the engine back toward its torque band — wider band, wider gaps; tighter band, closer gears."
                 : $"Gears follow Rₙ = A·nᴮ with 1st = {S(R2(A))} (from {S(R2(d.Pw))} hp/lb) and spacing exponent B = {S(B)} — wide low gears tame wheelspin, tight top gears stay in the power band.") +
             (canSpeed2 ? $" Per-gear and top speeds are computed from your {S(RL2)} rpm redline and tire diameter." : "");
@@ -318,7 +348,9 @@ public sealed class TuningEngine : ITuningEngine
             (fdSource2 == "target"
                 ? "FD = effRpm × π × tireØ × 60 / (63360 × targetMph × topGear)\neffRpm = min(peakPowerRpm, clamp(0.983×5252×hp/torque, 0.85–0.95×redline))"
                 : "FD = 4.25 + clamp((400−hp)/600, ±0.6) + weightAdj + goalAdj") +
-            (haveBand
+            (dropPath
+                ? $"\noverall₁ = totalTop × N^{S(R2(-goalBeff))} (launch drop gear); overallₙ = totalTop × (n/N)^{S(R2(B))} for n=2..N\ntotalTop = effRpm × π × tireØ × 60 / (63360 × targetMph); FD = totalTop / ({S(R2(A))} × N^{S(R2(B))}); gearₙ = overallₙ / FD"
+                : haveBand
                 ? $"\nB = clamp(−(N−1)·ln(0.85·redline/maxTq)/ln(N) + goalΔ, floor, −0.45)\nRₙ = {S(R2(A))} × n^{S(R2(B))}"
                 : $"\nRₙ = {S(R2(A))} × n^{S(B)}") +
             (canSpeed2 ? "\nspeed = redline / (gear × FD) × π × tireØ × 60/63360" : "");

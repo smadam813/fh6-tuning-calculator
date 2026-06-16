@@ -210,6 +210,11 @@
       const Bfloor = Math.log(0.52 / A) / Math.log(N);             // ensures A×N^B ≥ 0.52 before generation
       B = clamp(Bband, Math.max(B_LO, Bfloor), B_HI);
     }
+    // goal/drivetrain/powertrain launch character (the SAME nudges the fallback applies to B); the
+    // launch drop gear below pins 1st's overall ratio to this proven-launchable goal-B reference.
+    let goalBeff = GOAL_G.B;
+    if (i.powertrain === "Hybrid") goalBeff -= 0.02;
+    if (i.drivetrain === "AWD" && (goal === "Rally" || goal === "OffRoad")) goalBeff -= 0.02;
     let ratios = [];
     for (let n = 1; n <= N; n++) ratios.push(clamp(A * Math.pow(n, B), GEAR_MIN, GEAR_MAX));
     // enforce strictly descending (critique #7)
@@ -221,7 +226,7 @@
     // optional physics: real top speed / per-gear speeds, and target-based FD back-solve
     const RL = i.redlineRpm, TD = i.tireDiameter, TT = i.targetTopSpeed;
     const canSpeed = RL > 0 && TD > 0;
-    const topRatio = ratios[ratios.length - 1];
+    let topRatio = ratios[ratios.length - 1];
     // Top speed is power-limited (reached at ~peak-power rpm), not redline-limited, and FH6
     // power fades near the limiter. Back-solve FD from an effective top-speed rpm: the supplied
     // peak-power rpm if given, but capped by a droop-aware estimate (≈ the hp=torque crossover)
@@ -232,12 +237,32 @@
       : 0.95 * RL;
     const fdRpm = i.peakPowerRpm > 0 ? Math.min(i.peakPowerRpm, estRpm) : estRpm;
     let fdSource = "heuristic";
-    if (canSpeed && TT > 0 && topRatio > 0 && fdRpm > 0) {
+    // Launch (drop) gear. When the power band tightened the spacing past the goal baseline (a NARROW
+    // band: goalBeff < B), a single A·nᴮ exponent stretches 1st too tall and the car bogs on launch.
+    // Decouple 1st: pin its OVERALL ratio (gear×FD) to the proven-launchable goal-B reference, while
+    // gears 2..N stay the tight power-band cluster; the big 1→2 gap absorbs the conflict (a real drop
+    // gear). Wide bands and the no-band fallback keep the shipped A·nᴮ box byte-for-byte.
+    const dropPath = haveBand && canSpeed && TT > 0 && fdRpm > 0 && goalBeff < B;
+    if (dropPath) {
+      const totalTop = fdRpm * Math.PI * TD * 60 / (63360 * TT);    // total top-gear reduction (fixed by top speed)
+      const overall = [totalTop * Math.pow(N, -goalBeff)];           // 1st = launch drop gear (goal-B reference)
+      for (let n = 2; n <= N; n++) overall.push(totalTop * Math.pow(n / N, B)); // 2..N = tight power-band cluster
+      fd = clamp(r2(totalTop / (A * Math.pow(N, B))), FD_MIN, FD_MAX);
+      fdSource = "target";
+      ratios = overall.map((o) => clamp(o / fd, GEAR_MIN, GEAR_MAX));
+      for (let k = 1; k < ratios.length; k++) if (ratios[k] >= ratios[k - 1] - 0.01) ratios[k] = ratios[k - 1] - 0.05;
+      const lo2 = Math.min.apply(null, ratios);
+      if (lo2 < GEAR_MIN) { const add = GEAR_MIN - lo2; ratios = ratios.map((x) => x + add); }
+      ratios = ratios.map((x) => r2(clamp(x, GEAR_MIN, GEAR_MAX)));
+      topRatio = ratios[ratios.length - 1];
+    } else if (canSpeed && TT > 0 && topRatio > 0 && fdRpm > 0) {
       fd = clamp(r2((fdRpm * Math.PI * TD * 60) / (63360 * TT * topRatio)), FD_MIN, FD_MAX);
       fdSource = "target";
     }
     const speeds = canSpeed ? ratios.map((gr) => RL / (gr * fd) * Math.PI * TD * 60 / 63360) : null;
     const topSpeed = speeds ? speeds[speeds.length - 1] : null;
+    const o1 = r2(ratios[0] * fd);                                  // overall 1st (gear×FD), for the why string
+    const v1 = canSpeed ? rInt(RL * Math.PI * TD * 60 / 63360 / (ratios[0] * fd)) : 0; // 1st-gear top @ redline
 
     return {
       final: fd, ratios, singleSpeed: false, speeds, topSpeed, fdSource,
@@ -245,14 +270,18 @@
         text: (fdSource === "target"
             ? `Final drive is back-solved so top gear (${r2(topRatio)}) reaches your ${TT} mph target at ~${rInt(fdRpm)} rpm — where usable power peaks — not the ${RL} rpm redline; top speed is power-limited and FH6 engines fade near the limiter, so gearing to redline tops out short. Per-gear speeds below read at the ${RL} rpm redline, so top gear shows a bit past your target. `
             : `Final drive uses the community formula anchored at 400 hp → 4.25, shifted for this car's ${i.power} hp and ${rInt(i.weight)} lb, then ${GOAL_G.fd >= 0 ? "+" : ""}${GOAL_G.fd} for ${goalName(goal)}. `) +
-          (haveBand
+          (dropPath
+            ? `1st is a launch (drop) gear — its overall ratio (gear × final = ${o1}) is set for grip-limited launch, so it tops out ~${v1} mph at redline; gears 2–${N} are a close-ratio cluster spaced to your power band (redline ${RL} / max-torque ${i.maxTorqueRpm} rpm) to stay in the torque band on every upshift. The wide 1→2 gap is the drop gear.`
+            : haveBand
             ? `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb); spacing B = ${r2(B)} is sized from your power band (redline ${RL} / max-torque ${i.maxTorqueRpm} rpm) so each upshift drops the engine back toward its torque band — wider band, wider gaps; tighter band, closer gears.`
             : `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb) and spacing exponent B = ${B} — wide low gears tame wheelspin, tight top gears stay in the power band.`) +
           (canSpeed ? ` Per-gear and top speeds are computed from your ${RL} rpm redline and tire diameter.` : ``),
         formula: (fdSource === "target"
             ? `FD = effRpm × π × tireØ × 60 / (63360 × targetMph × topGear)\neffRpm = min(peakPowerRpm, clamp(0.983×5252×hp/torque, 0.85–0.95×redline))`
             : `FD = 4.25 + clamp((400−hp)/600, ±0.6) + weightAdj + goalAdj`) +
-          (haveBand
+          (dropPath
+            ? `\noverall₁ = totalTop × N^${r2(-goalBeff)} (launch drop gear); overallₙ = totalTop × (n/N)^${r2(B)} for n=2..N\ntotalTop = effRpm × π × tireØ × 60 / (63360 × targetMph); FD = totalTop / (${r2(A)} × N^${r2(B)}); gearₙ = overallₙ / FD`
+            : haveBand
             ? `\nB = clamp(−(N−1)·ln(0.85·redline/maxTq)/ln(N) + goalΔ, floor, −0.45)\nRₙ = ${r2(A)} × n^${r2(B)}`
             : `\nRₙ = ${r2(A)} × n^${B}`) +
           (canSpeed ? `\nspeed = redline / (gear × FD) × π × tireØ × 60/63360` : ``),
