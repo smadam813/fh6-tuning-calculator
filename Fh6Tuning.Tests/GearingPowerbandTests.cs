@@ -46,16 +46,27 @@ public sealed class GearingPowerbandTests
             Assert.True(Math.Abs(actual[k] - expected[k]) < 1e-6, $"gear {k + 1}: {actual[k]} != {expected[k]}");
     }
 
+    private const double CaymanTireDia = 19 + 2 * (365 * 0.30) / 25.4; // 365/30R19 -> 27.622 in
+
+    // 1st-gear top speed at redline (mph) — the launchability proxy. Lower = shorter 1st = launches harder;
+    // a too-tall 1st (high mph here) bogs off the line.
+    private static double FirstGearTopMph(Gearing g, double redlineRpm = 8700, double tireDiaIn = CaymanTireDia)
+        => redlineRpm * Math.PI * tireDiaIn * 60 / 63360 / (g.Ratios[0] * g.Final);
+
     [Fact]
-    public void Cayman_PowerbandTune_BackSolvesFdAndSpacesGears()
+    public void Cayman_PowerbandTune_DropGearLaunchesAndKeeps193()
     {
         var g = Engine.Compute(Cayman(), Goal.Circuit).Gearing;
         Assert.Equal("target", g.FdSource);
-        // Narrow high band (redline/maxTq = 1.12) -> tightest feasible close-ratio spacing.
-        AssertRatios([2.75, 2.01, 1.67, 1.47, 1.33, 1.23, 1.14], g.Ratios);
-        Assert.True(Math.Abs(g.Final - 2.96) < 1e-6, $"final {g.Final} ~ 2.96");
-        // FD x topGear = 2.96 x 1.14 ~ 3.37 == the user's measured-good 4.33 x 0.78, so ~193 mph.
-        // Displayed @redline top exceeds 193 because the car keeps pulling to the limiter past peak power.
+        // Narrow high band (redline/maxTq = 1.12): 1st is a launch DROP gear, gears 2..7 a tight cluster.
+        AssertRatios([4.06, 2.01, 1.68, 1.47, 1.33, 1.23, 1.14], g.Ratios);
+        Assert.True(Math.Abs(g.Final - 2.95) < 1e-6, $"final {g.Final} ~ 2.95");
+        // 1st now tops ~59.7 mph at redline (launchable) instead of the 87.8 mph bog before the drop gear.
+        Assert.InRange(FirstGearTopMph(g), 55.0, 63.0);
+        // The 1->2 gap is a real drop gear (>1.7x); gears 2..7 stay the tight power-band cluster (~1.20x steps).
+        Assert.True(g.Ratios[0] / g.Ratios[1] > 1.7, $"1->2 drop {g.Ratios[0] / g.Ratios[1]} should be a real drop gear");
+        Assert.True(g.Ratios[1] / g.Ratios[2] < 1.35, "cluster step 2->3 stays tight");
+        // FD x topGear ~ 3.37 -> still ~193 mph; displayed @redline top exceeds 193 (headroom).
         Assert.True(g.TopSpeed!.Value > 193, $"displayed @redline top {g.TopSpeed} exceeds target (headroom)");
     }
 
@@ -150,5 +161,46 @@ public sealed class GearingPowerbandTests
                     Assert.Equal(gears, g.Ratios.Count);
                     Assert.InRange(g.Final, 2.0, 7.0);
                 }
+    }
+
+    [Fact]
+    public void Cayman_6Speed_DropGearStillLaunches()
+    {
+        var g = Engine.Compute(Cayman(b => b.Gears = 6), Goal.Circuit).Gearing;
+        Assert.Equal("target", g.FdSource);
+        AssertRatios([3.92, 2.01, 1.67, 1.47, 1.33, 1.22], g.Ratios);
+        Assert.True(Math.Abs(g.Final - 2.76) < 1e-6, $"final {g.Final} ~ 2.76");
+        // 6-speed 1st tops ~66 mph at redline — launchable (was a 94.5 mph bog before the drop gear).
+        Assert.InRange(FirstGearTopMph(g), 60.0, 68.0);
+        Assert.True(g.TopSpeed!.Value > 193, "still hits ~193 (headroom past peak power)");
+    }
+
+    [Fact]
+    public void Cayman_MoreGearsNeverBogsLaunch()
+    {
+        // The exact inverse of the reported bug (where the 7-speed bogged WORSE than the 6-speed):
+        // overall 1st (gear x FD) must be non-decreasing in gear count, so 1st@redline only falls
+        // (more launchable) as gears are added.
+        double prevOverall1st = 0;
+        for (int gears = 2; gears <= 10; gears++)
+        {
+            var g = Engine.Compute(Cayman(b => b.Gears = gears), Goal.Circuit).Gearing;
+            double overall1st = g.Ratios[0] * g.Final;
+            Assert.True(overall1st >= prevOverall1st - 1e-9,
+                $"N={gears} overall_1st {overall1st} regressed vs N={gears - 1} ({prevOverall1st}) — adding gears must not bog launch");
+            prevOverall1st = overall1st;
+            AssertDescendingInRange(g.Ratios, $"cayman N={gears}");
+        }
+    }
+
+    [Fact]
+    public void WideBand_KeepsShippedAnBoxNoDropGear()
+    {
+        // A wide band (goalBeff >= B) must NOT engage the drop gear — 1st stays the shipped A-based ratio
+        // (== A = 2.75 for this car), so wide-band cars are byte-identical to the pre-drop-gear behavior.
+        var g = Engine.Compute(Cayman(b => b.MaxTorqueRpm = 3500), Goal.Circuit).Gearing;
+        Assert.Equal("target", g.FdSource);
+        Assert.True(Math.Abs(g.Ratios[0] - 2.75) < 1e-6, $"wide-band 1st {g.Ratios[0]} should be the shipped A (2.75), not a drop gear");
+        AssertDescendingInRange(g.Ratios, "wide-band Cayman");
     }
 }
