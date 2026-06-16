@@ -71,7 +71,7 @@ public sealed class CalculatorState
         // Aero downforce ranges
         "aeroFrontMin", "aeroFrontMax", "aeroRearMin", "aeroRearMax",
         // Gearing refinement
-        "redlineRpm", "targetTopSpeed", "tireWidth", "tireAspect", "tireRim",
+        "redlineRpm", "peakPowerRpm", "maxTorqueRpm", "targetTopSpeed", "tireWidth", "tireAspect", "tireRim",
     };
 
     private static Dictionary<string, string> NewBlankForm()
@@ -179,7 +179,10 @@ public sealed class CalculatorState
         AeroRear = OptAeroRange("aeroRearMin", "aeroRearMax"),
 
         // optional gearing physics (null = HP heuristic). target speed in mph; tire Ø in inches.
+        // rpm fields are unit-independent (no dim) — exactly like redlineRpm.
         RedlineRpm = OptField("redlineRpm", null),
+        PeakPowerRpm = OptField("peakPowerRpm", null),
+        MaxTorqueRpm = OptField("maxTorqueRpm", null),
         TireDiameter = TuneInput.OverallTireDiameter(
             OptField("tireWidth", null), OptField("tireAspect", null), OptField("tireRim", null)),
         TargetTopSpeed = OptField("targetTopSpeed", UnitService.Dim.Speed),

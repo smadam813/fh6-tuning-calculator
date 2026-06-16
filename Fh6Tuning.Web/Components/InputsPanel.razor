@@ -195,6 +195,14 @@
             @NumField("redlineRpm", step: 100, placeholder: "optional")
         </label>
         <label>
+            <span class="lbl">Peak power RPM <em>from dyno graph</em></span>
+            @NumField("peakPowerRpm", step: 100, placeholder: "optional")
+        </label>
+        <label>
+            <span class="lbl">Max torque RPM <em>from dyno graph</em></span>
+            @NumField("maxTorqueRpm", step: 100, placeholder: "optional")
+        </label>
+        <label>
             <span class="lbl">Target top speed <em>@Units.Label(UnitService.Dim.Speed, State.Units)</em></span>
             @NumField("targetTopSpeed", step: 1, placeholder: "optional")
         </label>
@@ -215,7 +223,10 @@
         speed to back-solve an exact final drive. Blank = HP-based estimate. Read the
         <strong>drive tire's</strong> spec straight off FH6's Tires screen — e.g.
         <strong>315/30R17</strong> = width&nbsp;/&nbsp;aspect&nbsp;R&nbsp;rim — and we compute the
-        rolling diameter for you.
+        rolling diameter for you. <strong>Peak power RPM</strong> sharpens the final-drive solve
+        (read off the in-game dyno graph; capped so an above-redline peak can't over-shorten it) and
+        <strong>max torque RPM</strong> spaces the gears to keep the engine in its torque band — both
+        optional, blank = current behavior.
     </p>
 </fieldset>
 

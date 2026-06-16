@@ -228,7 +228,36 @@ test("non-EV gearing back-solves final drive to a target top speed", () => {
   assert.equal(t.gearing.fdSource, "target");
   assert.equal(t.gearing.singleSpeed, false);
   assert.ok(Array.isArray(t.gearing.speeds) && t.gearing.speeds.length === BASE.gears, "per-gear speeds computed");
-  assert.ok(Math.abs(t.gearing.topSpeed - 160) < 1.5, `top speed ${t.gearing.topSpeed} ~ 160`);
+  // Top speed is power-limited, reached at the effective peak-power rpm — here the hp/torque estimate
+  // (no peakPowerRpm given) floors at 0.85×redline = 5950 — not the 7000 redline. The DISPLAYED
+  // top-gear speed is at the redline, so it sits above the target by redline/effRpm: 160×7000/5950 ≈ 188.2.
+  assert.ok(t.gearing.topSpeed > 160, `displayed @redline top speed ${t.gearing.topSpeed} exceeds the target (headroom)`);
+  assert.ok(Math.abs(t.gearing.topSpeed - 160 * 7000 / 5950) < 1.5, `top speed ${t.gearing.topSpeed} ~ 188.2`);
+});
+
+test("peak-power rpm below redline back-solves a longer FD and lands top speed at the target", () => {
+  // peakPowerRpm 6000 < 0.85×redline floor (5950) is false here (6000 > 5950), so the estimate floor
+  // (5950) binds via min(peakPowerRpm, estRpm) → effRpm 5950. Use a lower peak so the input itself binds.
+  const t = TUNING.compute(baseInput({ redlineRpm: 7000, tireDiameter: 26, targetTopSpeed: 160, peakPowerRpm: 5500 }), "Circuit");
+  assert.equal(t.gearing.fdSource, "target");
+  // effRpm = min(5500, estClampedTo[5950,6650]) = 5500 → displayed @redline speed = 160×7000/5500 ≈ 203.6.
+  assert.ok(Math.abs(t.gearing.topSpeed - 160 * 7000 / 5500) < 1.5, `top speed ${t.gearing.topSpeed} ~ 203.6`);
+});
+
+test("max-torque rpm makes gear spacing powerband-aware (tighter for a narrow band)", () => {
+  const wide = TUNING.compute(baseInput({ redlineRpm: 8000, maxTorqueRpm: 3500 }), "Circuit"); // band 2.29
+  const narrow = TUNING.compute(baseInput({ redlineRpm: 8000, maxTorqueRpm: 7000 }), "Circuit"); // band 1.14
+  // narrow band → closer ratios → a taller (numerically higher) top gear than the wide band.
+  const wTop = wide.gearing.ratios[wide.gearing.ratios.length - 1];
+  const nTop = narrow.gearing.ratios[narrow.gearing.ratios.length - 1];
+  assert.ok(nTop > wTop, `narrow-band top gear ${nTop} should exceed wide-band top gear ${wTop}`);
+  // both still strictly descending and in range
+  for (const g of [wide, narrow]) {
+    for (let k = 1; k < g.gearing.ratios.length; k++) {
+      assert.ok(g.gearing.ratios[k] < g.gearing.ratios[k - 1], "strictly descending");
+    }
+    assert.ok(g.gearing.ratios.every((r) => r >= 0.5 && r <= 5.5), "ratios in range");
+  }
 });
 
 test("gearing with redline + tire diameter but no target uses the HP heuristic FD", () => {
