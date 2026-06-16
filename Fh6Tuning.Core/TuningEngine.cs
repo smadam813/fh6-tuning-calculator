@@ -179,6 +179,8 @@ public sealed class TuningEngine : ITuningEngine
     private static Gearing Gearing(TuneInput i, Derived d, Goal goal)
     {
         const double FD_MIN = 2.0, FD_MAX = 7.0, GEAR_MIN = 0.5, GEAR_MAX = 5.5;
+        // powerband-aware spacing constants (used only when redline + max-torque rpm are known)
+        const double SPREAD = 0.85, B_LO = -0.95, B_HI = -0.45, KMAX_LO = 1.10, KMAX_HI = 2.20, CIRC_B = -0.65;
         // GOAL_G[goal] = { fd, B }
         (double fd, double B) goalG = goal switch
         {
@@ -247,11 +249,31 @@ public sealed class TuningEngine : ITuningEngine
         };
         A += aGoalAdj;
         A = Clamp(A, 1.80, 5.50);
-        double B = goalG.B;
-        if (i.Powertrain == Powertrain.Hybrid) B -= 0.02;
-        if (i.Drivetrain == Drivetrain.AWD && (goal == Goal.Rally || goal == Goal.OffRoad)) B -= 0.02;
-
         int N = (int)Clamp(JsMath.Round(i.Gears), 2, 10);
+        // Powerband-aware spacing exponent B (port of legacy gearing()): when redline + max-torque
+        // rpm are known, size the geometric-mean gap to SPREAD×(redline/maxTorque) so each upshift
+        // drops the engine back TOWARD its torque band, preserve the per-goal character, and clamp.
+        // Bfloor keeps top gear ≥ 0.52 (floor-lift never fires) and B_HI keeps gears strictly
+        // descending after rounding, for any gear count 2..10. Without both rpm inputs, B reverts to
+        // the exact per-goal constant (byte-identical fallback — what the parity grid runs).
+        double B;
+        bool haveBand = i.MaxTorqueRpm is > 0 && i.RedlineRpm is > 0;
+        if (!haveBand)
+        {
+            B = goalG.B;
+            if (i.Powertrain == Powertrain.Hybrid) B -= 0.02;
+            if (i.Drivetrain == Drivetrain.AWD && (goal == Goal.Rally || goal == Goal.OffRoad)) B -= 0.02;
+        }
+        else
+        {
+            double kMax = Clamp(i.RedlineRpm!.Value / i.MaxTorqueRpm!.Value, KMAX_LO, KMAX_HI);
+            double bBand = -(N - 1) * Math.Log(SPREAD * kMax) / Math.Log(N);
+            bBand += goalG.B - CIRC_B;                                    // preserve per-goal spacing character
+            if (i.Powertrain == Powertrain.Hybrid) bBand -= 0.02;
+            if (i.Drivetrain == Drivetrain.AWD && (goal == Goal.Rally || goal == Goal.OffRoad)) bBand -= 0.02;
+            double bFloor = Math.Log(0.52 / A) / Math.Log(N);             // ensures A×N^B ≥ 0.52 before generation
+            B = Clamp(bBand, Math.Max(B_LO, bFloor), B_HI);
+        }
         List<double> ratios = [];
         for (int n = 1; n <= N; n++) ratios.Add(Clamp(A * Math.Pow(n, B), GEAR_MIN, GEAR_MAX));
         // enforce strictly descending
@@ -265,10 +287,18 @@ public sealed class TuningEngine : ITuningEngine
         double RL2 = i.RedlineRpm ?? 0, TD2 = i.TireDiameter ?? 0, TT2 = i.TargetTopSpeed ?? 0;
         bool canSpeed2 = RL2 > 0 && TD2 > 0;
         double topRatio = ratios[ratios.Count - 1];
+        // Effective top-speed rpm for the FD back-solve (port of legacy gearing()): the supplied
+        // peak-power rpm capped by a droop-aware estimate (≈ hp=torque crossover) so an above-redline
+        // peak can't gear it too short; the estimate alone when peak-power rpm is absent. The torque>0
+        // guard avoids 0/0.
+        double estRpm = RL2 > 0 && i.Torque > 0
+            ? Clamp(0.983 * 5252 * i.Power / i.Torque, 0.85 * RL2, 0.95 * RL2)
+            : 0.95 * RL2;
+        double fdRpm = i.PeakPowerRpm is > 0 ? Math.Min(i.PeakPowerRpm.Value, estRpm) : estRpm;
         string fdSource2 = "heuristic";
-        if (canSpeed2 && TT2 > 0 && topRatio > 0)
+        if (canSpeed2 && TT2 > 0 && topRatio > 0 && fdRpm > 0)
         {
-            fd = Clamp(R2((RL2 * Math.PI * TD2 * 60) / (63360 * TT2 * topRatio)), FD_MIN, FD_MAX);
+            fd = Clamp(R2((fdRpm * Math.PI * TD2 * 60) / (63360 * TT2 * topRatio)), FD_MIN, FD_MAX);
             fdSource2 = "target";
         }
         IReadOnlyList<double>? speeds2 = canSpeed2
@@ -278,15 +308,20 @@ public sealed class TuningEngine : ITuningEngine
 
         string text =
             (fdSource2 == "target"
-                ? $"Final drive is back-solved from physics so top gear ({S(R2(topRatio))}) just reaches your target top speed at the {S(RL2)} rpm redline — more exact than the power heuristic. "
+                ? $"Final drive is back-solved so top gear ({S(R2(topRatio))}) reaches your {S(TT2)} mph target at ~{S(RInt(fdRpm))} rpm — where usable power peaks — not the {S(RL2)} rpm redline; top speed is power-limited and FH6 engines fade near the limiter, so gearing to redline tops out short. Per-gear speeds below read at the {S(RL2)} rpm redline, so top gear shows a bit past your target. "
                 : $"Final drive uses the community formula anchored at 400 hp → 4.25, shifted for this car's {S(i.Power)} hp and {S(RInt(i.Weight))} lb, then {(goalG.fd >= 0 ? "+" : "")}{S(goalG.fd)} for {GoalName(goal)}. ") +
-            $"Gears follow Rₙ = A·nᴮ with 1st = {S(R2(A))} (from {S(R2(d.Pw))} hp/lb) and spacing exponent B = {S(B)} — wide low gears tame wheelspin, tight top gears stay in the power band." +
+            (haveBand
+                ? $"Gears follow Rₙ = A·nᴮ with 1st = {S(R2(A))} (from {S(R2(d.Pw))} hp/lb); spacing B = {S(R2(B))} is sized from your power band (redline {S(RL2)} / max-torque {S(i.MaxTorqueRpm!.Value)} rpm) so each upshift drops the engine back toward its torque band — wider band, wider gaps; tighter band, closer gears."
+                : $"Gears follow Rₙ = A·nᴮ with 1st = {S(R2(A))} (from {S(R2(d.Pw))} hp/lb) and spacing exponent B = {S(B)} — wide low gears tame wheelspin, tight top gears stay in the power band.") +
             (canSpeed2 ? $" Per-gear and top speeds are computed from your {S(RL2)} rpm redline and tire diameter." : "");
         string formula =
             (fdSource2 == "target"
-                ? "FD = redline × π × tireØ × 60 / (63360 × targetMph × topGear)"
+                ? "FD = effRpm × π × tireØ × 60 / (63360 × targetMph × topGear)\neffRpm = min(peakPowerRpm, clamp(0.983×5252×hp/torque, 0.85–0.95×redline))"
                 : "FD = 4.25 + clamp((400−hp)/600, ±0.6) + weightAdj + goalAdj") +
-            $"\nRₙ = {S(R2(A))} × n^{S(B)}" + (canSpeed2 ? "\nspeed = redline / (gear × FD) × π × tireØ × 60/63360" : "");
+            (haveBand
+                ? $"\nB = clamp(−(N−1)·ln(0.85·redline/maxTq)/ln(N) + goalΔ, floor, −0.45)\nRₙ = {S(R2(A))} × n^{S(R2(B))}"
+                : $"\nRₙ = {S(R2(A))} × n^{S(B)}") +
+            (canSpeed2 ? "\nspeed = redline / (gear × FD) × π × tireØ × 60/63360" : "");
 
         return new Gearing(fd, ratios, false, speeds2, topSpeed, fdSource2, new Why(text, formula));
     }

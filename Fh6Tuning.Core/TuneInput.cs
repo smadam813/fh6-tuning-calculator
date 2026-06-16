@@ -56,6 +56,8 @@ public sealed record TuneInput
     public double? RedlineRpm { get; init; }
     public double? TireDiameter { get; init; }   // rolling Ø, in (from OverallTireDiameter)
     public double? TargetTopSpeed { get; init; } // mph
+    public double? PeakPowerRpm { get; init; }   // rpm at peak power; caps the FD top-speed back-solve
+    public double? MaxTorqueRpm { get; init; }   // rpm at peak torque; drives powerband gear spacing
 
     // ---- post-process dials (0 = pure baseline) ----
     public double HandlingBias { get; init; }     // -5 understeer … +5 oversteer

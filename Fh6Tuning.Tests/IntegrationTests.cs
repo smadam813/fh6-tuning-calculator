@@ -297,7 +297,11 @@ public sealed class IntegrationTests
         Assert.False(t.Gearing.SingleSpeed);
         Assert.NotNull(t.Gearing.Speeds);
         Assert.Equal((int)BASE.Gears, t.Gearing.Speeds!.Count);
-        Assert.True(Math.Abs(t.Gearing.TopSpeed!.Value - 160) < 1.5, $"top speed {t.Gearing.TopSpeed} ~ 160");
+        // Top speed is power-limited, reached at the effective peak-power rpm (no peakPowerRpm given →
+        // the hp/torque estimate floors at 0.85×redline = 5950), not the 7000 redline. The displayed
+        // top-gear speed is at the redline, so it sits above the target by redline/effRpm: 160×7000/5950.
+        Assert.True(t.Gearing.TopSpeed!.Value > 160, $"displayed @redline top speed {t.Gearing.TopSpeed} exceeds target (headroom)");
+        Assert.True(Math.Abs(t.Gearing.TopSpeed!.Value - 160 * 7000 / 5950) < 1.5, $"top speed {t.Gearing.TopSpeed} ~ 188.2");
     }
 
     [Fact]

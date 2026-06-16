@@ -169,6 +169,8 @@ public sealed class TuneInputBuilder
     public double? RedlineRpm { get; set; }
     public double? TireDiameter { get; set; }
     public double? TargetTopSpeed { get; set; }
+    public double? PeakPowerRpm { get; set; }
+    public double? MaxTorqueRpm { get; set; }
     public double HandlingBias { get; set; }
     public double OverallStiffness { get; set; }
 
@@ -205,6 +207,8 @@ public sealed class TuneInputBuilder
         RedlineRpm = RedlineRpm,
         TireDiameter = TireDiameter,
         TargetTopSpeed = TargetTopSpeed,
+        PeakPowerRpm = PeakPowerRpm,
+        MaxTorqueRpm = MaxTorqueRpm,
         HandlingBias = HandlingBias,
         OverallStiffness = OverallStiffness,
     };

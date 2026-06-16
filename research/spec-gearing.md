@@ -211,6 +211,41 @@ function gearRatios(power, goal, powertrain, gearsInput) {
 
 **Why:** Gears are spaced on a logarithmic curve — a wide 1st-to-2nd gap controls launch wheelspin, while progressively tighter top gears keep the engine in its power band against rapidly rising aerodynamic drag.
 
+### 4.1 Powerband-aware spacing exponent (max-torque RPM)
+
+The per-goal constant `B` ignores the engine. When a **`maxTorqueRPM`** (and `redlineRPM`) is supplied,
+derive `B` from the powerband width so each upshift drops the engine back **toward** its torque band —
+wider band → wider gaps, narrower band → closer gears. Keep the `Rₙ = A·nᴮ` law (so the proven
+clamp / strictly-descending / floor-lift guards still apply); only `B` changes:
+
+```js
+const SPREAD = 0.85, B_LO = -0.95, B_HI = -0.45, KMAX_LO = 1.10, KMAX_HI = 2.20, CIRC_B = -0.65;
+const haveBand = maxTorqueRpm > 0 && redlineRpm > 0;
+if (!haveBand) {
+  B = GOAL_B;  // per-goal constant — byte-identical fallback (what the parity grid runs)
+} else {
+  const kMax = clamp(redlineRpm / maxTorqueRpm, KMAX_LO, KMAX_HI);   // powerband width ratio
+  let Bband = -(N - 1) * Math.log(SPREAD * kMax) / Math.log(N);      // span-anchored geometric solve
+  Bband += GOAL_B - CIRC_B;                                          // preserve per-goal character
+  const Bfloor = Math.log(0.52 / A) / Math.log(N);                   // keeps top gear ≥ 0.52
+  B = clamp(Bband, Math.max(B_LO, Bfloor), B_HI);                    // B_HI keeps gears descending
+}
+```
+
+`Bfloor` (caps wide-band aggression so the top gear can't fall below 0.52 before generation) and
+`B_HI` (caps narrow-band tightness so adjacent gears can't tie after rounding) bracket a valid window
+for **every gear count 2–10 and every band**, so the downstream `[0.5,5.5]` clamp / descending-fixup /
+floor-lift never have to fire (verified across a 37M-config sweep). **Honest limitation:** this anchors
+the *geometric-mean* gap, not every shift — the widest gap is always 1→2 (the launch step, intentionally
+wide), which can land below `maxTorqueRPM`; the *upper* shifts land progressively deeper in-band. And for
+narrow bands (`kMax ≲ 1.35`) `B` saturates at `B_HI`, so very peaky cars get the tightest feasible
+spacing rather than finely-differentiated gaps. `SPREAD = 0.85` is a calibrated constant (pins the Cayman
+to its empirically-good top gear) — documented as tunable pending more in-game-measured cars.
+
+**Parity note:** both `maxTorqueRPM` and `peakPowerRPM` are **optional** refinements absent from the
+parity grid, so the byte-for-byte gate proves the change is a no-op there (it cannot exercise this path —
+that is what the C#-native `GearingPowerbandTests` are for).
+
 ---
 
 ## 5. Gear-count handling by goal (informational override)
@@ -233,23 +268,38 @@ function recommendedGearCount(goal, powertrain, gearsInput) {
 
 ---
 
-## 6. Top-Speed / Redline Validation (optional refinement)
+## 6. Top-Speed / Final-Drive back-solve (effective peak-power RPM)
 
-If `redlineRPM` and `tireDiameter` are known, verify the top gear reaches the target speed at redline and back-solve FD instead of using the HP heuristic:
+If `redlineRPM` and `tireDiameter` are known **and** a `targetTopSpeed` is given, back-solve FD from
+physics instead of the HP heuristic. **The critical correction (2026-06):** a car's top speed is
+*power-limited*, reached at ~peak-power RPM, and FH6 power fades approaching the limiter — so a real
+car tops out **below** redline. Gearing the *redline* to the target therefore tops out short (the
+reported 189.9-vs-193 mph bug). Gear an **effective top-speed RPM** to the target instead:
 
 ```js
-// V(mph) = (RPM / (gearTop * FD)) * (π * tireDia_in) * (60 / 63360)
-function topSpeedMph(rpm, gearTop, fd, tireDiaIn) {
-  return (rpm / (gearTop * fd)) * (Math.PI * tireDiaIn) * (60 / 63360);
-}
-// Back-solve FD so top gear hits targetTopSpeed at redline (set top ~10–20 mph beyond lap max):
-function fdForTopSpeed(rpm, gearTop, targetMph, tireDiaIn) {
-  const fd = (rpm * Math.PI * tireDiaIn * (60/63360)) / (targetMph * gearTop);
-  return clamp(fd, FD_MIN, FD_MAX);
-}
+// effective top-speed rpm: supplied peak-power rpm, capped by a droop-aware estimate so an
+// above-redline peak (e.g. 8900 rpm peak vs 8700 redline) can't gear the FD too short; the
+// estimate alone when peak-power rpm is absent. estRpm guards torque<=0 to avoid 0/0.
+const estRpm = (redline > 0 && torque > 0)
+  ? clamp(0.983 * 5252 * hp / torque, 0.85 * redline, 0.95 * redline)   // ≈ hp=torque dyno crossover
+  : 0.95 * redline;
+const fdRpm = (peakPowerRpm > 0) ? Math.min(peakPowerRpm, estRpm) : estRpm;
+
+// FD so top gear puts the engine at fdRpm when the car is at the target speed:
+const fd = clamp(r2((fdRpm * Math.PI * tireDia_in * 60) / (63360 * targetMph * gearTop)), FD_MIN, FD_MAX);
 ```
 
-**Why:** When tire size and redline are available, solving the physics directly is more accurate than the HP heuristic — set the top gear so the engine just kisses the limiter at the end of the longest straight (or ~10–20 mph beyond peak lap speed for Drag).
+Per-gear **displayed** speeds still use the *true* redline (`speed = redline/(gear·FD)·π·tireØ·60/63360`),
+so the gearing graph's "@redline" top-gear speed reads a few % **above** the target — the car keeps
+pulling to the limiter past peak power. This mirrors the EV path's `1.07` headroom: both substitute an
+effective rpm for redline (EV uses a flat 7% because flat instant torque has no power curve to estimate;
+ICE derives it per car). `5252·hp/torque` is the HP=torque dyno crossover, an inputs-only proxy for the
+usable top-end; `0.983` and the `0.85–0.95·redline` clamp keep it in the physically-plausible band.
+
+**Worked check (2005 Cayman GT3 WTAC):** 630 hp / 410 lb-ft, redline 8700, peak power 8900 (*above*
+redline → capped), 365/30R19 (Ø 27.62 in), target 193 → estRpm ≈ 7933, fdRpm = min(8900, 7933) = 7933 →
+FD ≈ 4.33 with the stock 0.78 top gear, or **2.96** with the powerband-spaced 1.14 top gear (§4.1) — same
+`FD × topGear ≈ 3.37`, the empirically-on-target value (the old redline back-solve gave 4.75 → 189.9 mph).
 
 ---
 

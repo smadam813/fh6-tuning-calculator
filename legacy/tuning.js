@@ -131,6 +131,8 @@
      ===================================================================== */
   function gearing(i, d, goal) {
     const FD_MIN = 2.0, FD_MAX = 7.0, GEAR_MIN = 0.5, GEAR_MAX = 5.5;
+    // powerband-aware spacing constants (used only when redline + max-torque rpm are known)
+    const SPREAD = 0.85, B_LO = -0.95, B_HI = -0.45, KMAX_LO = 1.10, KMAX_HI = 2.20, CIRC_B = -0.65;
     const GOAL_G = {
       Circuit: { fd: 0.0, B: -0.65 }, Drag: { fd: -0.20, B: -0.58 }, Drift: { fd: 0.10, B: -0.70 },
       OffRoad: { fd: 0.75, B: -0.72 }, Rally: { fd: 0.50, B: -0.70 }, Touge: { fd: 0.20, B: -0.66 },
@@ -185,11 +187,29 @@
     let A = 3.40 - clamp((d.pw - 0.05) / 0.35, 0, 1) * 1.0;   // 3.40 → 2.40
     A += { Circuit: 0, Drag: 0.30, Drift: -0.10, OffRoad: 0.40, Rally: 0.30, Touge: 0.10 }[goal] || 0;
     A = clamp(A, 1.80, 5.50);
-    let B = GOAL_G.B;
-    if (i.powertrain === "Hybrid") B -= 0.02;
-    if (i.drivetrain === "AWD" && (goal === "Rally" || goal === "OffRoad")) B -= 0.02;
-
     const N = clamp(Math.round(i.gears), 2, 10);
+    // Spacing exponent B. With redline + max-torque rpm known, B is powerband-aware:
+    // size the geometric-mean gap to SPREAD×(redline/maxTorque) so each upshift drops the
+    // engine back TOWARD its torque band — wider band → wider gaps, tighter band → closer
+    // gears — then preserve the per-goal spacing character and clamp. Bfloor keeps the top
+    // gear ≥ 0.52 (so the [0.5,5.5] floor-lift never fires) and B_HI keeps gears strictly
+    // descending after rounding, for any gear count 2..10. Without both rpm inputs, B reverts
+    // to the exact per-goal constant (byte-identical fallback — what the parity grid runs).
+    let B;
+    const haveBand = i.maxTorqueRpm != null && i.maxTorqueRpm > 0 && i.redlineRpm != null && i.redlineRpm > 0;
+    if (!haveBand) {
+      B = GOAL_G.B;
+      if (i.powertrain === "Hybrid") B -= 0.02;
+      if (i.drivetrain === "AWD" && (goal === "Rally" || goal === "OffRoad")) B -= 0.02;
+    } else {
+      const kMax = clamp(i.redlineRpm / i.maxTorqueRpm, KMAX_LO, KMAX_HI);
+      let Bband = -(N - 1) * Math.log(SPREAD * kMax) / Math.log(N);
+      Bband += GOAL_G.B - CIRC_B;                                  // preserve per-goal spacing character
+      if (i.powertrain === "Hybrid") Bband -= 0.02;
+      if (i.drivetrain === "AWD" && (goal === "Rally" || goal === "OffRoad")) Bband -= 0.02;
+      const Bfloor = Math.log(0.52 / A) / Math.log(N);             // ensures A×N^B ≥ 0.52 before generation
+      B = clamp(Bband, Math.max(B_LO, Bfloor), B_HI);
+    }
     let ratios = [];
     for (let n = 1; n <= N; n++) ratios.push(clamp(A * Math.pow(n, B), GEAR_MIN, GEAR_MAX));
     // enforce strictly descending (critique #7)
@@ -202,9 +222,18 @@
     const RL = i.redlineRpm, TD = i.tireDiameter, TT = i.targetTopSpeed;
     const canSpeed = RL > 0 && TD > 0;
     const topRatio = ratios[ratios.length - 1];
+    // Top speed is power-limited (reached at ~peak-power rpm), not redline-limited, and FH6
+    // power fades near the limiter. Back-solve FD from an effective top-speed rpm: the supplied
+    // peak-power rpm if given, but capped by a droop-aware estimate (≈ the hp=torque crossover)
+    // so an above-redline peak can't gear it too short; the estimate alone when peak-power rpm
+    // is absent. (estRpm guards torque<=0 to avoid 0/0.)
+    const estRpm = (RL > 0 && i.torque > 0)
+      ? clamp(0.983 * 5252 * i.power / i.torque, 0.85 * RL, 0.95 * RL)
+      : 0.95 * RL;
+    const fdRpm = i.peakPowerRpm > 0 ? Math.min(i.peakPowerRpm, estRpm) : estRpm;
     let fdSource = "heuristic";
-    if (canSpeed && TT > 0 && topRatio > 0) {
-      fd = clamp(r2((RL * Math.PI * TD * 60) / (63360 * TT * topRatio)), FD_MIN, FD_MAX);
+    if (canSpeed && TT > 0 && topRatio > 0 && fdRpm > 0) {
+      fd = clamp(r2((fdRpm * Math.PI * TD * 60) / (63360 * TT * topRatio)), FD_MIN, FD_MAX);
       fdSource = "target";
     }
     const speeds = canSpeed ? ratios.map((gr) => RL / (gr * fd) * Math.PI * TD * 60 / 63360) : null;
@@ -214,14 +243,19 @@
       final: fd, ratios, singleSpeed: false, speeds, topSpeed, fdSource,
       why: {
         text: (fdSource === "target"
-            ? `Final drive is back-solved from physics so top gear (${r2(topRatio)}) just reaches your target top speed at the ${RL} rpm redline — more exact than the power heuristic. `
+            ? `Final drive is back-solved so top gear (${r2(topRatio)}) reaches your ${TT} mph target at ~${rInt(fdRpm)} rpm — where usable power peaks — not the ${RL} rpm redline; top speed is power-limited and FH6 engines fade near the limiter, so gearing to redline tops out short. Per-gear speeds below read at the ${RL} rpm redline, so top gear shows a bit past your target. `
             : `Final drive uses the community formula anchored at 400 hp → 4.25, shifted for this car's ${i.power} hp and ${rInt(i.weight)} lb, then ${GOAL_G.fd >= 0 ? "+" : ""}${GOAL_G.fd} for ${goalName(goal)}. `) +
-          `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb) and spacing exponent B = ${B} — wide low gears tame wheelspin, tight top gears stay in the power band.` +
+          (haveBand
+            ? `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb); spacing B = ${r2(B)} is sized from your power band (redline ${RL} / max-torque ${i.maxTorqueRpm} rpm) so each upshift drops the engine back toward its torque band — wider band, wider gaps; tighter band, closer gears.`
+            : `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb) and spacing exponent B = ${B} — wide low gears tame wheelspin, tight top gears stay in the power band.`) +
           (canSpeed ? ` Per-gear and top speeds are computed from your ${RL} rpm redline and tire diameter.` : ``),
         formula: (fdSource === "target"
-            ? `FD = redline × π × tireØ × 60 / (63360 × targetMph × topGear)`
+            ? `FD = effRpm × π × tireØ × 60 / (63360 × targetMph × topGear)\neffRpm = min(peakPowerRpm, clamp(0.983×5252×hp/torque, 0.85–0.95×redline))`
             : `FD = 4.25 + clamp((400−hp)/600, ±0.6) + weightAdj + goalAdj`) +
-          `\nRₙ = ${r2(A)} × n^${B}` + (canSpeed ? `\nspeed = redline / (gear × FD) × π × tireØ × 60/63360` : ``),
+          (haveBand
+            ? `\nB = clamp(−(N−1)·ln(0.85·redline/maxTq)/ln(N) + goalΔ, floor, −0.45)\nRₙ = ${r2(A)} × n^${r2(B)}`
+            : `\nRₙ = ${r2(A)} × n^${B}`) +
+          (canSpeed ? `\nspeed = redline / (gear × FD) × π × tireØ × 60/63360` : ``),
       },
     };
   }
