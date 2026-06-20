@@ -237,16 +237,26 @@
       : 0.95 * RL;
     const fdRpm = i.peakPowerRpm > 0 ? Math.min(i.peakPowerRpm, estRpm) : estRpm;
     let fdSource = "heuristic";
-    // Launch (drop) gear. When the power band tightened the spacing past the goal baseline (a NARROW
-    // band: goalBeff < B), a single A·nᴮ exponent stretches 1st too tall and the car bogs on launch.
-    // Decouple 1st: pin its OVERALL ratio (gear×FD) to the proven-launchable goal-B reference, while
-    // gears 2..N stay the tight power-band cluster; the big 1→2 gap absorbs the conflict (a real drop
-    // gear). Wide bands and the no-band fallback keep the shipped A·nᴮ box byte-for-byte.
+    // Launch spacing for narrow bands. When the power band tightened the spacing past the goal baseline
+    // (a NARROW band: goalBeff < B), a single A·nᴮ exponent stretches 1st too tall and the car bogs on
+    // launch. The earlier fix decoupled 1st as a pure drop gear (1st at the goal-B reference, gears 2..N
+    // the tight cluster) — that launched fine but dumped the ENTIRE launch span into one giant 1→2 gap,
+    // so 2nd was left too tall and 1→2 bogged. Instead, distribute that span progressively: anchor BOTH
+    // ends (1st at the launchable goal-B reference, Nth at top speed) and taper the per-shift log-steps
+    // arithmetically — widest at 1→2, tightening to the power-band cluster step at the top. Same launchable
+    // 1st and same on-target top gear, but the gaps shrink smoothly so every upshift lands back near the
+    // torque band. Wide bands and the no-band fallback keep the shipped A·nᴮ box byte-for-byte.
     const dropPath = haveBand && canSpeed && TT > 0 && fdRpm > 0 && goalBeff < B;
     if (dropPath) {
       const totalTop = fdRpm * Math.PI * TD * 60 / (63360 * TT);    // total top-gear reduction (fixed by top speed)
-      const overall = [totalTop * Math.pow(N, -goalBeff)];           // 1st = launch drop gear (goal-B reference)
-      for (let n = 2; n <= N; n++) overall.push(totalTop * Math.pow(n / N, B)); // 2..N = tight power-band cluster
+      const span = -goalBeff * Math.log(N);                          // ln(overall₁/overallₙ) — the launch span
+      const sTop = -B * Math.log(N / (N - 1));                       // tightest (top) log-step = power-band cluster step
+      const delta = N > 2 ? (span - (N - 1) * sTop) / ((N - 2) * (N - 1) / 2) : 0; // step taper (>0 when goalBeff<B)
+      const overall = [];
+      for (let n = 1; n <= N; n++) {                                 // overallₙ via cumulative log-steps down from the top
+        const e = n === 1 ? span : n === N ? 0 : (N - n) * sTop + delta * (N - n) * (N - 1 - n) / 2;
+        overall.push(totalTop * Math.exp(e));
+      }
       fd = clamp(r2(totalTop / (A * Math.pow(N, B))), FD_MIN, FD_MAX);
       fdSource = "target";
       ratios = overall.map((o) => clamp(o / fd, GEAR_MIN, GEAR_MAX));
@@ -271,7 +281,7 @@
             ? `Final drive is back-solved so top gear (${r2(topRatio)}) reaches your ${TT} mph target at ~${rInt(fdRpm)} rpm — where usable power peaks — not the ${RL} rpm redline; top speed is power-limited and FH6 engines fade near the limiter, so gearing to redline tops out short. Per-gear speeds below read at the ${RL} rpm redline, so top gear shows a bit past your target. `
             : `Final drive uses the community formula anchored at 400 hp → 4.25, shifted for this car's ${i.power} hp and ${rInt(i.weight)} lb, then ${GOAL_G.fd >= 0 ? "+" : ""}${GOAL_G.fd} for ${goalName(goal)}. `) +
           (dropPath
-            ? `1st is a launch (drop) gear — its overall ratio (gear × final = ${o1}) is set for grip-limited launch, so it tops out ~${v1} mph at redline; gears 2–${N} are a close-ratio cluster spaced to your power band (redline ${RL} / max-torque ${i.maxTorqueRpm} rpm) to stay in the torque band on every upshift. The wide 1→2 gap is the drop gear.`
+            ? `Gears are progressively spaced: 1st is a launch gear (overall ratio gear × final = ${o1}, tops ~${v1} mph at redline) and the gaps taper smoothly up to a close-ratio cluster at the top, sized to your power band (redline ${RL} / max-torque ${i.maxTorqueRpm} rpm), so each upshift drops the engine back toward its torque band without a bog.`
             : haveBand
             ? `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb); spacing B = ${r2(B)} is sized from your power band (redline ${RL} / max-torque ${i.maxTorqueRpm} rpm) so each upshift drops the engine back toward its torque band — wider band, wider gaps; tighter band, closer gears.`
             : `Gears follow Rₙ = A·nᴮ with 1st = ${r2(A)} (from ${r2(d.pw)} hp/lb) and spacing exponent B = ${B} — wide low gears tame wheelspin, tight top gears stay in the power band.`) +
@@ -280,7 +290,7 @@
             ? `FD = effRpm × π × tireØ × 60 / (63360 × targetMph × topGear)\neffRpm = min(peakPowerRpm, clamp(0.983×5252×hp/torque, 0.85–0.95×redline))`
             : `FD = 4.25 + clamp((400−hp)/600, ±0.6) + weightAdj + goalAdj`) +
           (dropPath
-            ? `\noverall₁ = totalTop × N^${r2(-goalBeff)} (launch drop gear); overallₙ = totalTop × (n/N)^${r2(B)} for n=2..N\ntotalTop = effRpm × π × tireØ × 60 / (63360 × targetMph); FD = totalTop / (${r2(A)} × N^${r2(B)}); gearₙ = overallₙ / FD`
+            ? `\noverall₁ = totalTop × N^${r2(-goalBeff)} (launch span); overallₙ = totalTop × exp[(N−n)·sₜₒₚ + δ·(N−n)(N−1−n)/2]\nsₜₒₚ = −B·ln(N/(N−1)) (top cluster step); δ tapers the steps so Σ = −goalBeff·ln(N)\ntotalTop = effRpm × π × tireØ × 60 / (63360 × targetMph); FD = totalTop / (${r2(A)} × N^${r2(B)}); gearₙ = overallₙ / FD`
             : haveBand
             ? `\nB = clamp(−(N−1)·ln(0.85·redline/maxTq)/ln(N) + goalΔ, floor, −0.45)\nRₙ = ${r2(A)} × n^${r2(B)}`
             : `\nRₙ = ${r2(A)} × n^${B}`) +

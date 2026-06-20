@@ -46,6 +46,18 @@ public sealed class GearingPowerbandTests
             Assert.True(Math.Abs(actual[k] - expected[k]) < 1e-6, $"gear {k + 1}: {actual[k]} != {expected[k]}");
     }
 
+    // Progressive box: per-shift ratio steps must be monotonically non-increasing (widest at 1->2),
+    // so the launch span is spread smoothly instead of dumped into one bog-inducing 1->2 jump.
+    // NOTE: strict monotonicity holds only while 1st is below the 5.5 slider ceiling. At high gear counts
+    // on launch-heavy goals (off-road/rally, N~8-10) 1st can clamp to 5.5 and narrow the 1->2 step below
+    // 2->3 (still no bog — all upshifts land >5800 rpm). Apply this only to fixtures whose 1st doesn't clamp.
+    private static void AssertProgressiveSteps(IReadOnlyList<double> r, string ctx)
+    {
+        for (int k = 2; k < r.Count; k++)
+            Assert.True(r[k - 1] / r[k] <= r[k - 2] / r[k - 1] + 1e-9,
+                $"ratio steps not progressive (non-increasing) @ {ctx}: {string.Join(",", r)}");
+    }
+
     private const double CaymanTireDia = 19 + 2 * (365 * 0.30) / 25.4; // 365/30R19 -> 27.622 in
 
     // 1st-gear top speed at redline (mph) — the launchability proxy. Lower = shorter 1st = launches harder;
@@ -54,18 +66,23 @@ public sealed class GearingPowerbandTests
         => redlineRpm * Math.PI * tireDiaIn * 60 / 63360 / (g.Ratios[0] * g.Final);
 
     [Fact]
-    public void Cayman_PowerbandTune_DropGearLaunchesAndKeeps193()
+    public void Cayman_PowerbandTune_ProgressiveSpacingLaunchesAndKeeps193()
     {
         var g = Engine.Compute(Cayman(), Goal.Circuit).Gearing;
         Assert.Equal("target", g.FdSource);
-        // Narrow high band (redline/maxTq = 1.12): 1st is a launch DROP gear, gears 2..7 a tight cluster.
-        AssertRatios([4.06, 2.01, 1.68, 1.47, 1.33, 1.23, 1.14], g.Ratios);
+        // Narrow high band (redline/maxTq = 1.12): 1st is a launch gear, the gaps taper smoothly to a
+        // tight top cluster. 1st (4.06), FD (2.95) and top gear (1.14) are unchanged from the decoupled
+        // drop gear; the smoothing pulls the INTERIOR gears down (2nd 2.01 -> 2.85) to fill the gap.
+        AssertRatios([4.06, 2.85, 2.12, 1.67, 1.39, 1.23, 1.14], g.Ratios);
         Assert.True(Math.Abs(g.Final - 2.95) < 1e-6, $"final {g.Final} ~ 2.95");
-        // 1st now tops ~59.7 mph at redline (launchable) instead of the 87.8 mph bog before the drop gear.
+        // 1st still tops ~59.7 mph at redline (launchable) — unchanged by the smoothing.
         Assert.InRange(FirstGearTopMph(g), 55.0, 63.0);
-        // The 1->2 gap is a real drop gear (>1.7x); gears 2..7 stay the tight power-band cluster (~1.20x steps).
-        Assert.True(g.Ratios[0] / g.Ratios[1] > 1.7, $"1->2 drop {g.Ratios[0] / g.Ratios[1]} should be a real drop gear");
-        Assert.True(g.Ratios[1] / g.Ratios[2] < 1.35, "cluster step 2->3 stays tight");
+        // Progressive: per-shift steps monotonically non-increasing, widest 1->2 (~1.43x, was a ~2.0x bog).
+        AssertProgressiveSteps(g.Ratios, "cayman 7sp");
+        Assert.InRange(g.Ratios[0] / g.Ratios[1], 1.30, 1.55);
+        // The 1->2 upshift (the deepest drop) lands the engine ~6100 rpm at redline — no bog (was ~4300).
+        Assert.True(8700 * (g.Ratios[1] / g.Ratios[0]) > 5800,
+            $"1->2 lands at {8700 * (g.Ratios[1] / g.Ratios[0])} rpm — should stay well above the old ~4300 bog");
         // FD x topGear ~ 3.37 -> still ~193 mph; displayed @redline top exceeds 193 (headroom).
         Assert.True(g.TopSpeed!.Value > 193, $"displayed @redline top {g.TopSpeed} exceeds target (headroom)");
     }
@@ -164,14 +181,15 @@ public sealed class GearingPowerbandTests
     }
 
     [Fact]
-    public void Cayman_6Speed_DropGearStillLaunches()
+    public void Cayman_6Speed_ProgressiveSpacingStillLaunches()
     {
         var g = Engine.Compute(Cayman(b => b.Gears = 6), Goal.Circuit).Gearing;
         Assert.Equal("target", g.FdSource);
-        AssertRatios([3.92, 2.01, 1.67, 1.47, 1.33, 1.22], g.Ratios);
+        AssertRatios([3.92, 2.67, 1.96, 1.56, 1.33, 1.22], g.Ratios);
         Assert.True(Math.Abs(g.Final - 2.76) < 1e-6, $"final {g.Final} ~ 2.76");
-        // 6-speed 1st tops ~66 mph at redline — launchable (was a 94.5 mph bog before the drop gear).
+        // 6-speed 1st tops ~66 mph at redline — launchable, unchanged by the smoothing.
         Assert.InRange(FirstGearTopMph(g), 60.0, 68.0);
+        AssertProgressiveSteps(g.Ratios, "cayman 6sp");
         Assert.True(g.TopSpeed!.Value > 193, "still hits ~193 (headroom past peak power)");
     }
 
