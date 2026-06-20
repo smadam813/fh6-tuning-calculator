@@ -246,7 +246,7 @@ to its empirically-good top gear) — documented as tunable pending more in-game
 parity grid, so the byte-for-byte gate proves the change is a no-op there (it cannot exercise this path —
 that is what the C#-native `GearingPowerbandTests` are for).
 
-### 4.2 Launch drop gear (target mode, narrow bands)
+### 4.2 Progressive launch spacing (target mode, narrow bands)
 
 **The single-exponent conflict.** In target mode the final drive is back-solved from the *top* gear, so
 the displayed first-gear ratio `A` cancels out — the physical launch gearing is `overall_1st = totalTop ×
@@ -256,30 +256,49 @@ Cayman GT3 WTAC 7-speed had its 1st top out at **87.8 mph** at redline → bogge
 exponent provably cannot give both a launchable 1st **and** tight close-ratio upper gears for a peaky band
 (fixed top speed + tight uppers → low FD → tall 1st).
 
-**The drop-gear resolution** (what real close-ratio race boxes do): decouple 1st. When `haveBand && canSpeed
-&& targetTopSpeed>0 && goalBeff < B` (i.e. the band *tightened* the spacing past the goal baseline — a
-narrow band), pin 1st's **overall** ratio to the proven-launchable goal-B reference and keep gears 2..N as
-the tight power-band cluster; the wide 1→2 gap is the drop gear:
+**First attempt — a decoupled drop gear (insufficient).** The first fix pinned 1st's overall ratio to the
+launchable goal-B reference and left gears `2..N` as the tight power-band cluster (`overall[n] = totalTop ×
+(n/N)^B`). That launched fine but dumped the *entire* launch span into a single ~2.0× 1→2 jump, so **2nd
+was left too tall and 1→2 bogged** on the upshift (engine fell to ~4300 rpm — far below the torque band).
+
+**The progressive resolution** (what real close-ratio race boxes do): keep both end anchors but *spread* the
+launch span smoothly. When `haveBand && canSpeed && targetTopSpeed>0 && goalBeff < B` (the band *tightened*
+the spacing past the goal baseline — a narrow band), anchor 1st at the launchable goal-B reference and Nth
+at top speed, and taper the per-shift **log-steps** arithmetically — widest at 1→2, tightening to the
+power-band cluster step at the top:
 
 ```js
-totalTop  = effRpm × π × tireØ × 60 / (63360 × targetMph)      // fixed by top speed (§6)
-overall[1] = totalTop × N^(−goalBeff)                          // launch drop gear (goal-B reference)
-overall[n] = totalTop × (n/N)^B   for n = 2..N                 // tight power-band cluster, overall[N]=totalTop
+totalTop = effRpm × π × tireØ × 60 / (63360 × targetMph)       // fixed by top speed (§6)
+span  = −goalBeff × ln(N)                                       // ln(overall₁/overallₙ) — the launch span
+sTop  = −B × ln(N/(N−1))                                        // tightest (top) log-step = power-band cluster step
+delta = N>2 ? (span − (N−1)·sTop) / ((N−2)(N−1)/2) : 0          // step taper; delta>0 whenever goalBeff < B
+// cumulative log-steps down from the top: e(1)=span, e(N)=0, else (N−n)·sTop + delta·(N−n)(N−1−n)/2
+overall[n] = totalTop × exp(e(n))                               // overall[1]=totalTop·N^(−goalBeff), overall[N]=totalTop
 FD = clamp(r2(totalTop / (A × N^B)), 2, 7);  gear[n] = overall[n] / FD
 ```
 
-`goalBeff` is the per-goal `B` with the same Hybrid/AWD-rally nudges the fallback uses. The gate `goalBeff <
-B` means the drop gear fires **only** for narrow bands; **wide bands and the no-band fallback keep the
-shipped `A·nᴮ` box byte-for-byte** (so there is no wide-band launch regression). Then the existing
-strictly-descending / floor-lift / `r2` guards run unchanged.
+The arithmetic step sequence sums to `span` by construction (that fixes `delta`), so `overall[1]` is
+**exactly** the launchable goal-B reference and `overall[N]` is **exactly** the top-speed anchor — FD, 1st,
+and top gear are byte-identical to the decoupled drop gear; only the *interior* gears move down to fill the
+gap. `goalBeff` is the per-goal `B` with the same Hybrid/AWD-rally nudges the fallback uses. The gate
+`goalBeff < B` means this fires **only** for narrow bands; **wide bands and the no-band fallback keep the
+shipped `A·nᴮ` box byte-for-byte** (no wide-band launch regression). The existing strictly-descending /
+floor-lift / `r2` guards run unchanged.
 
-**Properties.** Launch is now **gear-count monotonic** — `overall_1st = totalTop × N^(−goalBeff)` strictly
-increases with `N`, so adding gears can only make 1st *more* launchable (the exact inverse of the bug, where
-the 7-speed bogged worse than the 6-speed). Worked Cayman (Circuit): **7-speed** → `[4.06, 2.01, 1.68, 1.47,
-1.33, 1.23, 1.14]`, FD **2.95**, 1st tops **59.7 mph** (was 87.8 bog), 1→2 drop 2.02×, top speed ~193;
-**6-speed** → `[3.92, 2.01, 1.67, 1.47, 1.33, 1.22]`, FD 2.76, 1st tops 66.1 mph. **Honest limits:** for very
-low gear counts (e.g. N≤4) a narrow-band 1st can still be tall (a 4-speed can't span launch→193 and stay
-tight); and `A` is now only an FD slider-placement seed in target mode, not the displayed 1st.
+**Properties.** While 1st is below the 5.5 slider ceiling the per-shift ratio steps are monotonically
+non-increasing (a true progressive box), so the 1→2 gap is the widest but no single gap bogs. Launch stays
+**gear-count monotonic** — `overall_1st = totalTop × N^(−goalBeff)` is unchanged, strictly increasing with
+`N`, so adding gears can only make 1st *more* launchable. Worked Cayman (Circuit): **7-speed** → `[4.06, 2.85,
+2.12, 1.67, 1.39, 1.23, 1.14]`, FD **2.95**, 1st tops **59.7 mph**, 1→2 step **1.43×** (was 2.02×) landing
+**~6100 rpm** at redline (was ~4300), per-gear @redline tops 60/85/114/145/174/197/**213** mph, achieved
+(power-limited) top **~193**; **6-speed** → `[3.92, 2.67, 1.96, 1.56, 1.33, 1.22]`, FD 2.76, 1st tops 66.1 mph.
+**Honest limits:** for very low gear counts (e.g. N≤4) a narrow-band 1→2 step is still wide (a 4-speed can't
+span launch→193 and stay tight throughout); and `A` is only an FD slider-placement seed in target mode, not
+the displayed 1st. `N=2` has a single step (the full span) — no interior gears to taper, so `delta` is unused.
+At **high** gear counts on launch-heavy goals (off-road/rally, N≈8–10) the launchable `overall_1st` can exceed
+the 5.5 ceiling and **clamp**, which compresses the 1→2 step *below* the 2→3 step — so the taper is not strictly
+monotonic there. This is still not a bog: every upshift in those clamped cases lands ≳5800 rpm at redline. (The
+`AssertProgressiveSteps` test therefore guards the un-clamped Cayman fixtures, where the strict taper holds.)
 
 ---
 
